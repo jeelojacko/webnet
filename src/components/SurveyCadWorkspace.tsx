@@ -1485,6 +1485,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     RECTANGLE: cadWorkspace.startRectangleCommand,
     CIRCLE: cadWorkspace.startCircleCommand,
     CIRCLECD: cadWorkspace.startCircleDiameterCommand,
+    CIRCLE2P: cadWorkspace.startCircleTwoPointCommand,
+    CIRCLE3P: cadWorkspace.startCircleThreePointCommand,
+    CIRCLETTR: cadWorkspace.startCircleTangentTangentRadiusCommand,
+    CIRCLETTT: cadWorkspace.startCircleTangentTangentTangentCommand,
     POLYGON: cadWorkspace.startPolygonCommand,
     PLINE: cadWorkspace.startPolylineCommand,
     TRAVERSE: cadWorkspace.startTraverseCommand,
@@ -2598,6 +2602,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         cadWorkspace.setCommandInputValue(text);
         handleEnterKey();
       },
+      // Phase B2 — single-buffer dock: direct edits replace the live session
+      // input verbatim (no-op outside an editable session).
+      setSessionInputValue: (text) => cadWorkspace.setCommandInputValue(text),
     };
   // Phase 19B QA — actions-channel subscription (see cadShellLink).
   // Registration re-runs every render to keep handlers fresh but never

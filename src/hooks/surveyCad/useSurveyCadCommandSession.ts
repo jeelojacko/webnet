@@ -82,6 +82,10 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'RECTANGLE':
     case 'CIRCLE':
     case 'CIRCLECD':
+    case 'CIRCLE2P':
+    case 'CIRCLE3P':
+    case 'CIRCLETTR':
+    case 'CIRCLETTT':
     case 'INVERSE':
     case 'BEARING_REPORT':
     case 'DISTANCE_REPORT':

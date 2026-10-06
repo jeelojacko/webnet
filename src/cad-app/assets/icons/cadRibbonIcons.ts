@@ -23,6 +23,12 @@ export type CadRibbonIconId =
   | 'draw-arc-center-start-end'
   | 'draw-arc-center-start-angle'
   | 'draw-arc-center-start-length'
+  | 'draw-circle-center-radius'
+  | 'draw-circle-center-diameter'
+  | 'draw-circle-2point'
+  | 'draw-circle-3point'
+  | 'draw-circle-tan-tan-radius'
+  | 'draw-circle-tan-tan-tan'
   | 'draw-point'
   | 'draw-spline'
   | 'draw-3dpoly'
@@ -117,6 +123,12 @@ export const CAD_RIBBON_ICONS: Record<CadRibbonIconId, CadRibbonIconSources> = {
   'draw-arc-center-start-end': { src16: new URL('./draw-arc-center-start-end-16.png', import.meta.url).href, src32: new URL('./draw-arc-center-start-end-32.png', import.meta.url).href },
   'draw-arc-center-start-angle': { src16: new URL('./draw-arc-center-start-angle-16.png', import.meta.url).href, src32: new URL('./draw-arc-center-start-angle-32.png', import.meta.url).href },
   'draw-arc-center-start-length': { src16: new URL('./draw-arc-center-start-length-16.png', import.meta.url).href, src32: new URL('./draw-arc-center-start-length-32.png', import.meta.url).href },
+  'draw-circle-center-radius': { src16: new URL('./draw-circle-center-radius-16.png', import.meta.url).href, src32: new URL('./draw-circle-center-radius-32.png', import.meta.url).href },
+  'draw-circle-center-diameter': { src16: new URL('./draw-circle-center-diameter-16.png', import.meta.url).href, src32: new URL('./draw-circle-center-diameter-32.png', import.meta.url).href },
+  'draw-circle-2point': { src16: new URL('./draw-circle-2point-16.png', import.meta.url).href, src32: new URL('./draw-circle-2point-32.png', import.meta.url).href },
+  'draw-circle-3point': { src16: new URL('./draw-circle-3point-16.png', import.meta.url).href, src32: new URL('./draw-circle-3point-32.png', import.meta.url).href },
+  'draw-circle-tan-tan-radius': { src16: new URL('./draw-circle-tan-tan-radius-16.png', import.meta.url).href, src32: new URL('./draw-circle-tan-tan-radius-32.png', import.meta.url).href },
+  'draw-circle-tan-tan-tan': { src16: new URL('./draw-circle-tan-tan-tan-16.png', import.meta.url).href, src32: new URL('./draw-circle-tan-tan-tan-32.png', import.meta.url).href },
   'draw-point': { src16: new URL('./draw-point-16.png', import.meta.url).href, src32: new URL('./draw-point-32.png', import.meta.url).href },
   'draw-spline': { src16: new URL('./draw-spline-16.png', import.meta.url).href, src32: new URL('./draw-spline-32.png', import.meta.url).href },
   'draw-3dpoly': { src16: new URL('./draw-3dpoly-16.png', import.meta.url).href, src32: new URL('./draw-3dpoly-32.png', import.meta.url).href },

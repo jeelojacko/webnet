@@ -126,14 +126,14 @@ export const CAD_RIBBON_TOOL_FAMILIES: readonly CadRibbonToolFamily[] = [
     id: 'circle',
     label: 'Circle',
     defaultVariantId: 'circle-center-radius',
-    // B1: Center/Radius + Center/Diameter are live; 2-Point/3-Point/TTR/TTT stay planned.
+    // B2: Center/Radius + Center/Diameter + 2-Point + 3-Point + TTR + TTT live.
     variants: [
-      { id: 'circle-center-radius', label: 'Center, Radius', commandKey: 'CIRCLE', hint: 'Circle from center and radius.' },
-      { id: 'circle-center-diameter', label: 'Center, Diameter', commandKey: 'CIRCLECD', hint: 'Circle from fixed center and diameter (radius is half).' },
-      { id: 'circle-2point', label: '2-Point', planned: true, hint: 'Planned: circle through two points.' },
-      { id: 'circle-3point', label: '3-Point', planned: true, hint: 'Planned: circle through three points.' },
-      { id: 'circle-tan-tan-radius', label: 'Tan, Tan, Radius', planned: true, hint: 'Planned: circle tangent to two objects with a radius.' },
-      { id: 'circle-tan-tan-tan', label: 'Tan, Tan, Tan', planned: true, hint: 'Planned: circle tangent to three objects.' },
+      { id: 'circle-center-radius', label: 'Center, Radius', icon: 'draw-circle-center-radius', commandKey: 'CIRCLE', hint: 'Circle from center and radius.' },
+      { id: 'circle-center-diameter', label: 'Center, Diameter', icon: 'draw-circle-center-diameter', commandKey: 'CIRCLECD', hint: 'Circle from fixed center and diameter (radius is half).' },
+      { id: 'circle-2point', label: '2-Point', icon: 'draw-circle-2point', commandKey: 'CIRCLE2P', hint: 'Circle with two points as opposite diameter endpoints.' },
+      { id: 'circle-3point', label: '3-Point', icon: 'draw-circle-3point', commandKey: 'CIRCLE3P', hint: 'Circumcircle through three points.' },
+      { id: 'circle-tan-tan-radius', label: 'Tan, Tan, Radius', icon: 'draw-circle-tan-tan-radius', commandKey: 'CIRCLETTR', hint: 'Circle tangent to two objects with a fixed radius.' },
+      { id: 'circle-tan-tan-tan', label: 'Tan, Tan, Tan', icon: 'draw-circle-tan-tan-tan', commandKey: 'CIRCLETTT', hint: 'Circle tangent to three objects (Apollonius).' },
     ],
   },
   {

@@ -3,6 +3,11 @@
 // Shapes V1 dock pin: while a POLYGON session is in mode phase, `I` means
 // Inscribed and must reach the session — never resolve to INSERT. Outside
 // that phase the I→INSERT alias stays intact (no global remap).
+//
+// Phase B2: while a session is active the dock renders the workspace session
+// buffer (single authority), so the harness wires `setSessionInputValue` back
+// into `commandInputValue` the way the live workspace does.
+import React, { useState } from 'react';
 import { act } from 'react';
 import type { ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -27,6 +32,28 @@ const actions = () =>
     openBlockManager: vi.fn(),
   }) as unknown as CadShellActions;
 
+/** Session-buffer harness: keystrokes round-trip through commandInputValue. */
+const StatefulDock: React.FC<{
+  over: Partial<CadWorkspaceSnapshot>;
+  shellActions: CadShellActions;
+}> = ({ over, shellActions }) => {
+  const [value, setValue] = useState('');
+  const link = React.useMemo(() => createCadShellLink(), []);
+  const wiredActions = React.useMemo(
+    () => ({ ...shellActions, setSessionInputValue: setValue }),
+    [shellActions, setValue],
+  );
+  return (
+    <CadCommandDock
+      link={link}
+      actionsOverride={wiredActions}
+      snapshot={snapshot({ ...over, commandInputValue: value })}
+      heightPx={148}
+      onResize={() => {}}
+    />
+  );
+};
+
 const render = async (node: ReactNode): Promise<{ container: HTMLElement; root: Root }> => {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -50,18 +77,14 @@ const pressEnter = async (input: HTMLInputElement): Promise<void> => {
 
 describe('dock polygon mode phase owns I', () => {
   it('routes `I` to the POLYGON session, not INSERT', async () => {
-    const link = createCadShellLink();
     const shellActions = actions();
-    link.actions = shellActions;
     const { container, root } = await render(
-      <CadCommandDock
-        link={link}
-        snapshot={snapshot({
+      <StatefulDock
+        shellActions={shellActions}
+        over={{
           activeCommandKey: 'POLYGON',
           commandPrompt: 'POLYGON active. 6 sides. Inscribed or Circumscribed? [I/C] <I>.',
-        })}
-        heightPx={148}
-        onResize={() => {}}
+        }}
       />,
     );
     const input = container.querySelector('[data-cad-command-input]') as HTMLInputElement;
@@ -77,7 +100,8 @@ describe('dock polygon mode phase owns I', () => {
     container.remove();
   });
 
-  it('keeps the I→INSERT alias with no active polygon mode session', async () => {    const link = createCadShellLink();
+  it('keeps the I→INSERT alias with no active polygon mode session', async () => {
+    const link = createCadShellLink();
     const shellActions = actions();
     link.actions = shellActions;
     const { container, root } = await render(
@@ -97,20 +121,17 @@ describe('dock polygon mode phase owns I', () => {
   });
 
   it('routes `I` to the session after an invalid mode entry (error prompt hides the [I/C] marker)', async () => {
-    const link = createCadShellLink();
     const shellActions = actions();
-    link.actions = shellActions;
     const { container, root } = await render(
-      <CadCommandDock
-        link={link}
-        snapshot={snapshot({
+      <StatefulDock
+        shellActions={shellActions}
+        over={{
           activeCommandKey: 'POLYGON',
           // resultText precedence: the invalid-retry prompt replaces the
-          // phase prompt, so the [I/C] marker is gone — still mode phase.
-          commandPrompt: 'POLYGON mode invalid. Enter `I` for Inscribed or `C` for Circumscribed (empty = Inscribed).',
-        })}
-        heightPx={148}
-        onResize={() => {}}
+          // phase prompt, so the [I/C] marker is gone — still a session.
+          commandPrompt:
+            'POLYGON mode invalid. Enter `I` for Inscribed or `C` for Circumscribed (empty = Inscribed).',
+        }}
       />,
     );
     const input = container.querySelector('[data-cad-command-input]') as HTMLInputElement;

@@ -1,0 +1,88 @@
+{
+  "flowA": {
+    "variants": {
+      "circle-center-radius": {
+        "command": "CIRCLE",
+        "icon": "draw-circle-center-radius"
+      },
+      "circle-center-diameter": {
+        "command": "CIRCLECD",
+        "icon": "draw-circle-center-diameter"
+      },
+      "circle-2point": {
+        "command": "CIRCLE2P",
+        "icon": "draw-circle-2point"
+      },
+      "circle-3point": {
+        "command": "CIRCLE3P",
+        "icon": "draw-circle-3point"
+      },
+      "circle-tan-tan-radius": {
+        "command": "CIRCLETTR",
+        "icon": "draw-circle-tan-tan-radius"
+      },
+      "circle-tan-tan-tan": {
+        "command": "CIRCLETTT",
+        "icon": "draw-circle-tan-tan-tan"
+      }
+    },
+    "distinctIcons": 6
+  },
+  "flowB2P": {
+    "id": "cad-circle-8b4a2686-9967-4a19-9018-9e24a1f48f53",
+    "type": "circle",
+    "centerX": 25,
+    "centerY": 20,
+    "radius": 15,
+    "createdBy": "CIRCLE2P"
+  },
+  "flowB3P": {
+    "id": "cad-circle-f923a032-e290-46d3-a7a2-59b346d63628",
+    "type": "circle",
+    "centerX": 100,
+    "centerY": 200,
+    "radius": 50,
+    "createdBy": "CIRCLE3P"
+  },
+  "flowTTR": {
+    "id": "cad-circle-d098c3a3-2005-481d-94fa-3da5ef7a84ce",
+    "type": "circle",
+    "centerX": 10,
+    "centerY": 10,
+    "radius": 10,
+    "createdBy": "CIRCLETTR"
+  },
+  "flowTTT": {
+    "id": "cad-circle-605573da-9a18-4e97-85ad-39d7d6bb166f",
+    "type": "circle",
+    "centerX": 29.289321881345245,
+    "centerY": 29.289321881345245,
+    "radius": 29.289321881345245,
+    "createdBy": "CIRCLETTT",
+    "expectedIncircleRadius": 29.289321881345245
+  },
+  "flowC": {
+    "id": "cad-circle-b6ac08b6-3784-489e-af45-bed8e7e68d7c",
+    "type": "circle",
+    "centerX": 6.314066059225514,
+    "centerY": 0.026439960950211727,
+    "radius": 5,
+    "createdBy": "CIRCLE"
+  },
+  "flowD": {
+    "suggestionCount": 7,
+    "firstKey": "CIRCLE"
+  },
+  "flowE_1366": {
+    "collapsedHeight": 54,
+    "expandedHeight": 148,
+    "reclaimedHeight": 74,
+    "historyScrollHeight": 334
+  },
+  "flowE_1920": {
+    "collapsedHeight": 54,
+    "expandedHeight": 148,
+    "reclaimedHeight": 74,
+    "historyScrollHeight": 334
+  }
+}

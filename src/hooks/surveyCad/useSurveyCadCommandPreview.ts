@@ -10,9 +10,14 @@ import {
 import {
   buildCircleCenterDiameterScalar,
   buildCircleCenterRadiusScalar,
+  buildCircleThreePoint,
+  buildCircleTwoPoint,
   buildRectangleVertices,
   buildRegularPolygonVertices,
 } from '../../engine/cad/cadGeometryShapeBuilders';
+import {
+  solveCadCircleTangentTangentRadius,
+} from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import {
   deriveAlign2DTransform,
   gridGroundTransform,
@@ -181,6 +186,82 @@ export const buildCommandPreview = ({
         : buildCircleCenterDiameterScalar(session.center, distance);
       if (!built) return null;
       return { kind: 'circle', center: built.center, radius: built.radius };
+    }
+    case 'CIRCLE2P': {
+      if (!previewPoint) return null;
+      if (!session.first) {
+        return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+      }
+      const built = buildCircleTwoPoint(session.first, previewPoint);
+      if (!built) return null;
+      return { kind: 'circle', center: built.center, radius: built.radius };
+    }
+    case 'CIRCLE3P': {
+      if (!previewPoint) return null;
+      if (session.points.length === 0) {
+        return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+      }
+      if (session.points.length === 1) {
+        return {
+          kind: 'line',
+          points: [
+            { x: session.points[0]!.x, y: session.points[0]!.y },
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      }
+      const built = buildCircleThreePoint(
+        session.points[0]!,
+        session.points[1]!,
+        previewPoint,
+      );
+      if (!built) {
+        return {
+          kind: 'line',
+          points: [
+            { x: session.points[1]!.x, y: session.points[1]!.y },
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      }
+      return { kind: 'circle', center: built.center, radius: built.radius };
+    }
+    case 'CIRCLETTR': {
+      if (!session.first || !session.second) {
+        return previewPoint
+          ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+          : null;
+      }
+      const radius = Number(session.inputValue.trim());
+      if (!Number.isFinite(radius) || radius <= 0) return null;
+      const solved = solveCadCircleTangentTangentRadius(session.first, session.second, radius);
+      if (solved.status !== 'SOLVED' || !solved.center || solved.radius == null) return null;
+      return { kind: 'circle', center: solved.center, radius: solved.radius };
+    }
+    case 'CIRCLETTT': {
+      if (!previewPoint) return null;
+      if (session.picks.length === 0) {
+        return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+      }
+      if (session.picks.length === 1) {
+        const pick = session.picks[0]!.pickPoint;
+        return {
+          kind: 'line',
+          points: [{ x: pick.x, y: pick.y }, { x: previewPoint.x, y: previewPoint.y }],
+        };
+      }
+      const [first, second] = session.picks;
+      if (!first || !second) return null;
+      // The third source is unknown until the next entity pick; the preview
+      // cannot resolve the hovered point to a primitive, so show only the
+      // next-pick guide line rather than a fabricated circle.
+      return {
+        kind: 'line',
+        points: [
+          { x: second.pickPoint.x, y: second.pickPoint.y },
+          { x: previewPoint.x, y: previewPoint.y },
+        ],
+      };
     }
     case 'POLYGON': {
       if (session.phase === 'sides' || session.phase === 'mode') return null;

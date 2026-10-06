@@ -1,3 +1,4 @@
+import { cadBuildArcFromThreePoints } from './cadGeometryArcPrimitives';
 import type { CadWorldPoint } from './cadGeometry';
 
 // Degenerate XY floor reused from the neighboring geometry authority:
@@ -66,6 +67,66 @@ export const buildCircleCenterDiameterScalar = (
 ): CircleCenterRadius | null => {
   if (!isFinitePoint(center) || !Number.isFinite(diameter)) return null;
   return toFiniteCircle(center, diameter / 2);
+};
+
+/** 2-Point (diametral): A and B are the OPPOSITE endpoints of a diameter.
+ * center = midpoint(A,B), R = distance(A,B)/2. Deliberately distinct from
+ * Center/Diameter, which fixes the supplied center. Rejects coincident or
+ * non-finite input (center never moves from the supplied value). */
+export const buildCircleTwoPoint = (
+  first: CadWorldPoint,
+  second: CadWorldPoint,
+): CircleCenterRadius | null => {
+  if (!isFinitePoint(first) || !isFinitePoint(second)) return null;
+  const dx = second.x - first.x;
+  const dy = second.y - first.y;
+  const diameter = Math.hypot(dx, dy);
+  if (!Number.isFinite(diameter) || diameter <= CAD_XY_DEGENERATE_FLOOR) return null;
+  // a + (b - a)/2 stays finite for individually finite large coordinates
+  // whose naive sum would overflow (unlike (a + b)/2).
+  return toFiniteCircle(
+    { x: first.x + dx / 2, y: first.y + dy / 2 },
+    diameter / 2,
+  );
+};
+
+/** Scale-relative conditioning guard for the 3-point circumcircle. The raw
+ * denominator convention (cadBuildArcFromThreePoints) uses an absolute
+ * machine check; this additionally rejects duplicate/coincident and
+ * near-collinear triangles whose circumcenter is numerically runaway for
+ * their size, using only the CAD floor authority (no new epsilon). */
+const isWellConditionedTriangle = (
+  first: CadWorldPoint,
+  second: CadWorldPoint,
+  third: CadWorldPoint,
+): boolean => {
+  const scale = Math.max(
+    Math.hypot(second.x - first.x, second.y - first.y),
+    Math.hypot(third.x - second.x, third.y - second.y),
+    Math.hypot(first.x - third.x, first.y - third.y),
+  );
+  if (!Number.isFinite(scale) || scale <= CAD_XY_DEGENERATE_FLOOR) return false;
+  const doubleArea = Math.abs(
+    (second.x - first.x) * (third.y - first.y) -
+      (second.y - first.y) * (third.x - first.x),
+  );
+  if (!Number.isFinite(doubleArea)) return false;
+  return doubleArea > CAD_XY_DEGENERATE_FLOOR * scale * scale;
+};
+
+/** 3-Point: circumcircle through A, B, C using the shared arc convention
+ * (cadBuildArcFromThreePoints) with an added scale-relative conditioning
+ * guard. Collinear, duplicate, and ill-conditioned triples reject. */
+export const buildCircleThreePoint = (
+  first: CadWorldPoint,
+  second: CadWorldPoint,
+  third: CadWorldPoint,
+): CircleCenterRadius | null => {
+  if (!isFinitePoint(first) || !isFinitePoint(second) || !isFinitePoint(third)) return null;
+  if (!isWellConditionedTriangle(first, second, third)) return null;
+  const arc = cadBuildArcFromThreePoints(first, second, third);
+  if (!arc) return null;
+  return toFiniteCircle(arc.center, arc.radius);
 };
 
 export const buildRectangleVertices = (

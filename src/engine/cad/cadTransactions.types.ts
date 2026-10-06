@@ -1,5 +1,6 @@
 import type { CadSelectionState } from './cadSelection';
 import type { DraftDocument } from './cadDraftTypes';
+import type { CadTangentSource } from './cadGeometryCircleTangentSolvers';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 import type {
@@ -99,6 +100,10 @@ export type CadCommandKey =
   | 'POLYGON'
   | 'CIRCLE'
   | 'CIRCLECD'
+  | 'CIRCLE2P'
+  | 'CIRCLE3P'
+  | 'CIRCLETTR'
+  | 'CIRCLETTT'
   | 'PLINE'
   | 'TRAVERSE'
   | 'BATCH_COGO'
@@ -380,6 +385,29 @@ export type CadCommand =
       key: 'CIRCLECD';
       center: { x: number; y: number; label: string };
       diameter: number;
+    }
+  | {
+      key: 'CIRCLE2P';
+      first: { x: number; y: number; label: string };
+      second: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'CIRCLE3P';
+      first: { x: number; y: number; label: string };
+      second: { x: number; y: number; label: string };
+      third: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'CIRCLETTR';
+      first: CadTangentSource;
+      second: CadTangentSource;
+      radius: number;
+    }
+  | {
+      key: 'CIRCLETTT';
+      first: CadTangentSource;
+      second: CadTangentSource;
+      third: CadTangentSource;
     }
   | {
       key: 'PLINE';

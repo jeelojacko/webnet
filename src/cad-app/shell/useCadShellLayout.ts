@@ -15,6 +15,7 @@ export const DEFAULT_SHELL_LAYOUT: CadShellLayoutState = {
   leftWidthPx: 264,
   rightWidthPx: 288,
   commandHeightPx: 148,
+  commandHistoryExpanded: false,
   toolspaceTab: 'prospector',
   ribbonCollapsed: false,
   lineweightDisplay: false,
@@ -46,6 +47,7 @@ const sanitizeLayout = (value: unknown): CadShellLayoutState => {
       MIN_COMMAND_PX,
       MAX_COMMAND_PX,
     ),
+    commandHistoryExpanded: raw.commandHistoryExpanded === true,
     toolspaceTab: tab(raw.toolspaceTab),
     ribbonCollapsed: raw.ribbonCollapsed === true,
     lineweightDisplay: raw.lineweightDisplay === true,
@@ -80,6 +82,8 @@ export interface CadShellLayoutController {
   movePanel: (_panel: CadSidePanelId) => void;
   setSideWidth: (_side: 'left' | 'right', _widthPx: number) => void;
   setCommandHeight: (_heightPx: number) => void;
+  /** Phase B2 — expand/collapse the history panel (persisted chrome only). */
+  setCommandHistoryExpanded: (_expanded: boolean) => void;
   setToolspaceTab: (_tab: CadToolspaceTab) => void;
   setRibbonCollapsed: (_collapsed: boolean) => void;
   setLineweightDisplay: (_enabled: boolean) => void;
@@ -150,6 +154,10 @@ export const useCadShellLayout = (): CadShellLayoutController => {
       [update],
     ),
     setCommandHeight: useCallback((heightPx) => update({ commandHeightPx: heightPx }), [update]),
+    setCommandHistoryExpanded: useCallback(
+      (expanded) => update({ commandHistoryExpanded: expanded }),
+      [update],
+    ),
     setToolspaceTab: useCallback((tab) => update({ toolspaceTab: tab }), [update]),
     setRibbonCollapsed: useCallback((collapsed) => update({ ribbonCollapsed: collapsed }), [update]),
     setLineweightDisplay: useCallback((enabled) => update({ lineweightDisplay: enabled }), [update]),

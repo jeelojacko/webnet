@@ -1,5 +1,6 @@
 import type { CadBatchCogoDraft } from '../../engine/cad/cadBatchCogo';
 import type { RegularPolygonMode } from '../../engine/cad/cadGeometryShapeBuilders';
+import type { CadTangentSource } from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import type {
   CadTraverseAdjustmentMethod,
   CadTraverseAdjustmentSummary,
@@ -60,6 +61,10 @@ export type ActiveCommandKey =
   | 'RECTANGLE'
   | 'CIRCLE'
   | 'CIRCLECD'
+  | 'CIRCLE2P'
+  | 'CIRCLE3P'
+  | 'CIRCLETTR'
+  | 'CIRCLETTT'
   | 'POLYGON'
   | 'PLINE'
   | 'TRAVERSE'
@@ -415,6 +420,31 @@ export type CommandSession =
       key: 'CIRCLECD';
       inputValue: string;
       center: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CIRCLE2P';
+      inputValue: string;
+      first: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CIRCLE3P';
+      inputValue: string;
+      points: CommandPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'CIRCLETTR';
+      inputValue: string;
+      first: CadTangentSource | null;
+      second: CadTangentSource | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CIRCLETTT';
+      inputValue: string;
+      picks: CadTangentSource[];
       resultText?: string;
     }
   | {

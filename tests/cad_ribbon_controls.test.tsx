@@ -325,21 +325,21 @@ describe('phase 21A sticky/reset state (§81)', () => {
     const Probe: React.FC = () => {
       const [, setNoise] = useState(0);
       const state = useCadToolFamilyState({ drawingId: 'd1' });
-      const circle = state.resolveVariant('circle');
+      const line = state.resolveVariant('line');
       return (
         <div>
-          <span data-cad-circle={circle?.id ?? 'none'} />
+          <span data-cad-line={line?.id ?? 'none'} />
           <button data-cad-test="noop" onClick={() => setNoise((value) => value + 1)} />
-          <button data-cad-test="pick-planned" onClick={() => state.selectVariant('circle', 'circle-3point')} />
+          <button data-cad-test="pick-planned" onClick={() => state.selectVariant('line', 'line-by-bearing')} />
         </div>
       );
     };
     const { container, root } = await render(<Probe />);
-    const circleId = (): string | null =>
-      container.querySelector('[data-cad-circle]')?.getAttribute('data-cad-circle') ?? null;
-    expect(circleId()).toBe('circle-center-radius');
+    const lineId = (): string | null =>
+      container.querySelector('[data-cad-line]')?.getAttribute('data-cad-line') ?? null;
+    expect(lineId()).toBe('line-create');
     await click(container.querySelector('[data-cad-test="pick-planned"]'));
-    expect(circleId()).toBe('circle-center-radius');
+    expect(lineId()).toBe('line-create');
     await cleanup(container, root);
   });
 });

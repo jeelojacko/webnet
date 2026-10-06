@@ -141,6 +141,37 @@ describe('CAD ribbon icon manifest', () => {
     container.remove();
   });
 
+  it('pins every Circle construction variant to its curated icon', () => {
+    // Phase B2 Worker C: each Circle row carries an explicit icon so a typo
+    // can never silently fall back to a text face (split primary renders
+    // currentVariant.icon directly).
+    const family = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === 'circle');
+    expect(family).toBeTruthy();
+    if (family == null) return;
+    const expected: Record<string, keyof typeof CAD_RIBBON_ICONS> = {
+      'circle-center-radius': 'draw-circle-center-radius',
+      'circle-center-diameter': 'draw-circle-center-diameter',
+      'circle-2point': 'draw-circle-2point',
+      'circle-3point': 'draw-circle-3point',
+      'circle-tan-tan-radius': 'draw-circle-tan-tan-radius',
+      'circle-tan-tan-tan': 'draw-circle-tan-tan-tan',
+    };
+    expect(family.variants.map((variant) => variant.id)).toEqual(Object.keys(expected));
+    for (const variant of family.variants) {
+      expect(variant.icon, `${variant.id} must not silently fall back to a text face`).toBe(
+        expected[variant.id],
+      );
+      const sources = variant.icon != null ? CAD_RIBBON_ICONS[variant.icon] : undefined;
+      expect(sources, `${variant.id} icon manifest entry`).toBeTruthy();
+      if (sources == null) continue;
+      for (const url of [sources.src16, sources.src32]) {
+        if (url == null) continue;
+        const file = path.join(ICON_DIR, pngBasename(url));
+        expect(fs.existsSync(file), `${variant.id} file ${file}`).toBe(true);
+      }
+    }
+  });
+
   it('never references the gitignored local-assets tree from src/', () => {
     // Comments document provenance, so scan code only (strip // and /* */).
     const stripComments = (text: string): string =>
