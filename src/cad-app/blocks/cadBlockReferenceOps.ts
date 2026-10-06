@@ -43,6 +43,13 @@ export const applyBlockReferenceOp = (project: CadProject, op: Extract<CadBlockU
         scaleY,
         metadata: { entityName: definition.name },
       };
+      // Phase B1: preflight expansion so a Circle child that cannot expand
+      // truthfully (non-uniform scale, sub-floor result) refuses the insert.
+      try {
+        expandBlockReference(definition, reference);
+      } catch (error) {
+        return fail(project, 'BLOCK_INSERT', error instanceof Error ? error.message : 'Expansion failed.');
+      }
       return {
         applied: true,
         project: { ...project, entities: [...project.entities, reference] },
@@ -112,6 +119,17 @@ export const applyBlockReferenceOp = (project: CadProject, op: Extract<CadBlockU
       }
       const scaleIssue = normalizeBlockScales(scaleX, scaleY);
       if (scaleIssue) return fail(project, 'BLOCK_EDIT', scaleIssue.message);
+      const candidate = { ...target, x, y, rotationDeg, scaleX, scaleY };
+      // Phase B1: preflight expansion so Properties edits cannot create a
+      // reference that renders empty (Circle non-uniform/sub-floor).
+      const candidateDefinition = findBlockDefinition(definitions, target.blockDefinitionId);
+      if (candidateDefinition) {
+        try {
+          expandBlockReference(candidateDefinition, candidate);
+        } catch (error) {
+          return fail(project, 'BLOCK_EDIT', error instanceof Error ? error.message : 'Expansion failed.');
+        }
+      }
       return {
         applied: true,
         project: {

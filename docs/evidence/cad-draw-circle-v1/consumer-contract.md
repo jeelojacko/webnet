@@ -7,7 +7,7 @@ N-A = unreachable for circles.
 | Site | Contract |
 |---|---|
 | `CadEntity` / `CadBlockChild` unions | SUPPORT (kind + grips `circle-center`/`circle-radius`) |
-| persistence clone/sanitize | SUPPORT (shallow arm; load conventions unchanged, same as arcs) |
+| persistence clone/sanitize | SUPPORT (validating arm: shared `isValidCircleGeometry` — finite center/radius + floor; malformed top-level and block-child circles throw fail-closed at load/clone, matching parcel/feature-line convention) |
 | project bounds | SUPPORT (center±r) |
 | renderer display primitive | SUPPORT (`circle` primitive, native SVG ring + hit pad) |
 | preview / transform-preview / selection-box | SUPPORT (native circle paths) |

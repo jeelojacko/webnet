@@ -10,12 +10,13 @@
 
 import type { CadBlockChild, CadEntity, CadEntityId, CadProject } from '../../engine/cad/cadTypes';
 
-type ChildSource = Extract<CadEntity, { type: 'line' | 'polyline' | 'arc' | 'polygon' | 'text' }>;
+type ChildSource = Extract<CadEntity, { type: 'line' | 'polyline' | 'arc' | 'circle' | 'polygon' | 'text' }>;
 
 const REDIFINEABLE: ReadonlySet<CadEntity['type']> = new Set([
   'line',
   'polyline',
   'arc',
+  'circle',
   'polygon',
   'text',
 ]);

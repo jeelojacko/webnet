@@ -220,3 +220,109 @@ describe('no new geometry epsilon (finding 5)', () => {
     expect(CAD_XY_DEGENERATE_FLOOR).toBe(1e-12);
   });
 });
+
+describe('round-3 findings (A-F)', () => {
+  const circleBlockDefinition = (over?: Record<string, unknown>) => ({
+    id: 'blk-c',
+    name: 'C',
+    basePoint: { x: 0, y: 0 },
+    entities: [{
+      id: 'c1', type: 'circle', layerId: 'general', visible: true, locked: false,
+      centerX: 5, centerY: 5, radius: 2,
+    }],
+    bodyAlignment: 'left' as const,
+    titleGap: 0,
+    ...over,
+  });
+  const circleRefProject = (scaleX: number, scaleY: number): CadProject => {
+    const project = projectWith([]);
+    return {
+      ...project,
+      blockDefinitions: [circleBlockDefinition()],
+      entities: [{
+        ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-c',
+        x: 0, y: 0, rotationDeg: 0, scaleX, scaleY,
+      }],
+    } as unknown as CadProject;
+  };
+
+  it('A: UI insert refuses circle 2/1 + tiny uniform; accepts 2/2', async () => {
+    const { applyBlockReferenceOp } = await import('../src/cad-app/blocks/cadBlockReferenceOps');
+    expect(applyBlockReferenceOp(circleRefProject(1, 1), { kind: 'insert', definitionId: 'blk-c', x: 0, y: 0, scale: 2, scaleY: 1 }).applied).toBe(false);
+    expect(applyBlockReferenceOp(circleRefProject(1, 1), { kind: 'insert', definitionId: 'blk-c', x: 0, y: 0, scale: 2, scaleY: 2 }).applied).toBe(true);
+    expect(applyBlockReferenceOp(circleRefProject(1, 1), { kind: 'insert', definitionId: 'blk-c', x: 0, y: 0, scale: 1e-13, scaleY: 1e-13 }).applied).toBe(false);
+  });
+  it('A: UI set-transform refuses circle 1/1->2/1 and tiny uniform; project unchanged; non-circle 2/1 accepted', async () => {
+    const { applyBlockReferenceOp } = await import('../src/cad-app/blocks/cadBlockReferenceOps');
+    const before = circleRefProject(1, 1);
+    const refused = applyBlockReferenceOp(before, { kind: 'set-transform', entityId: 'ref-1', scaleX: 2, scaleY: 1 });
+    expect(refused.applied).toBe(false);
+    expect(refused.project).toBe(before);
+    const tiny = applyBlockReferenceOp(before, { kind: 'set-transform', entityId: 'ref-1', scaleX: 1e-13, scaleY: 1e-13 });
+    expect(tiny.applied).toBe(false);
+    expect(tiny.project).toBe(before);
+    const lineProject: CadProject = {
+      ...before,
+      blockDefinitions: [{ ...circleBlockDefinition(), id: 'blk-l', entities: [{ ...base, id: 'l1', type: 'line', fromStationId: 'A', toStationId: 'B', fromX: 0, fromY: 0, toX: 1, toY: 0, sourceObservationIds: [] }] }],
+      entities: [{ ...base, id: 'ref-2', type: 'block-reference', blockDefinitionId: 'blk-l', x: 0, y: 0, rotationDeg: 0, scaleX: 1, scaleY: 1 }],
+    } as unknown as CadProject;
+    expect(applyBlockReferenceOp(lineProject, { kind: 'set-transform', entityId: 'ref-2', scaleX: 2, scaleY: 1 }).applied).toBe(true);
+  });
+  it('B/C: Block Manager captures Circle; redefine pref lights live non-uniform refs', async () => {
+    const { collectChildren } = await import('../src/cad-app/blocks/cadBlockSelectionGeometry');
+    const project = projectWith([circle({ id: 's1' })]);
+    const { children, skipped } = collectChildren(project, ['s1']);
+    expect(skipped).toEqual([]);
+    expect(children).toHaveLength(1);
+    expect(children[0]!.type).toBe('circle');
+    const { applyBlockUiOp } = await import('../src/cad-app/blocks/cadBlockUiCommands');
+    const withDef = {
+      ...project,
+      blockDefinitions: [circleBlockDefinition({ id: 'blk-l', entities: [{ ...base, id: 'l1', type: 'line', fromStationId: 'A', toStationId: 'B', fromX: 0, fromY: 0, toX: 1, toY: 0, sourceObservationIds: [] }] })],
+      entities: [circle({ id: 's1' }), { ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-l', x: 0, y: 0, rotationDeg: 0, scaleX: 2, scaleY: 1 }],
+    } as unknown as CadProject;
+    const refused = applyBlockUiOp(withDef, { kind: 'redefine', definitionId: 'blk-l', fromEntityIds: ['s1'] });
+    expect(refused.applied).toBe(false);
+    expect(withDef.blockDefinitions!.map((entry) => entry.entities.map((child) => child.type))).toEqual([['line']]);
+    const uniform: CadProject = {
+      ...withDef,
+      entities: [circle({ id: 's1' }), { ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-l', x: 0, y: 0, rotationDeg: 0, scaleX: 2, scaleY: 2 }],
+    } as unknown as CadProject;
+    expect(applyBlockUiOp(uniform, { kind: 'redefine', definitionId: 'blk-l', fromEntityIds: ['s1'] }).applied).toBe(true);
+  });
+  it('D: field-by-field finite law accepts individually finite overflow sums', async () => {
+    const { isValidCircleGeometry } = await import('../src/engine/cad/cadGeometryShapeBuilders');
+    expect(isValidCircleGeometry(1e308, 1e308, 15)).toBe(true);
+    expect(isValidCircleGeometry(10, 20, 0)).toBe(false);
+    expect(isValidCircleGeometry(10, 20, NaN)).toBe(false);
+  });
+  it('E: malformed persisted Circles fail closed on load (top-level + block child)', async () => {
+    const { createBlankCadDrawingDocument, parseCadDrawingFile, serializeCadDrawingFile } = await import('../src/engine/cad/cadDrawingFile');
+    const good = createBlankCadDrawingDocument({ name: 'c', units: 'm' });
+    (good.project as CadProject).entities = [circle()];
+    const parsed = JSON.parse(serializeCadDrawingFile(good)) as { project: { entities: Array<Record<string, unknown>> } };
+    expect(parseCadDrawingFile(JSON.stringify(parsed)).ok).toBe(true);
+    for (const bad of [{ radius: 0 }, { radius: -3 }, { centerX: 'oops' }]) {
+      const broken = JSON.parse(JSON.stringify(parsed)) as { project: { entities: Array<Record<string, unknown>> } };
+      Object.assign(broken.project.entities[0] as object, bad);
+      expect(parseCadDrawingFile(JSON.stringify(broken)).ok).toBe(false);
+    }
+    const withBlock = JSON.parse(JSON.stringify(parsed)) as {
+      project: { entities: Array<Record<string, unknown>>; blockDefinitions: Array<{ entities: Array<Record<string, unknown>> }> };
+    };
+    withBlock.project.blockDefinitions = [{ id: 'b', name: 'B', basePoint: { x: 0, y: 0 }, entities: [{ ...circle({ id: 'c9' }), radius: 0 }], bodyAlignment: 'left', titleGap: 0 } as never];
+    expect(parseCadDrawingFile(JSON.stringify(withBlock)).ok).toBe(false);
+  });
+  it('E: anchor factory emits center for center snaps, fixed otherwise; DIM sessions commit center association', async () => {
+    const { cadAnnotationAnchorFromCommandPoint } = await import('../src/engine/cad/annotation/cadAnnotationAnchorFromCommandPoint');
+    const project = projectWith([circle()]);
+    const centerAnchor = cadAnnotationAnchorFromCommandPoint(project, {
+      x: 10, y: 20, snapSourceEntityId: 'circ-1', snapKind: 'center',
+    } as never);
+    expect(centerAnchor).toMatchObject({ kind: 'arc-point', entityId: 'circ-1', point: 'center' });
+    const rimAnchor = cadAnnotationAnchorFromCommandPoint(project, {
+      x: 25, y: 20, snapSourceEntityId: 'circ-1', snapKind: 'nearest',
+    } as never);
+    expect(rimAnchor.kind).toBe('fixed');
+  });
+});
