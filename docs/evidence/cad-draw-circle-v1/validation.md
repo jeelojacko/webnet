@@ -42,3 +42,12 @@
   (persistence doc claim) — all fixed and pinned (block-render + sheet
   circle tests, DXF dim path widened, doc softened to arc convention).
   Re-verified: consumer suite green, annotation/export/block suites green.
+- Review-fix round 2 (same nested reviewer): 2 BLOCKER (anchor-resolver
+  BROKEN_REFERENCE for circles; DXF non-uniform INSERT distorting circle
+  blocks) + 3 MAJOR (persisted-circle load validation; transform/block
+  sub-floor results; raw 1e-12 literals in snap code) + 2 doc MINORs —
+  all fixed and pinned in `tests/cad_circle_reviewfix_v1.test.ts` (12/12):
+  center-anchor resolution incl. move/grip tracking, start/end BROKEN,
+  DIMRADIUS/DIMDIAMETER derivation + DXF derivation, DXF INSERT omission
+  with warning, BLOCK_INSERT gate, clone/load rejection, transform/block
+  floor refusal, canonical-floor epsilon audit.

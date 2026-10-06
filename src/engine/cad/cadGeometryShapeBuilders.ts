@@ -6,6 +6,12 @@ import type { CadWorldPoint } from './cadGeometry';
 // surfaces/volume/zero.ts is a delta-Z earthwork policy, wrong domain here.)
 export const CAD_XY_DEGENERATE_FLOOR = 1e-12;
 
+/** Shared Circle geometry validity: finite center, finite radius strictly
+ * above the CAD floor. Used by creation builders, persistence clone/load,
+ * and transform result checks — one authority, no duplicate literal. */
+export const isValidCircleGeometry = (centerX: number, centerY: number, radius: number): boolean =>
+  Number.isFinite(centerX + centerY + radius) && radius > CAD_XY_DEGENERATE_FLOOR;
+
 // No existing repo vertex cap was found; 1024 is a local cap for this
 // builder so a single polygon drag cannot allocate an unbounded ring.
 export const MAX_SHAPE_POLYGON_SIDES = 1024;

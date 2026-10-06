@@ -605,6 +605,18 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           result.omittedEntityIds.push(entity.id);
           break;
         }
+        // Phase B1: a native INSERT with non-uniform scales would let an
+        // external host distort a Circle child into ellipse-like geometry.
+        // Fail closed for circle-bearing definitions only; uniform,
+        // rotated, translated, and mirrored circle blocks stay exportable.
+        if (
+          entity.scaleX !== entity.scaleY &&
+          definition.entities.some((child) => child.type === 'circle')
+        ) {
+          warn({ code: 'SKIPPED_ENTITY', message: `block-reference ${entity.id} has non-uniform scale over a Circle child; INSERT omitted rather than distorted`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
         (model.inserts ??= []).push({
           ...blockReferenceInsert(
             registerLayer(entity.layerId),

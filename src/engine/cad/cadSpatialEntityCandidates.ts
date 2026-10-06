@@ -13,6 +13,7 @@ import {
 import {
   cadTangentPointsFromExternalPointToCircle,
 } from './cadGeometryCurveIntersections';
+import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
 import { getCadEntityDisplayLabel, getCadEntitySubpartDisplayLabel } from './cadEntityNames';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import type {
@@ -453,7 +454,7 @@ const radialRimPoint = (
   const dx = point.x - center.x;
   const dy = point.y - center.y;
   const length = Math.hypot(dx, dy);
-  if (length <= 1e-12) return cadPointOnCircle(center, radius, 0);
+  if (length <= CAD_XY_DEGENERATE_FLOOR) return cadPointOnCircle(center, radius, 0);
   return { x: center.x + (dx / length) * radius, y: center.y + (dy / length) * radius };
 };
 

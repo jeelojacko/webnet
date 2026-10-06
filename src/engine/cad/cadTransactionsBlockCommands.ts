@@ -1,6 +1,7 @@
 import { createStableRuntimeId } from '../id';
 import { checkCadEntityEditable, resolveCadEntityAppearance } from './cadAppearance';
 import {
+  blockReferenceScalesDistortCircle,
   expandBlockReference,
   findBlockDefinition,
   normalizeBlockScales,
@@ -126,6 +127,8 @@ const blockInsertCommand: CadCommandDefinition<InsertCommand> = {
     const scaleX = command.scaleX ?? 1;
     const scaleY = command.scaleY ?? 1;
     if (normalizeBlockScales(scaleX, scaleY) != null) return null;
+    // Phase B1: never create a reference that would distort a Circle child.
+    if (blockReferenceScalesDistortCircle(definition, scaleX, scaleY)) return null;
     if (!Number.isFinite(command.x) || !Number.isFinite(command.y)) return null;
     if (command.rotationDeg != null && !Number.isFinite(command.rotationDeg)) return null;
     const reference: CadBlockReferenceEntity = {

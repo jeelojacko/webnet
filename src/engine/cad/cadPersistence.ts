@@ -12,6 +12,7 @@ import type {
   SurveyCadPersistedState,
 } from './cadTypes';
 import { validateParcelCourseGeometry } from './cadParcelArcGeometry';
+import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
 import { sanitizeFeatureLine } from './cadFeatureLines';
 import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
@@ -145,9 +146,20 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'line':
     case 'error-ellipse':
     case 'arc':
-    case 'circle':
     case 'block-reference':
     case 'curve-label':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'circle':
+      // Phase B1: malformed persisted circles fail closed at load/clone,
+      // matching the parcel/feature-line convention of throwing on malformed
+      // geometry (both load sanitizers catch clone errors). No migration.
+      if (!isValidCircleGeometry(entity.centerX, entity.centerY, entity.radius)) {
+        throw new Error(`circle ${entity.id} has invalid geometry`);
+      }
       return {
         ...entity,
         appearance: cloneAppearance(entity.appearance),

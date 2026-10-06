@@ -5,6 +5,7 @@ import {
   cadPointOnCircle,
   type CadWorldPoint,
 } from './cadGeometry';
+import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { expandBlockReference, findBlockDefinition } from './cadBlocks';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
@@ -151,7 +152,7 @@ export const buildBlockReferenceSnapCandidates = (
           const dx = worldPoint.x - center.x;
           const dy = worldPoint.y - center.y;
           const length = Math.hypot(dx, dy);
-          const rim = length > 1e-12
+          const rim = length > CAD_XY_DEGENERATE_FLOOR
             ? { x: center.x + (dx / length) * child.radius, y: center.y + (dy / length) * child.radius }
             : cadPointOnCircle(center, child.radius, 0);
           candidates.push(

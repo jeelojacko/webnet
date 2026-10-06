@@ -23,6 +23,7 @@
 // documented here, not a geometric ellipse expansion.
 
 import { cadIsAngleOnArcSweep, cadNormalizeAngleDeg } from './cadGeometry';
+import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
 import type {
   CadBlockChild,
   CadBlockDefinition,
@@ -136,6 +137,16 @@ const requireValidScales = (reference: BlockPlacement): void => {
   if (issue) throw new Error(`${issue.code}: ${issue.message}`);
 };
 
+/** Phase B1: true when a reference would distort a Circle child: the
+ * definition nests a circle and the scales are non-uniform. Callers fail
+ * closed (return null / omit) rather than mean-scaling the radius. */
+export const blockReferenceScalesDistortCircle = (
+  definition: CadBlockDefinition,
+  scaleX: number,
+  scaleY: number,
+): boolean =>
+  scaleX !== scaleY && definition.entities.some((child) => child.type === 'circle');
+
 export interface CadWorldPoint {
   x: number;
   y: number;
@@ -217,7 +228,13 @@ export const transformBlockChildToWorld = (
         definition,
         reference,
       );
-      return { ...child, centerX: center.x, centerY: center.y, radius: child.radius * reference.scaleX };
+      const radius = child.radius * reference.scaleX;
+      if (!isValidCircleGeometry(center.x, center.y, radius)) {
+        throw new Error(
+          `CAD_BLOCK_CIRCLE_DEGENERATE_RESULT: block expansion would materialize a sub-floor circle child ${child.id}; refusing.`,
+        );
+      }
+      return { ...child, centerX: center.x, centerY: center.y, radius };
     }
     case 'text': {
       // Phase 18Q readable-text policy: only the anchor goes through the
