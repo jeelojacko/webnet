@@ -16,17 +16,36 @@ export const fromCenterRadius = (cx: number, cy: number, r: number): ModeResult 
     ? { mode: 'center-radius', center: null, radius: null, degenerate: r <= 0 ? 'ZERO_OR_NEGATIVE_RADIUS' : 'NON_FINITE_INPUT' }
     : { mode: 'center-radius', center: P(cx, cy), radius: r, degenerate: null };
 
-/** Center/Diameter: center = midpoint, r = dist/2; degenerates on coincident points. */
-export const fromCenterDiameter = (a: CadWorldPoint, b: CadWorldPoint): ModeResult => {
-  const d = cadDistance(a, b);
-  if (d <= 1e-12) return { mode: 'center-diameter', center: null, radius: null, degenerate: 'COINCIDENT_ENDPOINTS' };
-  return { mode: 'center-diameter', center: P((a.x + b.x) / 2, (a.y + b.y) / 2), radius: d / 2, degenerate: null };
+/** Center/Diameter: CENTER IS FIXED. Diameter D is a positive finite scalar;
+ * if the UI supplies a diameter-magnitude point P from the fixed center C,
+ * D = distance(C,P) and radius = D/2. The second point is NOT the opposite
+ * endpoint of a diameter (that is 2-Point). Center is returned exactly as
+ * supplied, never recomputed.
+ * Degeneracy floor: study-only 1e-12 literal mirroring production
+ * CAD_XY_DEGENERATE_FLOOR (src/engine/cad/cadGeometryShapeBuilders.ts:7,
+ * module-private, NOT exported) — B1 MUST reuse that authority, not this
+ * literal; the literal here is non-authoritative. */
+export const fromCenterDiameter = (center: CadWorldPoint, diameterPoint: CadWorldPoint): ModeResult => {
+  if (!Number.isFinite(center.x + center.y + diameterPoint.x + diameterPoint.y)) {
+    return { mode: 'center-diameter', center: null, radius: null, degenerate: 'NON_FINITE_INPUT' };
+  }
+  const diameter = cadDistance(center, diameterPoint);
+  if (diameter <= 1e-12) return { mode: 'center-diameter', center: null, radius: null, degenerate: 'ZERO_DIAMETER' };
+  return { mode: 'center-diameter', center: P(center.x, center.y), radius: diameter / 2, degenerate: null };
 };
 
-/** 2-Point (diametral): same math as Center/Diameter; distinct mode, shared degeneracy. */
+/** 2-Point (diametral): A and B are OPPOSITE ENDPOINTS of a diameter —
+ * center = midpoint(A,B), radius = distance(A,B)/2. Deliberately
+ * independent from fromCenterDiameter: the half-distance arithmetic is
+ * shared mathematics, but the interaction semantics differ (fixed center
+ * vs solved center). Degenerate on coincident points. */
 export const from2Point = (a: CadWorldPoint, b: CadWorldPoint): ModeResult => {
-  const r = fromCenterDiameter(a, b);
-  return { ...r, mode: '2-point' };
+  if (!Number.isFinite(a.x + a.y + b.x + b.y)) {
+    return { mode: '2-point', center: null, radius: null, degenerate: 'NON_FINITE_INPUT' };
+  }
+  const d = cadDistance(a, b);
+  if (d <= 1e-12) return { mode: '2-point', center: null, radius: null, degenerate: 'COINCIDENT_ENDPOINTS' };
+  return { mode: '2-point', center: P((a.x + b.x) / 2, (a.y + b.y) / 2), radius: d / 2, degenerate: null };
 };
 
 /** 3-Point: circumcenter via perpendicular-bisector determinant; null on collinear. */
@@ -72,16 +91,20 @@ export const analyzeTtrTtt = (): TtrAnalysis[] => [
 
 export const recommendB1Slice = (): { slice: string; reason: string } => ({
   slice: 'Center/Radius + Center/Diameter only',
-  reason: 'Both are single-solution closed forms reusing cadPointOnCircle/cadDistance; 2-point folds into diameter; 3-point adds one collinear guard; TTR/TTT need unsolved multi-solution infrastructure.',
+  reason: 'Both are single-solution closed forms with a FIXED center reusing cadPointOnCircle/cadDistance; 2-point is a distinct deferred interaction mode (solved center) that shares only the half-distance primitive; 3-point adds one collinear guard; TTR/TTT need unsolved multi-solution infrastructure.',
 });
 
 export const runModesStudy = (): Record<string, unknown> => ({
   centerRadius: fromCenterRadius(100, 200, 50),
   centerRadiusZero: fromCenterRadius(100, 200, 0),
   centerRadiusNegative: fromCenterRadius(100, 200, -5),
-  centerDiameter: fromCenterDiameter(P(50, 200), P(150, 200)),
-  centerDiameterCoincident: fromCenterDiameter(P(50, 200), P(50, 200)),
-  twoPoint: from2Point(P(50, 200), P(150, 200)),
+  centerDiameter: fromCenterDiameter(P(10, 20), P(40, 20)),
+  centerDiameterCoincident: fromCenterDiameter(P(10, 20), P(10, 20)),
+  centerDiameterVsTwoPoint: {
+    cd: fromCenterDiameter(P(10, 20), P(40, 20)),
+    twoPoint: from2Point(P(10, 20), P(40, 20)),
+  },
+  twoPoint: from2Point(P(10, 20), P(40, 20)),
   threePoint: from3Point(P(150, 200), P(100, 250), P(50, 200)),
   threePointCollinear: from3Point(P(0, 0), P(50, 0), P(100, 0)),
   tangentLeverageProbe: cadTangentPointsFromExternalPointToCircle({ x: 190, y: 200 }, { x: 100, y: 200 }, 50).length,

@@ -164,18 +164,38 @@
   "modes": {
     "centerDiameter": {
       "center": {
-        "x": 100,
-        "y": 200
+        "x": 10,
+        "y": 20
       },
       "degenerate": null,
       "mode": "center-diameter",
-      "radius": 50
+      "radius": 15
     },
     "centerDiameterCoincident": {
       "center": null,
-      "degenerate": "COINCIDENT_ENDPOINTS",
+      "degenerate": "ZERO_DIAMETER",
       "mode": "center-diameter",
       "radius": null
+    },
+    "centerDiameterVsTwoPoint": {
+      "cd": {
+        "center": {
+          "x": 10,
+          "y": 20
+        },
+        "degenerate": null,
+        "mode": "center-diameter",
+        "radius": 15
+      },
+      "twoPoint": {
+        "center": {
+          "x": 25,
+          "y": 20
+        },
+        "degenerate": null,
+        "mode": "2-point",
+        "radius": 15
+      }
     },
     "centerRadius": {
       "center": {
@@ -199,7 +219,7 @@
       "radius": null
     },
     "recommendation": {
-      "reason": "Both are single-solution closed forms reusing cadPointOnCircle/cadDistance; 2-point folds into diameter; 3-point adds one collinear guard; TTR/TTT need unsolved multi-solution infrastructure.",
+      "reason": "Both are single-solution closed forms with a FIXED center reusing cadPointOnCircle/cadDistance; 2-point is a distinct deferred interaction mode (solved center) that shares only the half-distance primitive; 3-point adds one collinear guard; TTR/TTT need unsolved multi-solution infrastructure.",
       "slice": "Center/Radius + Center/Diameter only"
     },
     "tangentLeverageProbe": 2,
@@ -236,12 +256,12 @@
     ],
     "twoPoint": {
       "center": {
-        "x": 100,
-        "y": 200
+        "x": 25,
+        "y": 20
       },
       "degenerate": null,
       "mode": "2-point",
-      "radius": 50
+      "radius": 15
     }
   },
   "sweep": [

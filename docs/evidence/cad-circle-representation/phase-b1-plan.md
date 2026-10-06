@@ -46,7 +46,12 @@ curve tables, DXF import (global gap).
 ## 5. Center/Radius + Center/Diameter transactions / sessions / ribbon
 
 - `cadGeometryShapeBuilders.ts`: `buildCircleCenterRadius/Diameter` pure
-  helpers (`r<=0`, `COINCIDENT_ENDPOINTS`, non-finite → null).
+  helpers. Center/Radius: center fixed, radius scalar. Center/Diameter:
+  center fixed exactly as supplied, diameter scalar (or picked distance
+  from the center), radius = diameter/2 — the second point is a
+  diameter-magnitude point, NOT the opposite endpoint (that is the
+  distinct deferred 2-Point mode). Degeneracies: `r<=0`/zero-diameter,
+  coincident, non-finite → null, reusing the existing CAD geometric floor.
 - `cadTransactionsShapeCommands.ts`: `CIRCLE`/`CIRCLECD` on current layer,
   ByLayer, one undo entry; registry + starters + 4-file session seams
   (mirror the Shapes V1 wiring); ribbon rows un-planned with truthful

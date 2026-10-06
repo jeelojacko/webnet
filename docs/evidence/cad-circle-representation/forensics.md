@@ -6,7 +6,7 @@
   exact commands). `switch (entity.type)` = **26 sites**; files containing
   `case 'arc'` = **33** (candidate-consumer **inventories, untested — not
   failures**); study corpus sha256
-  `1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce`. The
+  `5cbb97b06606e8f5c1a91c5a4b7551afaf10b8f8a132034a13e6c35eed22806f`. The
   executed pins are `scripts/cadCircleStudyExecution.ts` +
   `tests/cad_circle_study_execution.test.ts`.
 
@@ -120,7 +120,9 @@ by every full-sweep arc today, even after snap dedupe.
 ## 8. Construction modes (study)
 
 Center/Radius and Center/Diameter are single-solution closed forms
-(`scripts/cadCircleStudyModes.ts`); 2-Point folds to diameter; 3-Point adds one
+with a FIXED center (`scripts/cadCircleStudyModes.ts`); 2-Point is a
+distinct deferred interaction mode (solved center) sharing only the
+half-distance primitive; 3-Point adds one
 collinear guard; TTR/TTT are multi-solution Apollonius/Tangent problems with
 no persisted tangent-line/offset-curve infrastructure → DEFER. Recommended B1
 slice: **Center/Radius + Center/Diameter**.

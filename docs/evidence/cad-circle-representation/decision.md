@@ -5,7 +5,7 @@
 - Inputs: `forensics.md`, `arc-full-sweep-study.md`, `circle-entity-study.md`,
   `snaps-intersections.md`, `dxf-transform-persistence.md`, corpus
   `docs/evidence/cad-circle-representation/corpus.json` (sha256
-  `1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce`; fields
+  `5cbb97b06606e8f5c1a91c5a4b7551afaf10b8f8a132034a13e6c35eed22806f`; fields
   `forensics.representationVerdict` / `b1FullSweepArcAssessment` /
   `aFirstClassCircleAssessment` are verdict-aligned), study
   scripts `scripts/cadCircle{StudySweep,StudyAdapter,StudyModes,StudyExecution,CorpusRegen}.ts`,
