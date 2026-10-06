@@ -77,5 +77,43 @@ Details in `icon-sources.md` §3.
 - `npm run test:agent` agent tier.
 - Independent review.
 
+## 7. Review fix (B2 findings 3 + 4)
+
+Two review findings were fixed after the initial evidence run; this section
+claims only the focused suites re-run below.
+
+**Finding 3 — CIRCLETTR repick law.** An AMBIGUOUS or NO_SOLUTION radius
+submission now opens a UI-only repick window (`awaitingSecondRepick` on the
+`CIRCLETTR` session, never persisted): the next distinct tangent-object click
+replaces the second tangent, clears the error and radius input, and prompts for
+the radius again. Retrying the same tangent pair with another radius stays
+valid. A repick of the first or the current second primitive is rejected.
+Escape still cancels the whole session and no Circle entity is committed until
+a solve succeeds, so there is no partial undo. Ordinary third tangent clicks
+before a failed solve keep the existing "has both tangents" prompt and never
+replace the second source.
+
+**Finding 4 — history chevron direction.** The dock chevron was reversed;
+collapsed now renders the down chevron (`⌄`) and expanded the up chevron
+(`⌃`), while the `Show`/`Hide command history` labels and `aria-expanded` are
+unchanged. The component test pins the glyph text in both states, not just the
+label.
+
+Re-run validation:
+
+```
+npx vitest run tests/cad_circle_construction_b2.test.ts tests/cad_command_dock_b2.test.tsx
+npx vitest run tests/cad_circle_tangent_b2.test.ts tests/cad_circle_command_sessions_v1.test.tsx \
+  tests/cad_circle_2p3p_b2.test.ts tests/cad_ribbon_tool_families.test.ts \
+  tests/cad_circle_transactions_v1.test.ts tests/cad_circle_consumer_v1.test.ts \
+  tests/cad_circle_reviewfix_v1.test.ts
+npm run typecheck
+```
+
+Result: `51/51` (construction + dock), `99/99` (7 neighbouring suites),
+`tsc --noEmit` clean. `tests/cad_circle_construction_b2.test.ts` now holds 24
+tests (four added for the repick law); `tests/cad_command_dock_b2.test.tsx`
+remains 27 (glyph assertions added to the existing chevron test).
+
 This document claims only what was executed in this worktree; it makes no
 product-completeness or browser-behaviour claim.

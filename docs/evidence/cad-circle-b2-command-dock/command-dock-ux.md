@@ -74,9 +74,11 @@ and focuses the input:
   history panel, no resize handle, and `commandHeightPx` is ignored (an old
   148/200 value never leaves a blank reservoir).
 - The chevron toggle `[data-cad-command-history-toggle]` expands/collapses;
-  it never submits a command. Its `aria-label` flips between
+  it never submits a command (`type="button"`). Its `aria-label` flips between
   `Show command history` / `Hide command history` and it reports
-  `aria-expanded`.
+  `aria-expanded`. The glyph direction is pinned: collapsed shows a down
+  chevron (`⌄`) because the panel expands below, expanded shows an up chevron
+  (`⌃`) to collapse.
 - Expanded applies the fixed `heightPx` (e.g. 200 px) and shows the resize
   separator.
 

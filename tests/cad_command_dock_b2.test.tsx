@@ -447,10 +447,13 @@ describe('phase B2 compact layout', () => {
     const { container, root } = await render(<DockHarness shellActions={shellActions} />);
     const toggle = container.querySelector('[data-cad-command-history-toggle]') as HTMLButtonElement;
     expect(toggle.getAttribute('aria-label')).toBe('Show command history');
+    // Collapsed points down (expand below); expanded points up (collapse).
+    expect(toggle.textContent).toBe('⌄');
     await act(async () => {
       toggle.click();
     });
     expect(toggle.getAttribute('aria-label')).toBe('Hide command history');
+    expect(toggle.textContent).toBe('⌃');
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(shellActions.startCommand).not.toHaveBeenCalled();
     expect((container.querySelector('[data-cad-command-dock]') as HTMLElement).style.height).toBe('200px');

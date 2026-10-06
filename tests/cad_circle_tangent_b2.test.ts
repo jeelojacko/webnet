@@ -8,6 +8,7 @@ import {
 } from '../src/engine/cad/cadGeometry';
 import { cadIsAngleOnArcSweep } from '../src/engine/cad/cadGeometryArcPrimitives';
 import {
+  quadraticRoots,
   resolveCadTangentSource,
   solveCadCircleTangentTangentRadius,
   solveCadCircleTangentTangentTangent,
@@ -99,6 +100,46 @@ const expectCandidateResiduals = (
     });
   }
 };
+
+describe('quadraticRoots (stable q form)', () => {
+  const ascending = (values: readonly number[]): number[] => [...values].sort((a, b) => a - b);
+
+  it('keeps both roots when b is negative (a=1, b=-3, c=2)', () => {
+    expect(ascending(quadraticRoots(1, -3, 2, 1e-9))).toEqual([1, 2]);
+  });
+
+  it('keeps both roots when b is positive (a=1, b=3, c=2)', () => {
+    expect(ascending(quadraticRoots(1, 3, 2, 1e-9))).toEqual([-2, -1]);
+  });
+
+  it('collapses a double root to one value', () => {
+    expect(quadraticRoots(1, -2, 1, 1e-9)).toEqual([1]);
+  });
+
+  it('handles the linear case and rejects a degenerate linear system', () => {
+    expect(quadraticRoots(0, 2, -4, 1e-9)).toEqual([2]);
+    expect(quadraticRoots(0, 0, -4, 1e-9)).toEqual([]);
+  });
+
+  it('treats a discriminant inside the existing tolerance of zero as a double root', () => {
+    // D = b^2 - 4ac = -8e-19, inside (tolerance^2 = 1e-18) -> the two roots are
+    // within tolerance and collapse.
+    expect(quadraticRoots(1, -2, 1 + 2e-19, 1e-9)).toEqual([1]);
+    // Well outside it fails closed rather than fabricating roots.
+    expect(quadraticRoots(1, 0, 1, 1e-9)).toEqual([]);
+  });
+
+  it('does not fabricate a zero root for tiny-a/small-q systems', () => {
+    // q = -0.5*(b + sqrt(D)) ~ -3.2e-13 sits inside the degenerate floor, but
+    // c = -1e-14 is material next to tolerance^2 = 1e-24, so both q-form
+    // quotients still carry the true roots ~ +/-0.0316.
+    const roots = quadraticRoots(1e-11, 0, -1e-14, 1e-12).sort((a, b) => a - b);
+    expect(roots).toHaveLength(2);
+    expect(roots[0]).toBeCloseTo(-0.03162277660168379, 6);
+    expect(roots[1]).toBeCloseTo(0.03162277660168379, 6);
+    expect(roots.some((value) => value === 0)).toBe(false);
+  });
+});
 
 describe('TTR (Tan, Tan, Radius)', () => {
   it('picks the nearest of four line/line solutions by pick distance', () => {
@@ -352,6 +393,74 @@ describe('TTT (Tan, Tan, Tan)', () => {
     expect(result.center!.x).toBeCloseTo(0, 9);
     expect(result.center!.y).toBeCloseTo(25 / 6, 9);
     expectCandidateResiduals([first, second, third], result.candidates);
+  });
+
+  it('line + two concentric circles: keeps the radius-only radical relation', () => {
+    // Concentric pair (0,0)/r10 and (0,0)/r6: the radical axis degenerates, but
+    // the full tuple still encodes the radius-only relation c*R = rhs. With the
+    // line y=10 the internal-to-large / external-to-small branch is R=2 at
+    // (0,8); the internal-to-both branch R=8 at (0,2) must also survive.
+    const line = lineSource(point(0, 10), point(100, 10), point(0, 10), 'l');
+    const large = circleSource(point(0, 0), 10, point(0, 10), 'ca');
+    const small = circleSource(point(0, 0), 6, point(0, 6), 'cb');
+    const result = solveCadCircleTangentTangentTangent(line, large, small);
+    expect(result.status).toBe('SOLVED');
+    expect(result.center!.x).toBeCloseTo(0, 9);
+    expect(result.center!.y).toBeCloseTo(8, 9);
+    expect(result.radius).toBeCloseTo(2, 9);
+    expectCandidateResiduals([line, large, small], result.candidates);
+    expect(
+      result.candidates.some(
+        (candidate) =>
+          Math.abs(candidate.radius - 8) <= 1e-9 && Math.abs(candidate.center.y - 2) <= 1e-9,
+      ),
+    ).toBe(true);
+  });
+
+  it('line + two concentric circles: permutation-invariant pick intent', () => {
+    const line = lineSource(point(0, 10), point(100, 10), point(0, 10), 'l');
+    const large = circleSource(point(0, 0), 10, point(0, 10), 'ca');
+    const small = circleSource(point(0, 0), 6, point(0, 6), 'cb');
+    const base = solveCadCircleTangentTangentTangent(line, large, small);
+    expect(base.status).toBe('SOLVED');
+    for (const ordered of [
+      [large, small, line],
+      [small, line, large],
+      [line, small, large],
+      [small, large, line],
+      [large, line, small],
+    ] as const) {
+      const permuted = solveCadCircleTangentTangentTangent(ordered[0], ordered[1], ordered[2]);
+      expect(permuted.status).toBe('SOLVED');
+      expect(permuted.center!.x).toBeCloseTo(base.center!.x, 9);
+      expect(permuted.center!.y).toBeCloseTo(base.center!.y, 9);
+      expect(permuted.radius).toBeCloseTo(base.radius!, 9);
+    }
+  });
+
+  it('concentric equal radii: no usable radius relation, no false candidate', () => {
+    // Identical concentric circles make the radius-only relation redundant for
+    // matching signs and R=0 (invalid) for opposing signs, so the system stays
+    // underdetermined and must fail closed instead of inventing a centre.
+    const line = lineSource(point(0, 10), point(100, 10), point(0, 10), 'l');
+    const first = circleSource(point(0, 0), 10, point(0, 10), 'ca');
+    const second = circleSource(point(0, 0), 10, point(0, 10), 'cb');
+    const result = solveCadCircleTangentTangentTangent(line, first, second);
+    expect(result.status).toBe('NO_SOLUTION');
+    expect(result.candidates).toHaveLength(0);
+  });
+
+  it('concentric inconsistent sign branch: materially nonzero rhs fails closed', () => {
+    // Radii differ by 1e-12 (inside the scale-relative length tolerance) yet the
+    // squared difference is material, so the matching-sign radius relation is
+    // inconsistent. Both the redundant-looking branch and the near-zero-radius
+    // branch must be rejected rather than fabricating a candidate.
+    const line = lineSource(point(0, 0), point(100, 0), point(50, 0), 'l');
+    const first = circleSource(point(0, 5), 5, point(0, 10), 'ca');
+    const second = circleSource(point(0, 5), 5 + 1e-12, point(0, 10), 'cb');
+    const result = solveCadCircleTangentTangentTangent(line, first, second);
+    expect(result.status).toBe('NO_SOLUTION');
+    expect(result.candidates).toHaveLength(0);
   });
 
   it('reports NO_SOLUTION for degenerate/underdetermined triples', () => {

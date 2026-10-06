@@ -386,7 +386,7 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({
             onClick={toggleHistory}
             data-cad-command-history-toggle
           >
-            {expanded ? '⌄' : '⌃'}
+            {expanded ? '⌃' : '⌄'}
           </button>
         </div>
         {suggestionsVisible ? (

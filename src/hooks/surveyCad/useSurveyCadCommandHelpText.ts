@@ -36,9 +36,13 @@ export const helpTextForSession = (session: CommandSession | null): string => {
         ? 'CIRCLE3P point input: click in the model space or type `x,y` / `LABEL=x,y`.'
         : 'CIRCLE3P third point: click in the model space or type `x,y` / `LABEL=x,y` to commit the circumcircle.';
     case 'CIRCLETTR':
-      return session.second
-        ? 'CIRCLETTR radius: enter a positive radius. The nearest tangency solution wins; a symmetric tie stays ambiguous.'
-        : 'CIRCLETTR tangent pick: click a line, polyline, arc, or circle body. The pick point selects the tangent branch.';
+      if (!session.second) {
+        return 'CIRCLETTR tangent pick: click a line, polyline, arc, or circle body. The pick point selects the tangent branch.';
+      }
+      if (session.awaitingSecondRepick) {
+        return 'CIRCLETTR repick: click a different second tangent body, or enter another positive radius for the same pair.';
+      }
+      return 'CIRCLETTR radius: enter a positive radius. The nearest tangency solution wins; a symmetric tie stays ambiguous.';
     case 'CIRCLETTT':
       return 'CIRCLETTT tangent picks: click three lines, polylines, arcs, or circles. The third pick commits the Apollonius circle.';
     case 'POLYGON':

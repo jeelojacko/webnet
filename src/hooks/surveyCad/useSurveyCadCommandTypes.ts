@@ -439,6 +439,11 @@ export type CommandSession =
       inputValue: string;
       first: CadTangentSource | null;
       second: CadTangentSource | null;
+      /**
+       * UI-only repick law: after an AMBIGUOUS/NO_SOLUTION radius submission the
+       * next distinct tangent-object click replaces `second`. Never persisted.
+       */
+      awaitingSecondRepick?: boolean;
       resultText?: string;
     }
   | {

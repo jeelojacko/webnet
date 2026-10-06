@@ -138,13 +138,17 @@ export const handleSurveyCadShapeSubmit = ({
     }
     const solved = solveCadCircleTangentTangentRadius(session.first, session.second, radius);
     if (solved.status !== 'SOLVED') {
+      // Failed solve opens the UI-only repick window: another radius for the
+      // same pair stays valid, and the next distinct tangent click replaces
+      // the second source.
       replaceSession({
         ...session,
         inputValue: '',
+        awaitingSecondRepick: true,
         resultText:
           solved.status === 'AMBIGUOUS'
-            ? 'CIRCLETTR is ambiguous for those picks. Pick a different tangent or radius.'
-            : 'CIRCLETTR found no tangent circle for that radius. Pick a different tangent or radius.',
+            ? 'CIRCLETTR is ambiguous for those tangents. Pick a different second tangent, or enter another radius.'
+            : 'CIRCLETTR found no tangent circle for that radius. Pick a different second tangent, or enter another radius.',
       });
       return true;
     }

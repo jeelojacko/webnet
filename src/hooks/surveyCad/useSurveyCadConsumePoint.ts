@@ -545,8 +545,31 @@ const handleCircleConstructionPointPick = (
       replaceSession({
         ...current,
         second: source,
+        awaitingSecondRepick: false,
         inputValue: '',
         resultText: 'CIRCLETTR tangents captured. Enter the radius and press Enter.',
+      });
+      return true;
+    }
+    if (current.awaitingSecondRepick) {
+      // Repick law: the next distinct tangent object replaces the second source.
+      const repeated =
+        isSameCadTangentPrimitive(current.first.primitive, source.primitive) ||
+        isSameCadTangentPrimitive(current.second.primitive, source.primitive);
+      if (repeated) {
+        replaceSession({
+          ...current,
+          inputValue: '',
+          resultText: 'CIRCLETTR ignored a repeated tangent. Pick a different second tangent.',
+        });
+        return true;
+      }
+      replaceSession({
+        ...current,
+        second: source,
+        awaitingSecondRepick: false,
+        inputValue: '',
+        resultText: 'CIRCLETTR second tangent replaced. Enter the radius and press Enter.',
       });
       return true;
     }

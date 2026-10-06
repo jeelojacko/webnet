@@ -21,7 +21,9 @@ A tangent source is one picked primitive plus the exact pick point:
 `resolveCadTangentSource(project, entityId, pickPoint, segmentId?)` maps the
 picked entity to a source and returns `null` (fail closed) for unknown or
 unsupported entities. `isSameCadTangentPrimitive(a, b)` is the duplicate test
-(same kind + same `entityId`; for lines also the same `segmentId`).
+(same kind + same `entityId`; for lines also the same `segmentId`). The stable
+`quadraticRoots(a, b, c, tolerance)` helper is exported for focused unit
+coverage of its sign/branch matrix.
 
 ## 2. Tolerance and local frame
 
@@ -65,10 +67,17 @@ Apollonius solve over all eight sign triples `(s1, s2, s3)`, `si ∈ {+1, −1}`
 
 1. `buildApolloniusObjects` normalizes each source to a signed line equation
    `nx·x + ny·y = d` or a circle `(cx, cy, r)`; concentric circle pairs are
-   allowed but their radical axis is skipped.
+   allowed and no longer discard their relation.
 2. `buildLinearConstraints` emits one linear constraint per line
-   (`nx·x + ny·y − s·R = d`) and one per non-concentric circle pair (the radical
-   axis, eliminating `x²+y²`).
+   (`nx·x + ny·y − s·R = d`) and one per circle pair. For a non-concentric pair
+   this is the radical axis (eliminating `x²+y²`); for a concentric pair the
+   `x`/`y` coefficients vanish and the FULL tuple is judged instead: a nonzero
+   radius coefficient keeps the degenerate radius-only relation `c·R = rhs`
+   (which is what makes line + concentric-circle triples solvable), an all-zero
+   relation with `rhs ≈ 0` is a redundant duplicate that may be dropped, and an
+   all-zero relation with materially nonzero `rhs` is an inconsistent sign
+   branch that fails the whole triple closed (`null`) rather than inventing a
+   candidate.
 3. For each ordered pair of constraints the center and radius are expressed
    affinely in one free parameter, tried in rank order `R`, then `x`, then `y`;
    when the `(x, y)` block is rank-deficient (e.g. collinear circle centres)
@@ -76,8 +85,15 @@ Apollonius solve over all eight sign triples `(s1, s2, s3)`, `si ∈ {+1, −1}`
    circle equation instead. Substituting into an object whose own equation was
    not consumed yields a linear (line) or quadratic (circle) equation in the
    parameter (`radiusRootsForObject` → `quadraticRoots`). The quadratic uses
-   the stable `c/q` second root. The solve is closed-form — no iteration — and
-   uses only `CAD_XY_DEGENERATE_FLOOR`.
+   the stable `q` form (`q = −0.5·(b + sign(b)·√D)`, roots `q/a` and `c/q`), so
+   a negative `b` no longer collapses a genuine two-root system onto one
+   duplicated root, while double roots, the linear case, and a discriminant
+   inside the existing tolerance of zero all still resolve. A tiny `q` alone
+   never fabricates a zero root: the `{0, -b/a}` fallback applies only when
+   `|c|` is also within the tolerance authority, otherwise the `q`-form
+   quotients carry both nonzero roots. The solve is
+   closed-form — no iteration — and uses only
+   `CAD_XY_DEGENERATE_FLOOR`/`tangentTolerance`.
 4. Every resulting `(center, radius)` is validated by the same `buildCandidate`
    used by TTR, so tangency residuals, arc sweeps, and circle validity are
    enforced identically.
@@ -97,20 +113,24 @@ Apollonius solve over all eight sign triples `(s1, s2, s3)`, `si ∈ {+1, −1}`
 
 - radius zero/negative/non-finite; same primitive twice; parallel lines for TTR;
   degenerate or underdetermined triples; three parallel lines (only an
-  infinite-radius circle would fit); concentric-only triples; non-finite
-  inputs.
+  infinite-radius circle would fit); concentric-only triples; concentric pairs
+  whose degenerate radius-only relation is inconsistent; non-finite inputs.
 - `AMBIGUOUS` is surfaced to the session as a readable reason and is never
   auto-committed.
 
 ## 7. Test coverage
 
-`tests/cad_circle_tangent_b2.test.ts` (19 tests) covers: TTR nearest-of-four
+`tests/cad_circle_tangent_b2.test.ts` (29 tests) covers: `quadraticRoots`
+negative-/positive-`b` two-root completeness, double root, linear case,
+out-of-tolerance discriminant, and the tiny-`a`/small-`q` no-fabricated-zero guard; TTR nearest-of-four
 line/line, line/circle external and internal branches, circle/circle external
 branch, FILLET infinite-extension law, arc-sweep filtering, radius guards,
-duplicate/parallel failure, symmetric-tie `AMBIGUOUS`, TTT all-line
+duplicate/parallel failure, symmetric-tie `AMBIGUOUS`; TTT all-line
 incircle + three excircles, permutation invariance, line + two circles,
 two lines + one circle, three-circle Descartes incircle + enclosing Soddy
-circle, degenerate triples, three parallel lines, and
+circle, line + two concentric circles (radius-only radical relation, R=2 at
+(0,8), permutation invariant), concentric equal-radius and near-equal-radius
+no-false-candidate guards, degenerate triples, three parallel lines, and
 `resolveCadTangentSource` for line/circle/arc/polyline/missing. Two regressions
 pin the local-frame/rank-aware fixes: a 1e12 world-coordinate translation keeps
 the same branch selection, and collinear circle centres `(-10,0)/r10`,

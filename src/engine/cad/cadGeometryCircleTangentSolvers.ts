@@ -511,7 +511,8 @@ const buildApolloniusObjects = (
 const buildLinearConstraints = (
   objects: readonly ApolloniusObject[],
   signs: readonly number[],
-): LinearConstraint[] => {
+  tolerance: number,
+): LinearConstraint[] | null => {
   const constraints: LinearConstraint[] = [];
   for (const object of objects) {
     if (object.kind === 'line') {
@@ -531,38 +532,62 @@ const buildLinearConstraints = (
       if (left.kind !== 'circle' || right.kind !== 'circle') continue;
       const a = -2 * (left.cx - right.cx);
       const b = -2 * (left.cy - right.cy);
+      const c = -2 * (signs[left.index]! * left.r - signs[right.index]! * right.r);
+      const rhs =
+        left.r * left.r -
+        right.r * right.r -
+        (left.cx * left.cx + left.cy * left.cy - right.cx * right.cx - right.cy * right.cy);
       if (Math.abs(a) <= CAD_XY_DEGENERATE_FLOOR && Math.abs(b) <= CAD_XY_DEGENERATE_FLOOR) {
-        continue; // concentric: the radical axis degenerates.
+        // Concentric pair: the radical axis degenerates to the radius-only
+        // relation c*R = rhs. Judge the FULL tuple instead of discarding it.
+        if (Math.abs(c) <= tolerance) {
+          // No radius information: rhs == 0 is a redundant duplicate, a
+          // materially nonzero rhs means this sign branch is inconsistent.
+          if (Math.abs(rhs) <= tolerance * tolerance) continue;
+          return null;
+        }
       }
-      constraints.push({
-        a,
-        b,
-        c: -2 * (signs[left.index]! * left.r - signs[right.index]! * right.r),
-        rhs:
-          left.r * left.r -
-          right.r * right.r -
-          (left.cx * left.cx + left.cy * left.cy - right.cx * right.cx - right.cy * right.cy),
-        fullUsed: null,
-      });
+      constraints.push({ a, b, c, rhs, fullUsed: null });
     }
   }
   return constraints;
 };
 
-const quadraticRoots = (a: number, b: number, c: number, tolerance: number): number[] => {
+/** Stable quadratic roots in the `q` form: `q = -0.5*(b + sign(b)*sqrt(D))`,
+ * roots `q/a` and `c/q`. The naive `(-b ± sqrt(D))/(2a)` cancels
+ * catastrophically for one root when `|b|` is large; the previous code's b<0
+ * branch also reused the same expression for both roots, collapsing a genuine
+ * two-root system onto a single duplicated root. Exported for focused unit
+ * coverage of the sign/branch matrix (a=1,b=-3,c=2 must yield {1,2}). */
+export const quadraticRoots = (a: number, b: number, c: number, tolerance: number): number[] => {
   if (Math.abs(a) <= CAD_XY_DEGENERATE_FLOOR) {
     if (Math.abs(b) <= tolerance) return [];
-    return [-c / b];
+    const linear = -c / b;
+    return Number.isFinite(linear) ? [linear] : [];
   }
   const discriminant = b * b - 4 * a * c;
   if (discriminant < -tolerance * tolerance) return [];
   const root = Math.sqrt(Math.max(0, discriminant));
-  const denominator = b >= 0 ? b + root : b - root;
-  if (Math.abs(denominator) <= CAD_XY_DEGENERATE_FLOOR) return [];
-  const first = (-b - root) / (2 * a);
-  // Stable second root (c/q): -2c/(b +/- root).
-  const second = (-2 * c) / denominator;
-  return Math.abs(first - second) <= tolerance ? [first] : [first, second];
+  const q = -0.5 * (b + (b >= 0 ? root : -root));
+  const roots: number[] = [];
+  const pushRoot = (value: number): void => {
+    if (!Number.isFinite(value)) return;
+    if (roots.some((existing) => Math.abs(existing - value) <= tolerance)) return;
+    roots.push(value);
+  };
+  if (Math.abs(q) <= CAD_XY_DEGENERATE_FLOOR && Math.abs(c) <= tolerance * tolerance) {
+    // Genuine zero root only: q ~ 0 does NOT imply c ~ 0 (e.g. a=1e-11, b=0,
+    // c=-1e-14 has q ~ -3.2e-13 but true roots ~ +/-0.0316), and for D >= 0
+    // q == 0 implies c == 0. Collapse to {0, -b/a} only when the constant
+    // term is also zero within the caller's tolerance authority; otherwise
+    // the q-form quotients below still carry both nonzero roots.
+    pushRoot(0);
+    pushRoot(-b / a);
+  } else {
+    pushRoot(q / a);
+    pushRoot(c / q);
+  }
+  return roots;
 };
 
 const objectRootsForParam = (
@@ -659,7 +684,8 @@ const collectSignTripleCandidates = (
   signs: readonly number[],
   tolerance: number,
 ): CadTangentCircleCandidate[] => {
-  const constraints = buildLinearConstraints(objects, signs);
+  const constraints = buildLinearConstraints(objects, signs, tolerance);
+  if (!constraints) return [];
   const candidates: CadTangentCircleCandidate[] = [];
   for (let i = 0; i < constraints.length; i += 1) {
     for (let j = i + 1; j < constraints.length; j += 1) {

@@ -89,6 +89,29 @@ const sourceFor = (project: CadProject, entityId: string, x: number, y: number):
   return source!;
 };
 
+/** Horizontal line plus a circle used to exercise the TTR repick law. */
+const projectWithLineAndCircle = (): CadProject => {
+  const project = projectWithLines();
+  const layerId = project.layers[0]!.id;
+  project.entities.push({
+    id: 'circle-c',
+    type: 'circle',
+    layerId,
+    visible: true,
+    locked: false,
+    centerX: 0,
+    centerY: 50,
+    radius: 30,
+  } as never);
+  return project;
+};
+
+const findCreatedCircle = (project: CadProject): CadCircleEntity | undefined =>
+  project.entities.find(
+    (entity): entity is CadCircleEntity =>
+      entity.type === 'circle' && entity.metadata?.createdBy === 'CIRCLETTR',
+  );
+
 interface ConsumeResult {
   history: CadHistoryState;
   session: CommandSession | null | undefined;
@@ -323,6 +346,84 @@ describe('circle construction sessions', () => {
     expect(background.replaced).toBe(false);
     if (background.session?.key !== 'CIRCLETTR') return;
     expect(background.session.resultText).toMatch(/direct line/i);
+  });
+
+  it('CIRCLETTR failed solve keeps the same pair retryable with another radius', () => {
+    const project = projectWithLineAndCircle();
+    const history = createCadHistoryState(project);
+    const first = sourceFor(project, 'line-h', 50, 0);
+    const second = sourceFor(project, 'circle-c', 0, 20);
+    const failed = submitShape({ key: 'CIRCLETTR', inputValue: '', first, second }, '5', history);
+    if (failed.replaced?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+    expect(failed.replaced.awaitingSecondRepick).toBe(true);
+    expect(failed.replaced.second?.primitive.entityId).toBe('circle-c');
+    expect(failed.replaced.resultText).toMatch(/no tangent circle/i);
+    expect(failed.replaced.resultText).toMatch(/second tangent/i);
+    expect(failed.replaced.resultText).toMatch(/another radius/i);
+    // No Circle entity and no history mutation until a solve succeeds.
+    expect(findCreatedCircle(failed.history!.present.project)).toBeUndefined();
+
+    // Retry with the same pair and a larger radius still commits.
+    const retried = submitShape(failed.replaced, '25', failed.history);
+    expect(retried.replaced).toBeNull();
+    expect(findCreatedCircle(retried.history!.present.project)?.radius).toBe(25);
+  });
+
+  it('CIRCLETTR failed solve lets the next distinct tangent click replace the second source', () => {
+    const project = projectWithLineAndCircle();
+    const history = createCadHistoryState(project);
+    const first = sourceFor(project, 'line-h', 50, 0);
+    const second = sourceFor(project, 'circle-c', 0, 20);
+    const failed = submitShape({ key: 'CIRCLETTR', inputValue: '', first, second }, '5', history);
+    if (failed.replaced?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+    expect(failed.replaced.awaitingSecondRepick).toBe(true);
+
+    const repicked = consumePoint(history, failed.replaced, snapPoint(0, 20, 'line-v'));
+    if (repicked.session?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+    expect(repicked.session.second?.primitive.entityId).toBe('line-v');
+    expect(repicked.session.awaitingSecondRepick).toBe(false);
+    expect(repicked.session.resultText).toMatch(/replaced/i);
+
+    const committed = submitShape(repicked.session, '10', repicked.history);
+    expect(committed.replaced).toBeNull();
+    expect(findCreatedCircle(committed.history!.present.project)?.radius).toBe(10);
+  });
+
+  it('CIRCLETTR repick rejects the first or current second source', () => {
+    const project = projectWithLineAndCircle();
+    const history = createCadHistoryState(project);
+    const first = sourceFor(project, 'line-h', 50, 0);
+    const second = sourceFor(project, 'circle-c', 0, 20);
+    const failed = submitShape({ key: 'CIRCLETTR', inputValue: '', first, second }, '5', history);
+    if (failed.replaced?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+
+    const sameFirst = consumePoint(history, failed.replaced, snapPoint(20, 0, 'line-h'));
+    if (sameFirst.session?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+    expect(sameFirst.session.second?.primitive.entityId).toBe('circle-c');
+    expect(sameFirst.session.awaitingSecondRepick).toBe(true);
+    expect(sameFirst.session.resultText).toMatch(/repeated tangent/i);
+
+    const sameSecond = consumePoint(history, failed.replaced, snapPoint(0, 20, 'circle-c'));
+    if (sameSecond.session?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+    expect(sameSecond.session.second?.primitive.entityId).toBe('circle-c');
+    expect(sameSecond.session.awaitingSecondRepick).toBe(true);
+    expect(sameSecond.session.resultText).toMatch(/repeated tangent/i);
+  });
+
+  it('CIRCLETTR third tangent click before a failed solve does not replace the second source', () => {
+    const project = projectWithLines();
+    const history = createCadHistoryState(project);
+    const first = sourceFor(project, 'line-h', 80, 0);
+    const second = sourceFor(project, 'line-v', 0, 20);
+    const result = consumePoint(
+      history,
+      { key: 'CIRCLETTR', inputValue: '', first, second },
+      snapPoint(60, 40, 'line-hyp'),
+    );
+    if (result.session?.key !== 'CIRCLETTR') throw new Error('expected CIRCLETTR session');
+    expect(result.session.second?.primitive.entityId).toBe('line-v');
+    expect(result.session.awaitingSecondRepick).toBeFalsy();
+    expect(result.session.resultText).toMatch(/has both tangents/i);
   });
 
   it('CIRCLETTT commits on the third tangent pick and rejects repeats', () => {
