@@ -92,6 +92,8 @@ export const getCadEntityDisplayLabel = (entity: CadEntity): string => {
       return entity.parcelName;
     case 'arc':
       return readNonOpaqueEntityId(entity) ?? 'Arc';
+    case 'circle':
+      return readNonOpaqueEntityId(entity) ?? 'Circle';
     case 'alignment':
       return entity.name;
     case 'error-ellipse':

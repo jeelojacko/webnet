@@ -27,6 +27,7 @@ const cloneBlockChild = (child: CadBlockChild): CadBlockChild => {
   switch (child.type) {
     case 'line':
     case 'arc':
+    case 'circle':
       return {
         ...child,
         appearance: child.appearance ? { ...child.appearance } : undefined,

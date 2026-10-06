@@ -27,6 +27,7 @@ export const isBlockEligibleSource = (entity: CadEntity): boolean => {
     case 'line':
     case 'polyline':
     case 'arc':
+    case 'circle':
     case 'polygon':
       return true;
     case 'text':
@@ -75,6 +76,8 @@ export const blockSourceAnchors = (entity: CadEntity): Array<{ x: number; y: num
     case 'polygon':
       return entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }));
     case 'arc':
+      return [{ x: entity.centerX, y: entity.centerY }];
+    case 'circle':
       return [{ x: entity.centerX, y: entity.centerY }];
     case 'text':
       return [{ x: entity.x, y: entity.y }];

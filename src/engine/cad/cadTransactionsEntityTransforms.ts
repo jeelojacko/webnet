@@ -8,6 +8,7 @@ import {
   cadProjectPointOntoCircle,
 } from './cadGeometry';
 import { replaceCadProjectEntities } from './cadProjectState';
+import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
 import { sanitizeFeatureLine } from './cadFeatureLines';
 import type { CadCommand } from './cadTransactions.types';
 import type {
@@ -58,6 +59,12 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
         })),
       };
     case 'arc':
+      return {
+        ...entity,
+        centerX: entity.centerX + deltaX,
+        centerY: entity.centerY + deltaY,
+      };
+    case 'circle':
       return {
         ...entity,
         centerX: entity.centerX + deltaX,
@@ -302,6 +309,17 @@ const updateEntityFromGrip = (
         return updateArcEndpointFromGrip(entity, gripKind, point);
       }
       return null;
+    case 'circle':
+      if (gripKind === 'circle-center') {
+        if (!Number.isFinite(point.x + point.y)) return null;
+        return { ...entity, centerX: point.x, centerY: point.y };
+      }
+      if (gripKind === 'circle-radius') {
+        const radius = Math.hypot(point.x - entity.centerX, point.y - entity.centerY);
+        if (!Number.isFinite(radius) || radius <= CAD_XY_DEGENERATE_FLOOR) return null;
+        return { ...entity, radius };
+      }
+      return null;
     case 'block-reference':
       // Phase 18N UI slice: the insertion grip drags the whole reference.
       // Rotation/scale stay Properties-only (no grip affordance).
@@ -384,6 +402,23 @@ export const buildCadGripHandles = (entity: CadEntity): CadGripHandle[] => {
         },
       ];
     }
+    case 'circle':
+      return [
+        {
+          id: `${entity.id}:circle-center`,
+          entityId: entity.id,
+          kind: 'circle-center',
+          x: entity.centerX,
+          y: entity.centerY,
+        },
+        {
+          id: `${entity.id}:circle-radius`,
+          entityId: entity.id,
+          kind: 'circle-radius',
+          x: entity.centerX + entity.radius,
+          y: entity.centerY,
+        },
+      ];
     case 'block-reference':
       return [
         {

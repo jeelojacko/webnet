@@ -196,6 +196,20 @@ export const transformCadEntityGeometry = (
       );
       return { ok: true, entity: { ...entity, ...next } };
     }
+    case 'circle': {
+      // Phase B1: similarity-closed (translate/rotate/mirror/uniform
+      // scale; mirror and rotation leave the circle invariant). General
+      // affine would map the circle to an ellipse — fail closed with an
+      // explicit diagnostic, never silent deformation, never ellipse output.
+      if (classification.kind === 'GENERAL_AFFINE') {
+        return { ok: false, reason: 'CAD_TRANSFORM_CIRCLE_AFFINE_UNSUPPORTED' };
+      }
+      const center = applyPoint(transform, { x: entity.centerX, y: entity.centerY });
+      return {
+        ok: true,
+        entity: { ...entity, centerX: center.x, centerY: center.y, radius: entity.radius * Math.abs(classification.scale) },
+      };
+    }
     case 'alignment': {
       // Stationing (startStation, equations, raw chainage) is a dependency of
       // the alignment, not geometry: rigid motion preserves every element

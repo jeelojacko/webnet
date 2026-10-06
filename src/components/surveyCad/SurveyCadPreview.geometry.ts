@@ -162,6 +162,16 @@ export const primitiveBounds = (
         maxY: center.y + radius,
       };
     }
+    case 'circle': {
+      const center = project(primitive.center.x, primitive.center.y);
+      const radius = Math.max(primitive.radius * scale, 1.2);
+      return {
+        minX: center.x - radius,
+        minY: center.y - radius,
+        maxX: center.x + radius,
+        maxY: center.y + radius,
+      };
+    }
     case 'text': {
       const textBox = textPrimitiveScreenBox(primitive, project);
       return {

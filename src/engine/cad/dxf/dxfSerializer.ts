@@ -152,6 +152,13 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
           pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
         );
       });
+      (block.circles ?? []).forEach((circle) => {
+        out.push(
+          pair(0, 'CIRCLE'), pair(8, circle.layer),
+          pair(10, fmt(circle.center.x)), pair(20, fmt(circle.center.y)), pair(30, '0'),
+          pair(40, fmt(circle.radius)),
+        );
+      });
       block.texts.forEach((entry) => {
         out.push(
           pair(0, 'TEXT'), pair(8, entry.layer),
@@ -221,6 +228,13 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
       pair(0, 'ARC'), pair(8, arc.layer), ...colorOf(arc.layer, arc.colorHex), ...linetypeOf(arc.layer, arc.linetypeId), ...invisibleOf(arc.invisible),
       pair(10, fmt(arc.center.x)), pair(20, fmt(arc.center.y)), pair(30, '0'),
       pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
+    );
+  });
+  (model.circles ?? []).forEach((circle) => {
+    out.push(
+      pair(0, 'CIRCLE'), pair(8, circle.layer), ...colorOf(circle.layer, circle.colorHex), ...linetypeOf(circle.layer, circle.linetypeId), ...invisibleOf(circle.invisible),
+      pair(10, fmt(circle.center.x)), pair(20, fmt(circle.center.y)), pair(30, '0'),
+      pair(40, fmt(circle.radius)),
     );
   });
   model.texts.forEach((entry) => {

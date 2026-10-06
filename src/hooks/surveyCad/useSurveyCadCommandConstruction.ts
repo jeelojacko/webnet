@@ -61,6 +61,11 @@ export const buildSnapConstructionContext = (
       return session.phase === 'radius' && session.center
         ? pointConstructionContext(session.center, { includeScopeSeed: true })
         : inactiveConstructionContext();
+    case 'CIRCLE':
+    case 'CIRCLECD':
+      return session.center
+        ? pointConstructionContext(session.center, { includeScopeSeed: true })
+        : inactiveConstructionContext();
     case 'MULTI_INVERSE':
     case 'AREA':
       return lastPointConstructionContext(session.points);

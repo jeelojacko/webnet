@@ -85,8 +85,8 @@ describe('phase 21A tool-family manifests (§80)', () => {
     expect(curves.variants.find((variant) => variant.id === 'curves-tangent')?.separatorBefore).toBe(true);
   });
 
-  it('keeps Circle / Best Fit / Ellipse / Hatch as honest planned rows', () => {
-    for (const id of ['circle', 'bestfit', 'ellipse', 'hatch']) {
+  it('keeps Best Fit / Ellipse / Hatch as honest planned rows', () => {
+    for (const id of ['bestfit', 'ellipse', 'hatch']) {
       const entry = family(id);
       expect(entry.variants.length).toBeGreaterThan(0);
       expect(entry.variants.every((variant) => variant.planned === true)).toBe(true);
@@ -100,6 +100,19 @@ describe('phase 21A tool-family manifests (§80)', () => {
     ]);
   });
 
+  it('maps Circle rows to the live CIRCLE / CIRCLECD commands', () => {
+    const entry = family('circle');
+    expect(entry.defaultVariantId).toBe('circle-center-radius');
+    const byId = new Map(entry.variants.map((variant) => [variant.id, variant]));
+    expect(byId.get('circle-center-radius')?.commandKey).toBe('CIRCLE');
+    expect(byId.get('circle-center-diameter')?.commandKey).toBe('CIRCLECD');
+    expect(byId.get('circle-2point')?.commandKey).toBeUndefined();
+    expect(byId.get('circle-3point')?.commandKey).toBeUndefined();
+    expect(byId.get('circle-tan-tan-radius')?.commandKey).toBeUndefined();
+    expect(byId.get('circle-tan-tan-tan')?.commandKey).toBeUndefined();
+    expect(isCadRibbonVariantSelectable(entry, 'circle-center-radius')).toBe(true);
+    expect(isCadRibbonVariantSelectable(entry, 'circle-2point')).toBe(false);
+  });
   it('maps Shapes rows to the live RECTANGLE / POLYGON commands', () => {
     const entry = family('shapes');
     expect(entry.defaultVariantId).toBe('shapes-rectangle');
@@ -130,7 +143,8 @@ describe('phase 21A tool-family manifests (§80)', () => {
     expect(resolveCadRibbonCurrentVariant(arc, null).commandKey).toBe('ARC_3PT');
     expect(isCadRibbonVariantSelectable(arc, 'arc-sce')).toBe(true);
     expect(isCadRibbonVariantSelectable(arc, 'arc-nope')).toBe(false);
-    expect(isCadRibbonVariantSelectable(family('circle'), 'circle-center-radius')).toBe(false);
+    expect(isCadRibbonVariantSelectable(family('circle'), 'circle-center-radius')).toBe(true);
+    expect(isCadRibbonVariantSelectable(family('circle'), 'circle-2point')).toBe(false);
   });
 
   it('builds the default variant map for every family', () => {

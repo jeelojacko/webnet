@@ -4,7 +4,7 @@ import type { CadWorldPoint } from './cadGeometry';
 // cadGeometry.ts / cadGeometryArcBuilders.ts treat lengths <= 1e-12 as
 // degenerate and fail closed (return null). (The zeroDelta helper in
 // surfaces/volume/zero.ts is a delta-Z earthwork policy, wrong domain here.)
-const CAD_XY_DEGENERATE_FLOOR = 1e-12;
+export const CAD_XY_DEGENERATE_FLOOR = 1e-12;
 
 // No existing repo vertex cap was found; 1024 is a local cap for this
 // builder so a single polygon drag cannot allocate an unbounded ring.
@@ -15,6 +15,50 @@ export type RegularPolygonMode = 'inscribed' | 'circumscribed';
 
 const isFinitePoint = (point: CadWorldPoint): boolean =>
   Number.isFinite(point.x) && Number.isFinite(point.y);
+
+export interface CircleCenterRadius {
+  center: CadWorldPoint;
+  radius: number;
+}
+
+const toFiniteCircle = (center: CadWorldPoint, radius: number): CircleCenterRadius | null => {
+  if (!isFinitePoint(center) || !Number.isFinite(radius) || radius <= CAD_XY_DEGENERATE_FLOOR) return null;
+  return { center: { x: center.x, y: center.y }, radius };
+};
+
+/** Center/Radius: center fixed exactly as supplied; R = distance(C,P) for a
+ * picked radius point, or a positive scalar. Never moves the center. */
+export const buildCircleCenterRadius = (
+  center: CadWorldPoint,
+  radiusPoint: CadWorldPoint,
+): CircleCenterRadius | null => {
+  if (!isFinitePoint(center) || !isFinitePoint(radiusPoint)) return null;
+  return toFiniteCircle(center, Math.hypot(radiusPoint.x - center.x, radiusPoint.y - center.y));
+};
+
+export const buildCircleCenterRadiusScalar = (
+  center: CadWorldPoint,
+  radius: number,
+): CircleCenterRadius | null => toFiniteCircle(center, radius);
+
+/** Center/Diameter: center fixed EXACTLY as supplied; D = distance(C,P),
+ * radius = D/2. P is a diameter-magnitude point from the fixed center, NOT
+ * the opposite endpoint of a diameter (that is the deferred 2-Point mode). */
+export const buildCircleCenterDiameter = (
+  center: CadWorldPoint,
+  diameterPoint: CadWorldPoint,
+): CircleCenterRadius | null => {
+  if (!isFinitePoint(center) || !isFinitePoint(diameterPoint)) return null;
+  return toFiniteCircle(center, Math.hypot(diameterPoint.x - center.x, diameterPoint.y - center.y) / 2);
+};
+
+export const buildCircleCenterDiameterScalar = (
+  center: CadWorldPoint,
+  diameter: number,
+): CircleCenterRadius | null => {
+  if (!isFinitePoint(center) || !Number.isFinite(diameter)) return null;
+  return toFiniteCircle(center, diameter / 2);
+};
 
 export const buildRectangleVertices = (
   first: CadWorldPoint,

@@ -111,6 +111,22 @@ export const useSurveyCadWorkspacePreviews = ({
         },
       ];
     }
+    if (commandPreview.kind === 'circle') {
+      return [
+        {
+          kind: 'circle' as const,
+          id: 'preview:circle',
+          layerId: 'preview',
+          sourceEntityId: 'preview:circle',
+          stroke: previewStroke,
+          center: commandPreview.center,
+          radius: commandPreview.radius,
+          strokeWidth: 1.5,
+          opacity: previewOpacity,
+          strokeDasharray: '8 6',
+        },
+      ];
+    }
     if (commandPreview.kind === 'polyline') {
       return commandPreview.points.slice(0, -1).map((point, index) => ({
         kind: 'line' as const,

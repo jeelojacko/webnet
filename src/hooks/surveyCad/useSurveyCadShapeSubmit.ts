@@ -1,8 +1,11 @@
 import {
+  buildCircleCenterDiameterScalar,
+  buildCircleCenterRadiusScalar,
   MAX_SHAPE_POLYGON_SIDES,
   MIN_SHAPE_POLYGON_SIDES,
   type RegularPolygonMode,
 } from '../../engine/cad/cadGeometryShapeBuilders';
+import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import { parseInputPoint } from './useSurveyCadCommandPointParsing';
 import type { HandleSurveyCadTypedSubmitOptions } from './useSurveyCadTypedSubmit.types';
 
@@ -28,12 +31,13 @@ const parsePolygonMode = (rawInput: string): RegularPolygonMode | null => {
 };
 
 export const handleSurveyCadShapeSubmit = ({
+  applyHistoryUpdate,
   consumePoint,
   replaceSession,
   session,
 }: Pick<
   HandleSurveyCadTypedSubmitOptions,
-  'consumePoint' | 'replaceSession' | 'session'
+  'applyHistoryUpdate' | 'consumePoint' | 'replaceSession' | 'session'
 >): boolean => {
   if (session.key === 'RECTANGLE') {
     const parsed = parseInputPoint(session.inputValue, session.firstCorner);
@@ -43,6 +47,54 @@ export const handleSurveyCadShapeSubmit = ({
         resultText: session.firstCorner
           ? 'RECTANGLE corner invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.'
           : 'RECTANGLE corner invalid. Use `x,y` or `LABEL=x,y`.',
+      });
+      return true;
+    }
+    consumePoint(parsed);
+    return true;
+  }
+  if (session.key === 'CIRCLE' || session.key === 'CIRCLECD') {
+    const isDiameter = session.key === 'CIRCLECD';
+    const noun = isDiameter ? 'diameter' : 'radius';
+    if (!session.center) {
+      const parsed = parseInputPoint(session.inputValue, null);
+      if (!parsed) {
+        replaceSession({
+          ...session,
+          resultText: `${session.key} center invalid. Use \`x,y\` or \`LABEL=x,y\`.`,
+        });
+        return true;
+      }
+      consumePoint(parsed);
+      return true;
+    }
+    const center = session.center;
+    const scalar = Number(session.inputValue.trim());
+    if (session.inputValue.trim() !== '' && Number.isFinite(scalar) && scalar > 0) {
+      const built = isDiameter
+        ? buildCircleCenterDiameterScalar(center, scalar)
+        : buildCircleCenterRadiusScalar(center, scalar);
+      if (!built) {
+        replaceSession({
+          ...session,
+          inputValue: '',
+          resultText: `${session.key} ${noun} degenerate. Enter a positive finite ${noun}.`,
+        });
+        return true;
+      }
+      applyHistoryUpdate((existing) =>
+        isDiameter
+          ? runCadCommand(existing, { key: 'CIRCLECD', center, diameter: scalar })
+          : runCadCommand(existing, { key: 'CIRCLE', center, radius: scalar }),
+      );
+      replaceSession(null);
+      return true;
+    }
+    const parsed = parseInputPoint(session.inputValue, session.center);
+    if (!parsed) {
+      replaceSession({
+        ...session,
+        resultText: `${session.key} ${noun} invalid. Enter a positive ${noun} or a point (\`x,y\`, \`LABEL=x,y\`, \`@azimuth,distance\`).`,
       });
       return true;
     }

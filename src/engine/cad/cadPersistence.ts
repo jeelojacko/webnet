@@ -145,6 +145,7 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'line':
     case 'error-ellipse':
     case 'arc':
+    case 'circle':
     case 'block-reference':
     case 'curve-label':
       return {

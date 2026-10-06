@@ -174,6 +174,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   session('PLINE', 'Polyline', 'Draw', 'Draw a connected polyline.', ['PL']),
   session('RECTANGLE', 'Rectangle', 'Draw', 'Rectangle from two corners.'),
   session('POLYGON', 'Polygon', 'Draw', 'Regular polygon from center and radius point.'),
+  session('CIRCLE', 'Circle', 'Draw', 'Circle from center and radius.'),
+  session('CIRCLECD', 'Circle Diameter', 'Draw', 'Circle from fixed center and diameter; radius is half.'),
   session('TRAVERSE', 'Traverse', 'Draw', 'Draft an open/closed traverse.'),
   session('ARC_3PT', 'Arc (3-Point)', 'Draw', 'Arc through three points.'),
   session('ARC_SCE', 'Arc (Start/Center/End)', 'Draw', 'Arc from start, center, end.'),

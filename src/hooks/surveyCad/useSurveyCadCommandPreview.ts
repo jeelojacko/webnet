@@ -8,6 +8,8 @@ import {
   cadPointFromAzimuthDistance,
 } from '../../engine/cad/cadGeometry';
 import {
+  buildCircleCenterDiameterScalar,
+  buildCircleCenterRadiusScalar,
   buildRectangleVertices,
   buildRegularPolygonVertices,
 } from '../../engine/cad/cadGeometryShapeBuilders';
@@ -50,6 +52,11 @@ export type CadCommandPreviewState =
       radius: number;
       startAngleDeg: number;
       endAngleDeg: number;
+    }
+  | {
+      kind: 'circle';
+      center: { x: number; y: number };
+      radius: number;
     }
   | {
       kind: 'translate-selection';
@@ -158,6 +165,22 @@ export const buildCommandPreview = ({
         kind: 'polyline',
         points: [...vertices, vertices[0]!],
       };
+    }
+    case 'CIRCLE':
+    case 'CIRCLECD': {
+      if (!previewPoint) return null;
+      if (!session.center) {
+        return {
+          kind: 'point',
+          point: { x: previewPoint.x, y: previewPoint.y },
+        };
+      }
+      const distance = Math.hypot(previewPoint.x - session.center.x, previewPoint.y - session.center.y);
+      const built = session.key === 'CIRCLE'
+        ? buildCircleCenterRadiusScalar(session.center, distance)
+        : buildCircleCenterDiameterScalar(session.center, distance);
+      if (!built) return null;
+      return { kind: 'circle', center: built.center, radius: built.radius };
     }
     case 'POLYGON': {
       if (session.phase === 'sides' || session.phase === 'mode') return null;

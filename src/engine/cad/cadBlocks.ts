@@ -82,7 +82,7 @@ export const normalizeBlockScales = (
   return null;
 };
 
-const SUPPORTED_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'polygon', 'text']);
+const SUPPORTED_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'circle', 'polygon', 'text']);
 
 /**
  * Validate a block definition. Sibling names are compared case-insensitively
@@ -203,6 +203,22 @@ export const transformBlockChildToWorld = (
         endAngleDeg,
       };
     }
+    case 'circle': {
+      // Phase B1: a circle has no sweep to preserve and must never be
+      // mean-scaled or distorted. Non-uniform block scale fails closed;
+      // mirror/rotation leave the circle invariant (center transforms).
+      if (reference.scaleX !== reference.scaleY) {
+        throw new Error(
+          `CAD_BLOCK_CIRCLE_NON_UNIFORM_SCALE: block reference scales a circle child non-uniformly (scaleX=${reference.scaleX}, scaleY=${reference.scaleY}); refusing instead of distorting the circle.`,
+        );
+      }
+      const center = transformBlockPointToWorld(
+        { x: child.centerX, y: child.centerY },
+        definition,
+        reference,
+      );
+      return { ...child, centerX: center.x, centerY: center.y, radius: child.radius * reference.scaleX };
+    }
     case 'text': {
       // Phase 18Q readable-text policy: only the anchor goes through the
       // (possibly mirrored) transform; the glyph itself is never mirrored.
@@ -282,6 +298,11 @@ const childPoints = (child: CadBlockChild): CadWorldPoint[] => {
       return [...child.vertices];
     case 'arc':
       return arcSamplePoints(child.centerX, child.centerY, child.radius, child.startAngleDeg, child.endAngleDeg);
+    case 'circle':
+      return [
+        { x: child.centerX - child.radius, y: child.centerY - child.radius },
+        { x: child.centerX + child.radius, y: child.centerY + child.radius },
+      ];
     case 'text':
       return [{ x: child.x, y: child.y }];
   }

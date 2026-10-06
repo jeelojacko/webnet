@@ -1,13 +1,16 @@
 import {
+  cadAngleDegFromCenter,
   cadInfiniteLineIntersection,
   cadIntersectArcArc,
   cadIntersectCircleCircle,
   cadIntersectInfiniteLineArc,
   cadIntersectSegmentArc,
+  cadIntersectSegmentCircle,
+  cadIsAngleOnArcSweep,
   cadSegmentIntersection,
   type CadWorldPoint,
 } from './cadGeometry';
-import type { CadArcRef, CadSegmentRef } from './cadSpatialIndexTypes';
+import type { CadArcRef, CadCircleRef, CadSegmentRef } from './cadSpatialIndexTypes';
 import { buildCandidate } from './cadSpatialSnapCandidates';
 import {
   nearestArcEndpointToPoint,
@@ -22,11 +25,13 @@ const pointsMatch = (left: CadWorldPoint, right: CadWorldPoint): boolean =>
 
 export const buildExactIntersectionCandidates = ({
   arcs,
+  circles = [],
   segments,
   worldPoint,
 }: {
   segments: CadSegmentRef[];
   arcs: CadArcRef[];
+  circles?: CadCircleRef[];
   worldPoint: CadWorldPoint;
 }): CadSnapCandidate[] => {
   const candidates: CadSnapCandidate[] = [];
@@ -98,6 +103,64 @@ export const buildExactIntersectionCandidates = ({
       });
     }
   }
+
+  segments.forEach((segment) => {
+    circles.forEach((circle) => {
+      cadIntersectSegmentCircle(segment.start, segment.end, circle.center, circle.radius).forEach((intersection) => {
+        candidates.push(
+          buildCandidate(
+            'intersection',
+            `${segment.sourceEntityId}|${circle.sourceEntityId}`,
+            intersection,
+            worldPoint,
+            `${segment.label} x ${circle.label}`,
+          ),
+        );
+      });
+    });
+  });
+
+  for (let leftIndex = 0; leftIndex < circles.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < circles.length; rightIndex += 1) {
+      const left = circles[leftIndex];
+      const right = circles[rightIndex];
+      cadIntersectCircleCircle(left.center, left.radius, right.center, right.radius).forEach((intersection) => {
+        candidates.push(
+          buildCandidate(
+            'intersection',
+            `${left.sourceEntityId}|${right.sourceEntityId}`,
+            intersection,
+            worldPoint,
+            `${left.label} x ${right.label}`,
+          ),
+        );
+      });
+    }
+  }
+
+  arcs.forEach((arc) => {
+    circles.forEach((circle) => {
+      cadIntersectCircleCircle(arc.center, arc.radius, circle.center, circle.radius)
+        .filter((intersection) =>
+          cadIsAngleOnArcSweep(
+            cadAngleDegFromCenter(arc.center, intersection),
+            arc.startAngleDeg,
+            arc.endAngleDeg,
+          ),
+        )
+        .forEach((intersection) => {
+          candidates.push(
+            buildCandidate(
+              'intersection',
+              `${arc.sourceEntityId}|${circle.sourceEntityId}`,
+              intersection,
+              worldPoint,
+              `${arc.label} x ${circle.label}`,
+            ),
+          );
+        });
+    });
+  });
 
   return candidates;
 };

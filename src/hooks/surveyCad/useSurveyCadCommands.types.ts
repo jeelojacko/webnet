@@ -87,6 +87,8 @@ export interface UseSurveyCadCommandsResult {
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startRectangleCommand: () => void;
+  startCircleCommand: () => void;
+  startCircleDiameterCommand: () => void;
   startPolygonCommand: () => void;
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;

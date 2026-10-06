@@ -152,6 +152,43 @@ export const renderPrimitive = ({
         </g>
       );
     }
+    case 'circle': {
+      const at = project(primitive.center.x, primitive.center.y);
+      const radius = primitive.radius * scale;
+      return (
+        <g key={primitive.id}>
+          {hoverTitle}
+          <circle
+            {...commonProps}
+            data-survey-cad-hit-target="true"
+            data-survey-cad-entity-id={primitive.sourceEntityId}
+            data-survey-cad-segment-id={primitive.sourceSegmentId}
+            cx={at.x}
+            cy={at.y}
+            r={radius}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={Math.max(16, primitive.strokeWidth + 14)}
+            strokeOpacity={0.001}
+            pointerEvents="stroke"
+          />
+          <circle
+            cx={at.x}
+            cy={at.y}
+            r={radius}
+            fill="none"
+            {...commonProps}
+            data-survey-cad-render-entity-id={primitive.sourceEntityId}
+            stroke={isSelected ? '#fbbf24' : primitive.stroke}
+            strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
+            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.92}
+            strokeDasharray={screenDasharray}
+            strokeDashoffset={screenDashoffset}
+            pointerEvents="stroke"
+          />
+        </g>
+      );
+    }
     case 'point': {
       const point = project(primitive.point.x, primitive.point.y);
       // Honest marker shapes (shared geometry with export): unknown/missing

@@ -42,6 +42,7 @@ const submitShape = (session: CommandSession, inputValue: string) => {
   let replaced: CommandSession | null | undefined;
   const consumed: CommandPoint[] = [];
   const handled = handleSurveyCadShapeSubmit({
+    applyHistoryUpdate: () => undefined,
     consumePoint: (next) => {
       consumed.push(next);
     },

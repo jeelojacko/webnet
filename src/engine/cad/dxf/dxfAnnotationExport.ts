@@ -292,10 +292,12 @@ const deriveDimensionAnnotation = (
       // Lone arc-point anchor: center + radius read live from the arc
       // entity (same derivation as the viewport renderer), so radius edits
       // re-measure in DXF too instead of dropping the dimension silently.
+      // Circles associate only via the center anchor (no start/end points).
       const source = project.entities.find(
         (candidate) => candidate.id === singleRadialAnchor.entityId,
       );
-      if (source == null || source.type !== 'arc') return { primitives, warnings, ok: false };
+      if (source == null || (source.type !== 'arc' && source.type !== 'circle')) return { primitives, warnings, ok: false };
+      if (source.type === 'circle' && singleRadialAnchor.point !== 'center') return { primitives, warnings, ok: false };
       const center = { x: source.centerX, y: source.centerY };
       let arcPoint: { x: number; y: number };
       if (singleRadialAnchor.point === 'center') {

@@ -41,6 +41,8 @@ const childSegments = (child: CadBlockChild): Array<Array<{ x: number; y: number
       return child.vertices.length > 0 ? [[...child.vertices, child.vertices[0]!]] : [];
     case 'arc':
       return [arcSamples(child.centerX, child.centerY, child.radius, child.startAngleDeg, child.endAngleDeg)];
+    case 'circle':
+      return [arcSamples(child.centerX, child.centerY, child.radius, 0, 360)];
     case 'text':
       return [];
   }

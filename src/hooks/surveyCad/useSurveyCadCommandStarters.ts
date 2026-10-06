@@ -63,6 +63,18 @@ export const useSurveyCadCommandStarters = ({
       inputValue: '',
       firstCorner: null,
     }),
+  startCircleCommand: () =>
+    beginSession({
+      key: 'CIRCLE',
+      inputValue: '',
+      center: null,
+    }),
+  startCircleDiameterCommand: () =>
+    beginSession({
+      key: 'CIRCLECD',
+      inputValue: '',
+      center: null,
+    }),
   startPolygonCommand: () =>
     beginSession({
       key: 'POLYGON',

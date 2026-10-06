@@ -41,6 +41,11 @@ const entityPoints = (entity: CadEntity): Array<{ x: number; y: number }> => {
         { x: entity.centerX - entity.radius, y: entity.centerY - entity.radius },
         { x: entity.centerX + entity.radius, y: entity.centerY + entity.radius },
       ];
+    case 'circle':
+      return [
+        { x: entity.centerX - entity.radius, y: entity.centerY - entity.radius },
+        { x: entity.centerX + entity.radius, y: entity.centerY + entity.radius },
+      ];
     case 'text':
       return [{ x: entity.x, y: entity.y }];
     case 'survey-point':

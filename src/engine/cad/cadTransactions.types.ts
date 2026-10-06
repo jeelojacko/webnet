@@ -97,6 +97,8 @@ export type CadCommandKey =
   | 'LINE'
   | 'RECTANGLE'
   | 'POLYGON'
+  | 'CIRCLE'
+  | 'CIRCLECD'
   | 'PLINE'
   | 'TRAVERSE'
   | 'BATCH_COGO'
@@ -368,6 +370,16 @@ export type CadCommand =
       through: { x: number; y: number; label: string };
       sides: number;
       mode: 'inscribed' | 'circumscribed';
+    }
+  | {
+      key: 'CIRCLE';
+      center: { x: number; y: number; label: string };
+      radius: number;
+    }
+  | {
+      key: 'CIRCLECD';
+      center: { x: number; y: number; label: string };
+      diameter: number;
     }
   | {
       key: 'PLINE';

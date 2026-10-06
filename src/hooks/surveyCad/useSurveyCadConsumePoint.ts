@@ -1,5 +1,7 @@
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import {
+  buildCircleCenterDiameterScalar,
+  buildCircleCenterRadiusScalar,
   buildRectangleVertices,
   buildRegularPolygonVertices,
 } from '../../engine/cad/cadGeometryShapeBuilders';
@@ -402,6 +404,42 @@ const handleShapePointPick = ({
       return true;
     }
     return false;
+  }
+  if (current.key === 'CIRCLE' || current.key === 'CIRCLECD') {
+    if (!current.center) {
+      replaceSession({
+        ...current,
+        center: point,
+        inputValue: '',
+        resultText: undefined,
+      });
+      return true;
+    }
+    const center = current.center;
+    const distance = Math.hypot(point.x - center.x, point.y - center.y);
+    const built = current.key === 'CIRCLE'
+      ? buildCircleCenterRadiusScalar(center, distance)
+      : buildCircleCenterDiameterScalar(center, distance);
+    if (!built) {
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText:
+          current.key === 'CIRCLE'
+            ? 'CIRCLE radius degenerate. Pick a radius point away from the center.'
+            : 'CIRCLECD diameter degenerate. Pick a diameter point away from the center.',
+      });
+      return true;
+    }
+    const committedCenter = center;
+    const committedDistance = distance;
+    applyHistoryUpdate((existing) =>
+      current.key === 'CIRCLE'
+        ? runCadCommand(existing, { key: 'CIRCLE', center: committedCenter, radius: built.radius })
+        : runCadCommand(existing, { key: 'CIRCLECD', center: committedCenter, diameter: committedDistance }),
+    );
+    replaceSession(null);
+    return true;
   }
   return false;
 };

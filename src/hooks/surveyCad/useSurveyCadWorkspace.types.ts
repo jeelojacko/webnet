@@ -115,6 +115,8 @@ export interface UseSurveyCadWorkspaceResult {
     | 'COGO_POINT'
     | 'LINE'
     | 'RECTANGLE'
+    | 'CIRCLE'
+    | 'CIRCLECD'
     | 'POLYGON'
     | 'PLINE'
     | 'TRAVERSE'
@@ -248,6 +250,8 @@ export interface UseSurveyCadWorkspaceResult {
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startRectangleCommand: () => void;
+  startCircleCommand: () => void;
+  startCircleDiameterCommand: () => void;
   startPolygonCommand: () => void;
   startLineTableCommand: () => void;
   startCurveTableCommand: () => void;

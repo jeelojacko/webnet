@@ -60,6 +60,13 @@ export interface CadDisplayTextPrimitive extends CadDisplayPrimitiveBase {
   textAnchor?: 'start' | 'middle' | 'end';
 }
 
+export interface CadDisplayCirclePrimitive extends CadDisplayPrimitiveBase {
+  kind: 'circle';
+  center: CadDisplayPoint;
+  radius: number;
+  strokeWidth: number;
+}
+
 export interface CadDisplayEllipsePrimitive extends CadDisplayPrimitiveBase {
   kind: 'ellipse';
   center: CadDisplayPoint;
@@ -73,6 +80,7 @@ export type CadDisplayPrimitive =
   | CadDisplayPointPrimitive
   | CadDisplayLinePrimitive
   | CadDisplayArcPrimitive
+  | CadDisplayCirclePrimitive
   | CadDisplayTextPrimitive
   | CadDisplayEllipsePrimitive;
 

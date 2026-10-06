@@ -97,6 +97,8 @@ export interface DxfExportModel {
    */
   faces3d?: Array<{ layer: string; a: DxfPoint3D; b: DxfPoint3D; c: DxfPoint3D } & DxfEntryStyle>;
   arcs: Array<{ layer: string; center: DxfPoint; radius: number; startDeg: number; endDeg: number } & DxfEntryStyle>;
+  /** Phase B1: native model-space CIRCLE (groups 10/20/30/40, no angles). Optional so existing model literals keep compiling; absent = no circles. */
+  circles?: Array<{ layer: string; center: DxfPoint; radius: number } & DxfEntryStyle>;
   texts: Array<{ layer: string; at: DxfPoint; height: number; text: string; rotationDeg?: number } & DxfEntryStyle>;
   /**
    * Phase 18N native block table (referenced definitions only). Children
@@ -193,6 +195,7 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     polylines3d: [],
     faces3d: [],
     arcs: [],
+    circles: [],
     texts: [],
     blocks: [],
     inserts: [],
@@ -455,6 +458,23 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           radius: entity.radius,
           startDeg: entity.startAngleDeg,
           endDeg: entity.endAngleDeg,
+          ...entryStyle(entity),
+        });
+        result.exportedEntityIds.push(entity.id);
+        break;
+      case 'circle':
+        if (
+          !finitePair(entity.centerX, entity.centerY) ||
+          !Number.isFinite(entity.radius) || entity.radius <= 0
+        ) {
+          warn({ code: 'SKIPPED_ENTITY', message: `circle ${entity.id} has invalid geometry`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        (model.circles ??= []).push({
+          layer: registerLayer(entity.layerId),
+          center: { x: entity.centerX, y: entity.centerY },
+          radius: entity.radius,
           ...entryStyle(entity),
         });
         result.exportedEntityIds.push(entity.id);

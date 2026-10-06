@@ -255,15 +255,18 @@ describe('shape predicates', () => {
     expect(onlyPolygon(result!.nextSnapshot.project).vertices).toHaveLength(1024);
   });
 
-  it('Circle/BestFit/Ellipse/Hatch stay planned with no engine command', () => {
-    for (const family of ['circle', 'bestfit', 'ellipse', 'hatch']) {
+  it('BestFit/Ellipse/Hatch stay planned with no engine command; Circle is live', () => {
+    for (const family of ['bestfit', 'ellipse', 'hatch']) {
       const found = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === family);
       expect(found).toBeDefined();
       expect(found!.variants.length).toBeGreaterThan(0);
       expect(found!.variants.every((variant) => variant.planned === true)).toBe(true);
     }
-    for (const key of ['CIRCLE', 'BESTFIT', 'ELLIPSE', 'HATCH']) {
+    for (const key of ['BESTFIT', 'ELLIPSE', 'HATCH']) {
       expect(Object.hasOwn(CAD_COMMAND_REGISTRY, key)).toBe(false);
+    }
+    for (const key of ['CIRCLE', 'CIRCLECD']) {
+      expect(Object.hasOwn(CAD_COMMAND_REGISTRY, key)).toBe(true);
     }
     const shapes = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === 'shapes')!;
     expect(shapes.variants.map((variant) => variant.commandKey)).toEqual(['RECTANGLE', 'POLYGON']);

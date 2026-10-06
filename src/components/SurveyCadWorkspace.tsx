@@ -1483,6 +1483,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     COGO_POINT: cadWorkspace.startCogoPointCommand,
     LINE: cadWorkspace.startLineCommand,
     RECTANGLE: cadWorkspace.startRectangleCommand,
+    CIRCLE: cadWorkspace.startCircleCommand,
+    CIRCLECD: cadWorkspace.startCircleDiameterCommand,
     POLYGON: cadWorkspace.startPolygonCommand,
     PLINE: cadWorkspace.startPolylineCommand,
     TRAVERSE: cadWorkspace.startTraverseCommand,
