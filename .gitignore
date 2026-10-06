@@ -38,6 +38,10 @@ Working/
 graft/
 temp/study-ai-*/
 
+# Machine-local Pi state (project routing policy .pi/APPEND_SYSTEM.md stays tracked)
+.pi/*
+!.pi/APPEND_SYSTEM.md
+
 # Test-run artifacts (regenerated locally, never source data)
 temp/phase8b1-browser-inputs.json
 
