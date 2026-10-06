@@ -55,7 +55,7 @@ asserts **0 page errors, 0 console errors, 0 unhandled rejections** at the end
   54 px. Chevron expands to 148 px and shows a scrollable history (18+
   entries, scrollHeight 371, auto-scrolled to the newest). Collapsing returns
   to 54 px, equal to the pre-use baseline (the pre-fix 74 px persistent third
-  echo row is gone). 6 PNGs per width set
+  echo row is gone). 4 PNGs per width set, 8 total
   (`E-collapsed`, `E-collapsed-after-use`, `E-expanded`, `E-reclaimed`).
 - **F — error gates (PASS).** 0 page errors, 0 console errors, 0 unhandled
   rejections across all 7 tests.
