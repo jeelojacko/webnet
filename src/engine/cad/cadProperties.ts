@@ -41,7 +41,8 @@ import type {
 } from './cadPropertiesModel';
 import { resolveCadParcelCourses } from './cadParcelCourses';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
-import { resolveCadPolylineCourses } from './cadPolylineCourses';
+import { cadPolylineCourseMidpoint, resolveCadPolylineCourses } from './cadPolylineCourses';
+import { describeCadPolylineVertexDeleteBlock } from './cadPolylineTopology';
 import {
   cadParcelPlanDesignation,
   cadParcelPlanInfo,
@@ -248,6 +249,45 @@ const alignmentEndStationLabel = (entity: CadAlignmentEntity): string => {
 };
 
 /**
+ * Phase C3 — Properties row actions for polyline vertex topology. The insert
+ * action's immediate point is the TRUE course midpoint (line midpoint or
+ * signed-sweep arc midpoint) recomputed from the live entity at dispatch
+ * time, so a stale panel can never insert at a moved position. Delete is
+ * preflighted with the pure legality helper (no mutation) so the button
+ * renders disabled with a reason instead of silently failing.
+ */
+const polylineInsertRowAction = (
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+  courseIndex: number,
+): CadEntityPropertyRowAction => {
+  const course = resolveCadPolylineCourses(entity)?.[courseIndex];
+  const midpoint = course == null ? null : cadPolylineCourseMidpoint(course);
+  return {
+    kind: 'polyline-insert-vertex',
+    linkId: `${entity.id}:insert:${courseIndex}`,
+    entityId: entity.id,
+    courseIndex,
+    label: 'Insert Vertex',
+    ...(midpoint == null ? { disabledReason: 'Course geometry does not resolve.' } : {}),
+  };
+};
+
+const polylineDeleteRowAction = (
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+  vertexIndex: number,
+): CadEntityPropertyRowAction => {
+  const block = describeCadPolylineVertexDeleteBlock(entity, vertexIndex);
+  return {
+    kind: 'polyline-delete-vertex',
+    linkId: `${entity.id}:vertex:${vertexIndex}`,
+    entityId: entity.id,
+    vertexIndex,
+    label: 'Delete Vertex',
+    ...(block != null ? { disabledReason: block } : {}),
+  };
+};
+
+/**
  * Segment rows: polyline emits the N-1 open edges, or all N ring edges when
  * closed (C1). Polygon emits all N ring edges including the implicit
  * last→first closing edge (polygons store no duplicate closure vertex, so
@@ -273,6 +313,7 @@ const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }
         `Segment ${index + 1} azimuth`,
         formatCadNorthAzimuthDms(inverse.azimuthDeg),
         entity.type === 'polyline' ? { kind: 'polyline-segment-azimuth', segmentIndex: index } : undefined,
+        entity.type === 'polyline' ? [polylineInsertRowAction(entity, index)] : undefined,
       ),
     ];
   });
@@ -294,7 +335,13 @@ const polylineSegmentRows = (entity: Extract<CadEntity, { type: 'polyline' }>): 
       const metrics = course.metrics;
       const bulge = (course.geometry as { bulge: number }).bulge;
       rows.push(
-        row(`segment:${course.index}:kind`, `Segment ${course.index + 1} type`, 'Arc'),
+        row(
+          `segment:${course.index}:kind`,
+          `Segment ${course.index + 1} type`,
+          'Arc',
+          undefined,
+          [polylineInsertRowAction(entity, course.index)],
+        ),
         row(`segment:${course.index}:length`, `Segment ${course.index + 1} length`, numeric(metrics.arcLength)),
         row(
           `segment:${course.index}:curve`,
@@ -306,7 +353,13 @@ const polylineSegmentRows = (entity: Extract<CadEntity, { type: 'polyline' }>): 
     } else {
       const inverse = buildCadInverseSummary(course.from, course.to);
       rows.push(
-        row(`segment:${course.index}:kind`, `Segment ${course.index + 1} type`, 'Line'),
+        row(
+          `segment:${course.index}:kind`,
+          `Segment ${course.index + 1} type`,
+          'Line',
+          undefined,
+          [polylineInsertRowAction(entity, course.index)],
+        ),
         row(`segment:${course.index}:length`, `Segment ${course.index + 1} length`, numeric(inverse.distance)),
         row(
           `segment:${course.index}:azimuth`,
@@ -443,6 +496,7 @@ const vertexRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 
         `${label} Northing`,
         numeric(vertex.y),
         entity.type === 'polyline' ? { kind: 'polyline-vertex-y', vertexIndex: index } : undefined,
+        entity.type === 'polyline' ? [polylineDeleteRowAction(entity, index)] : undefined,
       ),
     ];
   });

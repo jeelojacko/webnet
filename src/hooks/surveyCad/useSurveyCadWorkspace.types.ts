@@ -194,6 +194,8 @@ export interface UseSurveyCadWorkspaceResult {
     | 'PARCELCHECK'
     | 'PARCELSCHEDULE'
     | 'PARCELSHAREDEDIT'
+    | 'PLINEINSERTVERTEX'
+    | 'PLINEDELETEVERTEX'
     | 'MOVE'
     | 'COPY'
     | 'ROTATE'
@@ -271,6 +273,8 @@ export interface UseSurveyCadWorkspaceResult {
   startParcelReportCommand: () => void;
   startParcelDescCommand: () => void;
   startPolylineCommand: () => void;
+  startPlineInsertVertexCommand: () => void;
+  startPlineDeleteVertexCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
   startMTextCommand: () => void;

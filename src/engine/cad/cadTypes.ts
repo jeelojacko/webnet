@@ -1034,7 +1034,15 @@ export type CadGripHandleKind =
   | 'arc-radius'
   | 'circle-center'
   | 'circle-radius'
-  | 'insertion';
+  | 'insertion'
+  /**
+   * Phase C3 — secondary hollow grip at one polyline course midpoint. It
+   * NEVER moves a vertex: drag-release projects the cursor back onto the
+   * ORIGINAL course and dispatches POLYLINE_INSERT_VERTEX, which splits the
+   * course in place (count-changing, one undo entry). `courseIndex` is the
+   * resolved course the grip belongs to.
+   */
+  | 'polyline-insert';
 
 export interface CadGripHandle {
   id: string;
@@ -1043,6 +1051,8 @@ export interface CadGripHandle {
   x: number;
   y: number;
   vertexIndex?: number;
+  /** Present on `polyline-insert` grips only: the target course index. */
+  courseIndex?: number;
 }
 
 export type CadSnapKind =

@@ -121,6 +121,20 @@ export const resolveCadPolylineCourses = (
   return courses;
 };
 
+/**
+ * Phase C3 — the TRUE midpoint of one resolved course: a line's finite
+ * midpoint, or the signed-sweep arc midpoint from `describeParcelArcCourse`
+ * (which rides `cadArcMidpoint`, never the chord midpoint). Shared by the
+ * insert grips and the Properties/command insert actions so all three
+ * surfaces agree on the immediate insertion point.
+ */
+export const cadPolylineCourseMidpoint = (
+  course: CadPolylineResolvedCourse,
+): CadWorldPoint =>
+  course.kind === 'arc' && course.metrics != null
+    ? course.metrics.midpoint
+    : { x: (course.from.x + course.to.x) / 2, y: (course.from.y + course.to.y) / 2 };
+
 /** Course count the resolver actually accepts for an entity: the stored
  *  ring's edge count. A canonical closed ring wraps last→first (n edges); a
  *  legacy closed ring that repeats its first vertex keeps n-1 edges. This is

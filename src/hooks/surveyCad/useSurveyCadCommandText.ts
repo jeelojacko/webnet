@@ -122,6 +122,16 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
       return session.resultText ?? polygonPromptForPhase(session);
     case 'PLINE':
       return session.resultText ?? plinePromptForSession(session);
+    case 'PLINEINSERTVERTEX':
+      return session.resultText ??
+        (session.polylineId == null
+          ? 'PLINEINSERTVERTEX active. Click an editable polyline, or type `x,y` / `C<n>` after selecting one.'
+          : 'PLINEINSERTVERTEX active. Click on a course to insert a vertex there, or type `x,y` / `C<n>`.');
+    case 'PLINEDELETEVERTEX':
+      return session.resultText ??
+        (session.polylineId == null
+          ? 'PLINEDELETEVERTEX active. Click an editable polyline, or type `V<n>` after selecting one.'
+          : 'PLINEDELETEVERTEX active. Click a vertex to delete it, or type `V<n>`.');
     case 'TRAVERSE':
       return session.resultText ??
         (session.points.length > 0

@@ -14,6 +14,7 @@ import {
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
+import { runPolylineVertexRowAction } from './surveyCadPolylineVertexActions';
 import { commitBlockUiOp } from '../../cad-app/blocks/cadBlockUiCommands';
 import {
   commitLandXmlImport,
@@ -283,6 +284,14 @@ export const useSurveyCadWorkspace = (
       commandState.startParcelSharedEditCommand(action.linkId);
       return { applied: true };
     }
+    // Phase C3 — polyline Properties vertex topology routes through the pure
+    // action seam (insert midpoint recomputed live; delete re-preflighted).
+    const polylineOutcome = runPolylineVertexRowAction(
+      action,
+      history.present.project,
+      runLayerCommand,
+    );
+    if (polylineOutcome) return polylineOutcome;
     return {
       applied: false,
       reason: 'Unknown parcel link action.',
@@ -687,6 +696,8 @@ export const useSurveyCadWorkspace = (
     startCircleTangentTangentTangentCommand: commandState.startCircleTangentTangentTangentCommand,
     startPolygonCommand: commandState.startPolygonCommand,
     startPolylineCommand: commandState.startPolylineCommand,
+    startPlineInsertVertexCommand: commandState.startPlineInsertVertexCommand,
+    startPlineDeleteVertexCommand: commandState.startPlineDeleteVertexCommand,
     startTraverseCommand: commandState.startTraverseCommand,
     startBatchCogoCommand: commandState.startBatchCogoCommand,
     startMTextCommand: commandState.startMTextCommand,

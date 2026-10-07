@@ -1,0 +1,209 @@
+{
+  "flowA": {
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 14.25728115847706,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 20
+      }
+    ]
+  },
+  "flowB": {
+    "before": [
+      {
+        "kind": "arc",
+        "bulge": 0.4
+      }
+    ],
+    "after": [
+      {
+        "kind": "arc",
+        "bulge": 0.2164157226595614
+      },
+      {
+        "kind": "arc",
+        "bulge": 0.16895819352044605
+      }
+    ],
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 11.32494274114133,
+        "y": -3.939339553203146
+      },
+      {
+        "x": 20,
+        "y": 0
+      }
+    ]
+  },
+  "flowC": {
+    "segmentWidths": [
+      {
+        "startWidth": 2,
+        "endWidth": 5
+      },
+      {
+        "startWidth": 5,
+        "endWidth": 8
+      }
+    ],
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 10,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      }
+    ]
+  },
+  "flowD": {
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 10,
+        "y": 10
+      },
+      {
+        "x": 0,
+        "y": 10
+      }
+    ]
+  },
+  "flowE": {
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 10,
+        "y": 10
+      },
+      {
+        "x": 0,
+        "y": 10
+      }
+    ],
+    "closed": true
+  },
+  "flowF": {
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      },
+      {
+        "x": 40,
+        "y": 0
+      }
+    ]
+  },
+  "flowG": {
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      }
+    ],
+    "geometry": [
+      {
+        "kind": "arc",
+        "bulge": -0.9999999999999999
+      }
+    ]
+  },
+  "flowH": {
+    "verticesAfterInsert": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 10,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      }
+    ]
+  },
+  "flowI": {
+    "vertices": 4,
+    "courses": 3,
+    "geometry": [
+      {
+        "kind": "line"
+      },
+      {
+        "kind": "line"
+      },
+      {
+        "kind": "arc",
+        "bulge": -0.9999999999999999
+      }
+    ],
+    "widths": [
+      {
+        "startWidth": 1,
+        "endWidth": 2.5
+      },
+      {
+        "startWidth": 2.5,
+        "endWidth": 3
+      },
+      {
+        "startWidth": 1,
+        "endWidth": 3
+      }
+    ]
+  },
+  "flowJ": {
+    "restored": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 20
+      }
+    ]
+  }
+}

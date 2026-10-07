@@ -30,6 +30,9 @@ export interface SurveyCadCommandStarters {
   startCircleTangentTangentTangentCommand: () => void;
   startPolygonCommand: () => void;
   startPolylineCommand: () => void;
+  /** Phase C3 — count-changing polyline vertex topology sessions. */
+  startPlineInsertVertexCommand: () => void;
+  startPlineDeleteVertexCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
   startParcelSplitBearingCommand: () => void;
@@ -131,4 +134,10 @@ export interface BuildSurveyCadCommandStartersOptions {
   selectedEntityIds?: string[];
   /** Fallback POINTTABLE ordering when nothing is selected. */
   surveyPointEntityIdsInStationOrder?: string[];
+  /**
+   * Phase C3 — the sole selected editable polyline id, or null when the
+   * selection is empty/ambiguous/locked. Seeds the vertex-topology sessions
+   * so a second pick is only needed for the vertex/course.
+   */
+  selectedEditablePolylineId?: string | null;
 }

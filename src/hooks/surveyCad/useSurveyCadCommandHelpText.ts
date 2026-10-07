@@ -264,6 +264,14 @@ export const helpTextForSession = (session: CommandSession | null): string => {
         : 'FILLET picks: click two lines, polylines, or arcs near the corner to round. The current radius stays active for repeated corners until Enter, Esc, or empty-space double-click ends the tool.';
     case 'PASTE':
       return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
+    case 'PLINEINSERTVERTEX':
+      return session.polylineId == null
+        ? 'PLINEINSERTVERTEX: click an editable polyline (or select one), then click the course point to insert. Typed `x,y` inserts on the nearest course; `C<n>` inserts at that course midpoint.'
+        : 'PLINEINSERTVERTEX: click on a course to split it at the projected point. Typed `x,y` projects onto the nearest course; `C<n>` inserts at that course midpoint. Esc cancels.';
+    case 'PLINEDELETEVERTEX':
+      return session.polylineId == null
+        ? 'PLINEDELETEVERTEX: click an editable polyline (or select one), then click the vertex to delete. Typed `V<n>` deletes that vertex. Mixed line+arc and off-circle arc joins refuse with zero mutation.'
+        : 'PLINEDELETEVERTEX: click a vertex to delete it, or type `V<n>`. Esc cancels.';
     case 'MTEXT':
       return 'MTEXT: click the insertion point, then type each line in the command input (Enter per line). Esc commits.';
     case 'LEADER':

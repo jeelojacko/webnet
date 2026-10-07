@@ -1517,6 +1517,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     CIRCLETTT: cadWorkspace.startCircleTangentTangentTangentCommand,
     POLYGON: cadWorkspace.startPolygonCommand,
     PLINE: cadWorkspace.startPolylineCommand,
+    PLINEINSERTVERTEX: cadWorkspace.startPlineInsertVertexCommand,
+    PLINEDELETEVERTEX: cadWorkspace.startPlineDeleteVertexCommand,
     TRAVERSE: cadWorkspace.startTraverseCommand,
     ARC_3PT: cadWorkspace.startArc3PointCommand,
     ARC_SCE: cadWorkspace.startArcStartCenterEndCommand,

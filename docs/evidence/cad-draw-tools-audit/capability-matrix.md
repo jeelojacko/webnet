@@ -57,3 +57,24 @@ Still missing/deferred: vertex insert/delete, Z, line chaining, right-click
 finish, command repeat, raw direct bulge-entry UI, arc-midpoint/width grips,
 full mixed-segment trim/extend/fillet, and general DXF import. Evidence:
 `docs/evidence/cad-polyline-c2-bulge-width/`.
+
+## Addendum — Phase C3 current state (2026-10-07)
+
+Historical baseline and the C1/C2 addenda above are unchanged. Polyline
+update after Phase C3 (branch `feat/cad-polyline-vertex-editing-c3`):
+mid-course **vertex insert** and **vertex delete** are now SUPPORTED as
+count-changing engine transactions (one history entry each, zero mutation on
+refusal). Insert rides the ORIGINAL course (line projection / true swept-arc
+radial projection, never a chord) and splits the course's geometry/width
+metadata in place; delete merges adjacent line+line or same-circle arc+arc
+courses and blocks mixed-curvature / off-circle joins. Both are reachable
+from three surfaces: per-course secondary hollow **insert grips**
+(`polyline-insert`, positioned at the true arc midpoint for arcs), per-vertex
+**Delete Vertex** / per-course **Insert Vertex** Properties actions (delete
+disabled with a reason when unrepresentable), and pick-gated typed commands
+`PLINEINSERTVERTEX` (`PIV`) / `PLINEDELETEVERTEX` (`PDV`). No `PEDIT` dialog
+was added; the global `Delete` → `ERASE` keybinding is unchanged.
+Still missing/deferred: Z, line chaining, right-click finish, command repeat,
+raw direct bulge-entry UI, width grips, destructive arc↔line conversion, full
+mixed-segment trim/extend/fillet, and general DXF import. Evidence:
+`docs/evidence/cad-polyline-c3-vertex-editing/`.
