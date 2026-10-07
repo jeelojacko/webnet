@@ -61,6 +61,20 @@ Flyout boxes (fixed-position anchor, shared constants 352×260 / margin 8):
 | Hatch | 240×80 @ (660,167) | inside all resolutions | none (78 = 78) |
 | Line @1366×430 (aux) | 352×**255** @ (95,167) | bottom 422 ≤ 430 | 414 > 253; `max-height` capped to available space |
 
+> **Superseded — post-L1, 2026-10-07** (branch
+> `fix/cad-ribbon-flyout-overflow-interaction`). The `352×260` box and the
+> "Line scrolls" column above are the historical pre-L1 capture and the PNGs
+> are left untouched. The fixed **260px product cap was retired**: the anchor
+> (`cadRibbonFlyout.anchor.ts`) now sets an inline `max-height` equal to the
+> live viewport room on the chosen side, so on a desktop viewport every
+> family shows its **natural full height** with no vertical overflow and no
+> product cap. On a **short viewport** the internal-scroll **fallback**
+> remains (menu capped to room, `overscroll-behavior: contain`), and internal
+> scroll is explicitly **exempt** from the external-scroll close. Current
+> contract is asserted by `tests-browser/cad-shell-ribbon-hardening-21b.spec.ts`
+> (desktop natural-height/no-overflow law + 1366×360 internal-scroll fallback)
+> and `tests/cad_ribbon_controls.test.tsx`.
+
 ## Findings
 
 ### F1 — flyout rows grew a horizontal scrollbar (FIXED)

@@ -95,6 +95,60 @@ async function openSheetFixture(page: Page, filePath: string): Promise<void> {
   await page.locator('[data-cad-shell-open-drawing-input]').setInputFiles(filePath);
 }
 
+interface FlyoutOpen {
+  flyout: ReturnType<Page['locator']>;
+  box: { x: number; y: number; width: number; height: number };
+}
+
+/**
+ * Open a family flyout and resolve only once its fixed box has settled.
+ *
+ * The anchor is computed from the caret rect at click time, so a ribbon
+ * relayout or focus-driven strip scroll racing the click can momentarily leave
+ * Playwright an attached-but-boxless node (the intermittent "flyout has no
+ * box" in the full run). Wait for a stable caret rect, then retry the open
+ * once if the first attempt does not settle.
+ */
+async function openFamilyFlyout(page: Page, familyId: string): Promise<FlyoutOpen> {
+  const caret = page.locator(`[data-cad-family-caret="${familyId}"]`);
+  const flyout = page.locator(`[data-cad-ribbon-flyout="${familyId}"]`);
+  await expect(caret).toBeVisible({ timeout: 10_000 });
+  let last = '';
+  await expect
+    .poll(async () => {
+      const rect = await caret.boundingBox();
+      const current = rect ? `${Math.round(rect.x)},${Math.round(rect.y)}` : '';
+      const settled = current !== '' && current === last;
+      last = current;
+      return settled;
+    }, { timeout: 5000, intervals: [100, 100, 250] })
+    .toBe(true);
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt > 0) {
+      // A racing external scroll can close a just-opened menu; clear and retry.
+      await page.keyboard.press('Escape').catch(() => undefined);
+      await expect(flyout).toHaveCount(0, { timeout: 2000 }).catch(() => undefined);
+    }
+    await caret.click({ force: true });
+    try {
+      await expect(flyout).toBeAttached({ timeout: 5000 });
+      await expect(flyout).toBeVisible({ timeout: 5000 });
+      await expect
+        .poll(async () => {
+          const rect = await flyout.boundingBox();
+          return rect != null && rect.width > 0 && rect.height > 0;
+        }, { timeout: 5000 })
+        .toBe(true);
+      const box = await flyout.boundingBox();
+      if (box) return { flyout, box };
+    } catch {
+      // Retry once.
+    }
+  }
+  throw new Error(`flyout ${familyId} has no box after retry`);
+}
+
 // ---------------------------------------------------------------------------
 // 1. Sticky-face lifecycle through real shell paths
 // ---------------------------------------------------------------------------
@@ -214,11 +268,7 @@ for (const resolution of RESOLUTIONS) {
       // inside the viewport, no vertical overflow, no horizontal overflow,
       // and no fixed product cap. Overflow is measured, never assumed.
       for (const familyId of DESKTOP_FAMILIES) {
-        await page.locator(`[data-cad-family-caret="${familyId}"]`).click({ force: true });
-        const flyout = page.locator(`[data-cad-ribbon-flyout="${familyId}"]`);
-        await expect(flyout).toBeVisible({ timeout: 5000 });
-        const box = await flyout.boundingBox();
-        if (!box) throw new Error(`flyout ${familyId} has no box`);
+        const { flyout, box } = await openFamilyFlyout(page, familyId);
         expect(box.width).toBeGreaterThan(0);
         expect(box.height).toBeGreaterThan(0);
         expect(box.x).toBeGreaterThanOrEqual(-0.5);
@@ -318,9 +368,7 @@ test.describe('Phase 21B short-viewport flyout fallback @ 1366x360', () => {
     const vp = page.viewportSize();
     if (!vp) throw new Error('no viewport size');
 
-    await page.locator('[data-cad-family-caret="line"]').click({ force: true });
-    const flyout = page.locator('[data-cad-ribbon-flyout="line"]');
-    await expect(flyout).toBeVisible({ timeout: 5000 });
+    const { flyout, box } = await openFamilyFlyout(page, 'line');
 
     const start = await flyout.evaluate((el) => ({
       scrollH: el.scrollHeight,
@@ -332,11 +380,14 @@ test.describe('Phase 21B short-viewport flyout fallback @ 1366x360', () => {
     expect(start.scrollTop).toBe(0);
 
     // The box still stays fully inside the viewport.
-    const box = await flyout.boundingBox();
-    if (!box) throw new Error('line flyout has no box');
     expect(box.y).toBeGreaterThanOrEqual(-0.5);
     expect(box.y + box.height).toBeLessThanOrEqual(vp.height + 0.5);
     expect(box.x + box.width).toBeLessThanOrEqual(vp.width + 0.5);
+    test.info().annotations.push({
+      type: 'flyout-fallback-line',
+      description: `@ ${vp.width}x${vp.height} line: scrollH/clientH=${start.scrollH}/${start.clientH} ` +
+        `box=${Math.round(box.width)}x${Math.round(box.height)} bottom=${Math.round(box.y + box.height)} (internal scroll)`,
+    });
 
     // Real wheel scroll: scrollTop moves and the menu REMAINS OPEN, across
     // multiple scrolls (overscroll-behavior: contain stops page chaining).

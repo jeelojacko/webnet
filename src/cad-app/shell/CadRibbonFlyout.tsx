@@ -58,7 +58,10 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
   anchor = null,
 }) => {
   const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  // Side-aware style: exactly one of top/bottom is set (fixed positioning).
+  // Side-aware style: exactly one of top/bottom governs the fixed paint.
+  // `.cad-ribbon-flyout--fixed` pins top:0, so an upward menu must reset
+  // `top` to auto or the box would stretch from the viewport top to the
+  // caret; symmetrically the downward menu resets `bottom` to auto.
   const anchorStyle: React.CSSProperties | undefined =
     anchor == null
       ? undefined
@@ -66,8 +69,8 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
           left: anchor.left,
           maxHeight: anchor.maxHeight,
           ...(anchor.side === 'up'
-            ? { bottom: anchor.bottom ?? undefined }
-            : { top: anchor.top ?? undefined }),
+            ? { top: 'auto', bottom: anchor.bottom ?? 'auto' }
+            : { top: anchor.top ?? 'auto', bottom: 'auto' }),
         };
 
   // Focus the current variant on open so arrow keys continue from the face.

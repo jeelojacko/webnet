@@ -4,8 +4,10 @@ import React, { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CadRibbonSplitButton } from '../src/cad-app/shell/CadRibbonSplitButton';
+import { CadRibbonFlyout } from '../src/cad-app/shell/CadRibbonFlyout';
 import {
   resolveCadRibbonFlyoutAnchor,
+  type CadRibbonFlyoutAnchor,
 } from '../src/cad-app/shell/cadRibbonFlyout.anchor';
 import {
   CAD_RIBBON_FLYOUT_CARET_GAP_PX,
@@ -422,6 +424,36 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
     await cleanup(container, root);
   });
 
+  it('L1-J: an upward anchor resets top:auto so bottom owns the fixed paint', async () => {
+    const renderFlyout = async (anchor: CadRibbonFlyoutAnchor): Promise<HTMLElement> => {
+      const { container, root } = await render(
+        <CadRibbonFlyout
+          family={family('arc')}
+          currentVariantId="arc-3pt"
+          isVariantAvailable={() => true}
+          onSelect={() => undefined}
+          onRequestClose={() => undefined}
+          anchor={anchor}
+        />,
+      );
+      const flyout = container.querySelector<HTMLElement>('[data-cad-ribbon-flyout="arc"]');
+      if (!flyout) throw new Error('flyout missing');
+      await cleanup(container, root);
+      return flyout;
+    };
+    const up = await renderFlyout({ left: 40, maxHeight: 300, side: 'up', top: null, bottom: 120 });
+    expect(up.classList.contains('cad-ribbon-flyout--fixed')).toBe(true);
+    // .cad-ribbon-flyout--fixed pins top:0; the inline style must override it
+    // so the box hangs from the caret via bottom instead of spanning the screen.
+    expect(up.style.top).toBe('auto');
+    expect(up.style.bottom).toBe('120px');
+    expect(up.style.maxHeight).toBe('300px');
+
+    const down = await renderFlyout({ left: 40, maxHeight: 300, side: 'down', top: 200, bottom: null });
+    expect(down.style.top).toBe('200px');
+    expect(down.style.bottom).toBe('auto');
+  });
+
   it('L1-E: opens downward when there is more room below (top ribbon)', () => {
     const anchor = resolveCadRibbonFlyoutAnchor({ top: 30, bottom: 50, left: 100 }, 1366, 768);
     expect(anchor.side).toBe('down');
@@ -454,18 +486,27 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
     );
   });
 
-  it('L1-I: stays positive and bounded inside a tiny viewport', () => {
-    const anchor = resolveCadRibbonFlyoutAnchor({ top: 40, bottom: 50, left: 5 }, 100, 100);
+  it('L1-I: stays positive and bounded inside a realistic minimum viewport', () => {
+    // A 100px-wide viewport is not a supported target: `.cad-ribbon-flyout`
+    // carries `min-width: 15rem` (240px), so the box necessarily overflows a
+    // 100px viewport no matter how the left clamp is computed. Assert the
+    // smallest realistic viewport (320px) where the clamp keeps the 240px
+    // min-width box on-screen, instead of claiming no-overflow at 100px.
+    const width = 320;
+    const height = 480;
+    const flyoutMinWidth = 240; // cadShell.css: `.cad-ribbon-flyout { min-width: 15rem }`
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 40, bottom: 50, left: 5 }, width, height);
     expect(anchor.maxHeight).toBeGreaterThan(0);
     expect(anchor.left).toBeGreaterThanOrEqual(CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX);
+    expect(anchor.left + flyoutMinWidth).toBeLessThanOrEqual(width);
     // The chosen side's far edge ends at the viewport margin.
     const topEdge = anchor.side === 'up'
-      ? 100 - (anchor.bottom ?? 0) - anchor.maxHeight
+      ? height - (anchor.bottom ?? 0) - anchor.maxHeight
       : anchor.top ?? 0;
     const bottomEdge = anchor.side === 'up'
-      ? 100 - (anchor.bottom ?? 0)
+      ? height - (anchor.bottom ?? 0)
       : (anchor.top ?? 0) + anchor.maxHeight;
     expect(topEdge).toBeGreaterThanOrEqual(CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX - 0.001);
-    expect(bottomEdge).toBeLessThanOrEqual(100 - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX + 0.001);
+    expect(bottomEdge).toBeLessThanOrEqual(height - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX + 0.001);
   });
 });
