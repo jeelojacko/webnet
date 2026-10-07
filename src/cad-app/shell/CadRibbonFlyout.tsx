@@ -9,7 +9,8 @@ import React, { useEffect, useRef } from 'react';
 import { CAD_RIBBON_ICONS } from '../assets/icons/cadRibbonIcons';
 import { resolveShellCommandText } from './cadCommandRegistry';
 import type { CadRibbonToolFamily, CadRibbonToolVariant } from './cadRibbonToolFamilies';
-import type { CadRibbonFlyoutAnchor } from './cadRibbonFlyout.constants';
+import type { CadRibbonFlyoutAnchor } from './cadRibbonFlyout.anchor';
+import { ensureCadRibbonFlyoutRowVisible } from './cadRibbonFlyout.scroll';
 
 export interface CadRibbonFlyoutProps {
   family: CadRibbonToolFamily;
@@ -58,12 +59,34 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
   anchor = null,
 }) => {
   const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const listRef = useRef<HTMLUListElement>(null);
+  // Side-aware style: exactly one of top/bottom governs the fixed paint.
+  // `.cad-ribbon-flyout--fixed` pins top:0, so an upward menu must reset
+  // `top` to auto or the box would stretch from the viewport top to the
+  // caret; symmetrically the downward menu resets `bottom` to auto.
+  const anchorStyle: React.CSSProperties | undefined =
+    anchor == null
+      ? undefined
+      : {
+          left: anchor.left,
+          maxHeight: anchor.maxHeight,
+          ...(anchor.side === 'up'
+            ? { top: 'auto', bottom: anchor.bottom ?? 'auto' }
+            : { top: anchor.top ?? 'auto', bottom: 'auto' }),
+        };
 
   // Focus the current variant on open so arrow keys continue from the face.
+  // preventScroll: the menu paints position:fixed but stays DOM-descended from
+  // the ribbon strip's scroll container, so a scrolling focus would pan the
+  // strip and the resulting (external-target) scroll event would self-close
+  // the just-opened menu via the split button's scroll law. The focused row is
+  // instead revealed by scrolling ONLY the flyout's own box (its offset math),
+  // so ancestors never move.
   useEffect(() => {
     const currentIndex = family.variants.findIndex((variant) => variant.id === currentVariantId);
     const target = currentIndex >= 0 ? rowRefs.current[currentIndex] : rowRefs.current[0];
-    target?.focus();
+    target?.focus({ preventScroll: true });
+    ensureCadRibbonFlyoutRowVisible(listRef.current, target ?? null);
   }, [family, currentVariantId]);
 
   const moveFocus = (from: HTMLElement, delta: number): void => {
@@ -71,7 +94,9 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
     if (buttons.length === 0) return;
     const index = buttons.indexOf(from as HTMLButtonElement);
     const next = ((index < 0 ? 0 : index + delta) % buttons.length + buttons.length) % buttons.length;
-    buttons[next]?.focus();
+    const target = buttons[next];
+    target?.focus({ preventScroll: true });
+    ensureCadRibbonFlyoutRowVisible(listRef.current, target);
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLUListElement>): void => {
@@ -90,7 +115,9 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
     if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault();
       const buttons = rowRefs.current.filter((entry): entry is HTMLButtonElement => entry != null);
-      (event.key === 'Home' ? buttons[0] : buttons[buttons.length - 1])?.focus();
+      const target = event.key === 'Home' ? buttons[0] : buttons[buttons.length - 1];
+      target?.focus({ preventScroll: true });
+      ensureCadRibbonFlyoutRowVisible(listRef.current, target);
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
@@ -104,15 +131,14 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
 
   return (
     <ul
+      ref={listRef}
       id={menuId}
       role="menu"
       aria-label={`${family.label} tools`}
       className={`cad-ribbon-flyout${anchor != null ? ' cad-ribbon-flyout--fixed' : ''}`}
       data-cad-ribbon-flyout={family.id}
       onKeyDown={onKeyDown}
-      {...(anchor != null
-        ? { style: { top: anchor.top, left: anchor.left, maxHeight: anchor.maxHeight } }
-        : {})}
+      {...(anchorStyle != null ? { style: anchorStyle } : {})}
     >
       {family.variants.map((variant, index) => {
         const runnable = canRunVariant(variant, isVariantAvailable);

@@ -61,6 +61,33 @@ Flyout boxes (fixed-position anchor, shared constants 352×260 / margin 8):
 | Hatch | 240×80 @ (660,167) | inside all resolutions | none (78 = 78) |
 | Line @1366×430 (aux) | 352×**255** @ (95,167) | bottom 422 ≤ 430 | 414 > 253; `max-height` capped to available space |
 
+> **Superseded — post-L1, 2026-10-07** (branch
+> `fix/cad-ribbon-flyout-overflow-interaction`). The `352×260` box and the
+> "Line scrolls" column above are the historical pre-L1 capture and the PNGs
+> are left untouched. The fixed **260px product cap was retired**: the anchor
+> (`cadRibbonFlyout.anchor.ts`) now sets an inline `max-height` equal to the
+> live viewport room on the chosen side, so on a desktop viewport every
+> family shows its **natural full height** with no vertical overflow and no
+> product cap. On a **short viewport** the internal-scroll **fallback**
+> remains (menu capped to room, `overscroll-behavior: contain`), and internal
+> scroll is explicitly **exempt** from the external-scroll close. Current
+> contract is asserted by `tests-browser/cad-shell-ribbon-hardening-21b.spec.ts`
+> (desktop natural-height/no-overflow law + 1366×360 internal-scroll fallback)
+> and `tests/cad_ribbon_controls.test.tsx`.
+>
+> **Focus reveal law (same branch).** On open, and during Arrow/Home/End
+> navigation, the focused row is revealed by writing only the flyout's own
+> `scrollTop` (`ensureCadRibbonFlyoutRowVisible` in
+> `cadRibbonFlyout.scroll.ts`). Focus always passes `preventScroll: true` and
+> `element.scrollIntoView()` is never called, so the reveal can never pan the
+> ribbon strip — a strip scroll is an external scroll that would self-close
+> the menu. Regression fixed: reopening the height-capped Line menu after
+> picking `line-perpendicular-from-point` had left focus on an off-screen row
+> while the menu sat at `scrollTop 0`; keyboard nav had used a scrolling
+> `focus()` that could pan the strip. Covered by
+> `tests/cad_ribbon_controls.test.tsx` (L1-K helper + L1-L reopen/nav) and the
+> 1366×360 fallback case in `cad-shell-ribbon-hardening-21b.spec.ts`.
+
 ## Findings
 
 ### F1 — flyout rows grew a horizontal scrollbar (FIXED)

@@ -4,6 +4,17 @@ import React, { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CadRibbonSplitButton } from '../src/cad-app/shell/CadRibbonSplitButton';
+import { CadRibbonFlyout } from '../src/cad-app/shell/CadRibbonFlyout';
+import {
+  resolveCadRibbonFlyoutAnchor,
+  type CadRibbonFlyoutAnchor,
+} from '../src/cad-app/shell/cadRibbonFlyout.anchor';
+import {
+  CAD_RIBBON_FLYOUT_CARET_GAP_PX,
+  CAD_RIBBON_FLYOUT_MAX_WIDTH_PX,
+  CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
+} from '../src/cad-app/shell/cadRibbonFlyout.constants';
+import { ensureCadRibbonFlyoutRowVisible } from '../src/cad-app/shell/cadRibbonFlyout.scroll';
 import {
   findCadRibbonToolFamily,
   type CadRibbonToolFamily,
@@ -341,5 +352,334 @@ describe('phase 21A sticky/reset state (§81)', () => {
     await click(container.querySelector('[data-cad-test="pick-planned"]'));
     expect(lineId()).toBe('bestfit-line');
     await cleanup(container, root);
+  });
+});
+
+describe('post-L1 flyout scroll / anchor contract (L1)', () => {
+  const openArcFlyout = async (container: HTMLElement): Promise<Element | null> => {
+    await click(container.querySelector('[data-cad-family-caret="arc"]'));
+    return container.querySelector('[data-cad-ribbon-flyout="arc"]');
+  };
+
+  const domRect = (left: number, top: number): DOMRect =>
+    ({ left, top, right: left, bottom: top, width: 0, height: 0, x: left, y: top }) as unknown as DOMRect;
+
+  // The split button must be DOM-descended from the ribbon strip's own scroll
+  // container (`.cad-shell-ribbon-groups`) for the induced-scroll law to apply.
+  const renderInStrip = async (): Promise<{ container: HTMLElement; root: Root }> =>
+    render(
+      <div className="cad-shell-ribbon-groups">
+        <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />
+      </div>,
+    );
+
+  it('L1-A: keeps the flyout open when the flyout itself scrolls', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    const flyout = await openArcFlyout(container);
+    expect(flyout).not.toBeNull();
+    // A real internal scroll dispatches a non-bubbling scroll event whose
+    // target is the flyout (or a scrolling node inside it); capture must ignore it.
+    await act(async () => {
+      flyout?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    // A second scroll still must not close it (multiple-wheel scrolls).
+    await act(async () => {
+      flyout?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-B: closes on an external window scroll immediately after open', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    await openArcFlyout(container);
+    // No window-level grace exists: a real external window scroll must close
+    // right away. (The only exemption is the one-shot, strip-target,
+    // unmoved-caret induced scroll covered by L1-B2.)
+    await act(async () => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-B2: ignores the strip\'s same-frame bring-into-view scroll, but only once', async () => {
+    const { container, root } = await renderInStrip();
+    await openArcFlyout(container);
+    const strip = container.querySelector('.cad-shell-ribbon-groups');
+    // jsdom rects are zero-origin, so the caret reads the same position at open
+    // and at scroll time — the browser's own bring-into-view scroll of the
+    // ribbon strip (issued while resolving the click, delivered after mount).
+    // It is not a user scroll, so the menu stays open.
+    await act(async () => {
+      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    // One-shot: a second strip scroll is genuine and closes.
+    await act(async () => {
+      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-B3: closes when a genuine ribbon scroll pans the caret', async () => {
+    const { container, root } = await renderInStrip();
+    const caret = container.querySelector<HTMLElement>('[data-cad-family-caret="arc"]');
+    if (!caret) throw new Error('caret missing');
+    // Open reads the caret at 0; the scroll reports it panned 24px => a real
+    // user scroll, so it closes rather than leaving a stale anchor.
+    const rectSpy = vi
+      .spyOn(caret, 'getBoundingClientRect')
+      .mockReturnValueOnce(domRect(0, 0))
+      .mockReturnValue(domRect(24, 0));
+    await openArcFlyout(container);
+    const strip = container.querySelector('.cad-shell-ribbon-groups');
+    await act(async () => {
+      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    rectSpy.mockRestore();
+    await cleanup(container, root);
+  });
+
+  it('L1-C: mousedown inside the flyout (row and scrollbar target) does not close', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    const flyout = await openArcFlyout(container);
+    const row = container.querySelector('[data-cad-variant="arc-sce"]');
+    await act(async () => {
+      row?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    // A mousedown whose target is the flyout element itself stands in for a
+    // native scrollbar track/thumb press.
+    await act(async () => {
+      flyout?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-D: Escape closes and restores caret focus', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    await openArcFlyout(container);
+    await keyDown(document.activeElement, 'Escape');
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    expect(
+      (document.activeElement as HTMLElement).getAttribute('data-cad-family-caret'),
+    ).toBe('arc');
+    await cleanup(container, root);
+  });
+
+  it('L1-K: reveal helper scrolls only the flyout box by the minimum offset', () => {
+    const scrollBox = document.createElement('div');
+    const row = document.createElement('button');
+    scrollBox.appendChild(row);
+    Object.defineProperty(scrollBox, 'clientHeight', { configurable: true, value: 100 });
+    let scrollTop = 0;
+    Object.defineProperty(scrollBox, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (next: number) => {
+        scrollTop = next;
+      },
+    });
+    const setRow = (offsetTop: number, offsetHeight: number): void => {
+      Object.defineProperty(row, 'offsetTop', { configurable: true, value: offsetTop });
+      Object.defineProperty(row, 'offsetHeight', { configurable: true, value: offsetHeight });
+    };
+
+    // Below the viewport: scroll down just enough to reveal the row bottom.
+    scrollTop = 0;
+    setRow(250, 30);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, row);
+    expect(scrollTop).toBe(180);
+
+    // Above the viewport: scroll up to the row top.
+    scrollTop = 200;
+    setRow(120, 30);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, row);
+    expect(scrollTop).toBe(120);
+
+    // Already visible: never scroll.
+    scrollTop = 120;
+    setRow(150, 30);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, row);
+    expect(scrollTop).toBe(120);
+
+    // Missing arguments are a no-op, never a throw.
+    ensureCadRibbonFlyoutRowVisible(null, row);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, null);
+    expect(scrollTop).toBe(120);
+  });
+
+  it('L1-L: reopen after a lower Line pick focuses+reveals it and nav never pans an ancestor', async () => {
+    const scrollIntoView = vi.fn();
+    const proto = HTMLElement.prototype as unknown as { scrollIntoView?: () => void };
+    const hadScrollIntoView = 'scrollIntoView' in proto;
+    proto.scrollIntoView = scrollIntoView;
+    const focusSpy = vi.spyOn(HTMLButtonElement.prototype, 'focus');
+    try {
+      const lineKeys = family('line').variants
+        .map((variant) => variant.commandKey)
+        .filter((key): key is string => key != null);
+      const { container, root } = await render(
+        <div className="cad-shell-ribbon-groups">
+          <SplitHarness
+            toolFamily={family('line')}
+            snapshot={stubSnapshot(lineKeys)}
+            actions={stubActions()}
+            initialVariantId="line-create"
+          />
+        </div>,
+      );
+
+      // First open: choose the bottom (17th) variant so it becomes the face.
+      await click(container.querySelector('[data-cad-family-caret="line"]'));
+      await click(container.querySelector('[data-cad-variant="line-perpendicular-from-point"]'));
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).toBeNull();
+
+      // Reopen: focus lands on the current (lower) row with preventScroll, and
+      // the menu is revealed without scrollIntoView() panning an ancestor.
+      await click(container.querySelector('[data-cad-family-caret="line"]'));
+      const flyout = container.querySelector<HTMLElement>('[data-cad-ribbon-flyout="line"]');
+      if (flyout == null) throw new Error('flyout missing');
+      expect((document.activeElement as HTMLElement).getAttribute('data-cad-variant')).toBe(
+        'line-perpendicular-from-point',
+      );
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      expect(focusSpy.mock.calls.at(-1)?.[0]).toEqual({ preventScroll: true });
+
+      // Keyboard nav consumes the same container-only reveal: mock metrics so a
+      // lower row can be revealed ONLY through the flyout's own scrollTop.
+      Object.defineProperty(flyout, 'clientHeight', { configurable: true, value: 100 });
+      let scrollTop = 0;
+      Object.defineProperty(flyout, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTop,
+        set: (next: number) => {
+          scrollTop = next;
+        },
+      });
+      const lastRow = container.querySelector<HTMLElement>(
+        '[data-cad-variant="line-perpendicular-from-point"]',
+      );
+      if (lastRow == null) throw new Error('last row missing');
+      Object.defineProperty(lastRow, 'offsetTop', { configurable: true, value: 250 });
+      Object.defineProperty(lastRow, 'offsetHeight', { configurable: true, value: 30 });
+
+      await keyDown(document.activeElement, 'End');
+      expect(scrollTop).toBe(180);
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).not.toBeNull();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+
+      await keyDown(document.activeElement, 'Home');
+      expect(scrollTop).toBe(0);
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).not.toBeNull();
+
+      await keyDown(document.activeElement, 'ArrowDown');
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).not.toBeNull();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+
+      await cleanup(container, root);
+    } finally {
+      focusSpy.mockRestore();
+      if (!hadScrollIntoView) delete proto.scrollIntoView;
+    }
+  });
+
+  it('L1-J: an upward anchor resets top:auto so bottom owns the fixed paint', async () => {
+    const renderFlyout = async (anchor: CadRibbonFlyoutAnchor): Promise<HTMLElement> => {
+      const { container, root } = await render(
+        <CadRibbonFlyout
+          family={family('arc')}
+          currentVariantId="arc-3pt"
+          isVariantAvailable={() => true}
+          onSelect={() => undefined}
+          onRequestClose={() => undefined}
+          anchor={anchor}
+        />,
+      );
+      const flyout = container.querySelector<HTMLElement>('[data-cad-ribbon-flyout="arc"]');
+      if (!flyout) throw new Error('flyout missing');
+      await cleanup(container, root);
+      return flyout;
+    };
+    const up = await renderFlyout({ left: 40, maxHeight: 300, side: 'up', top: null, bottom: 120 });
+    expect(up.classList.contains('cad-ribbon-flyout--fixed')).toBe(true);
+    // .cad-ribbon-flyout--fixed pins top:0; the inline style must override it
+    // so the box hangs from the caret via bottom instead of spanning the screen.
+    expect(up.style.top).toBe('auto');
+    expect(up.style.bottom).toBe('120px');
+    expect(up.style.maxHeight).toBe('300px');
+
+    const down = await renderFlyout({ left: 40, maxHeight: 300, side: 'down', top: 200, bottom: null });
+    expect(down.style.top).toBe('200px');
+    expect(down.style.bottom).toBe('auto');
+  });
+
+  it('L1-E: opens downward when there is more room below (top ribbon)', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 30, bottom: 50, left: 100 }, 1366, 768);
+    expect(anchor.side).toBe('down');
+    expect(anchor.top).toBe(50 + CAD_RIBBON_FLYOUT_CARET_GAP_PX);
+    expect(anchor.bottom).toBeNull();
+    const room = 768 - 50 - CAD_RIBBON_FLYOUT_CARET_GAP_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    expect(anchor.maxHeight).toBe(room);
+  });
+
+  it('L1-F: opens upward when there is more room above and uses bottom semantics', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 700, bottom: 720, left: 100 }, 1366, 768);
+    expect(anchor.side).toBe('up');
+    expect(anchor.top).toBeNull();
+    expect(anchor.bottom).toBe(768 - 700 + CAD_RIBBON_FLYOUT_CARET_GAP_PX);
+    const room = 700 - CAD_RIBBON_FLYOUT_CARET_GAP_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    expect(anchor.maxHeight).toBe(room);
+  });
+
+  it('L1-G: maxHeight is the available room, never a fixed 260px cap', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 40, bottom: 60, left: 100 }, 1366, 700);
+    const room = 700 - 60 - CAD_RIBBON_FLYOUT_CARET_GAP_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    expect(anchor.maxHeight).toBe(room);
+    expect(anchor.maxHeight).toBeGreaterThan(260);
+  });
+
+  it('L1-H: clamps left inside the viewport for a far-right caret', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 30, bottom: 50, left: 1300 }, 1366, 768);
+    expect(anchor.left).toBe(
+      1366 - CAD_RIBBON_FLYOUT_MAX_WIDTH_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
+    );
+  });
+
+  it('L1-I: stays positive and bounded inside a realistic minimum viewport', () => {
+    // A 100px-wide viewport is not a supported target: `.cad-ribbon-flyout`
+    // carries `min-width: 15rem` (240px), so the box necessarily overflows a
+    // 100px viewport no matter how the left clamp is computed. Assert the
+    // smallest realistic viewport (320px) where the clamp keeps the 240px
+    // min-width box on-screen, instead of claiming no-overflow at 100px.
+    const width = 320;
+    const height = 480;
+    const flyoutMinWidth = 240; // cadShell.css: `.cad-ribbon-flyout { min-width: 15rem }`
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 40, bottom: 50, left: 5 }, width, height);
+    expect(anchor.maxHeight).toBeGreaterThan(0);
+    expect(anchor.left).toBeGreaterThanOrEqual(CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX);
+    expect(anchor.left + flyoutMinWidth).toBeLessThanOrEqual(width);
+    // The chosen side's far edge ends at the viewport margin.
+    const topEdge = anchor.side === 'up'
+      ? height - (anchor.bottom ?? 0) - anchor.maxHeight
+      : anchor.top ?? 0;
+    const bottomEdge = anchor.side === 'up'
+      ? height - (anchor.bottom ?? 0)
+      : (anchor.top ?? 0) + anchor.maxHeight;
+    expect(topEdge).toBeGreaterThanOrEqual(CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX - 0.001);
+    expect(bottomEdge).toBeLessThanOrEqual(height - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX + 0.001);
   });
 });
