@@ -831,6 +831,70 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
     expect(rawOnSource?.lineSourceOnPoint).toMatchObject({ x: 30, y: 0 });
   });
 
+  it('shares the clamped tolerance between snap revalidation and the resolver at coarse zoom', () => {
+    const project = buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100, 0)] });
+    const pickPhaseB = (
+      snap: CommandPoint,
+      rawWorldPoint: { x: number; y: number },
+      tolerance: number,
+    ) => {
+      let history = createCadHistoryState(project);
+      let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+      const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
+        history = updater(history);
+      };
+      const replaceSession = (next: CadLineL1SessionState | null) => {
+        session = next;
+      };
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' },
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: tolerance,
+        rawWorldPoint,
+      });
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: snap,
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: tolerance,
+        rawWorldPoint,
+      });
+      return session;
+    };
+
+    // Viewport tolerance 100 m clamps to the 10 m cap: a snap 50 m from the raw
+    // click is discarded (a raw 100 m comparison would wrongly keep it), and the
+    // raw click (50, 50) is judged by the same 10 m cap → resolver rejects.
+    const stale = pickPhaseB(
+      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1' },
+      { x: 50, y: 50 },
+      100,
+    );
+    expect(stale?.lineSourceOnPoint).toBeNull();
+    expect(stale?.resultText).toMatch(/not on the source line/i);
+
+    // Same coarse tolerance: the raw click on the source is used and accepted.
+    const rawOnSource = pickPhaseB(
+      { ...point(70, 0, 'snap'), snapSourceEntityId: 'line:1' },
+      { x: 30, y: 0.5 },
+      100,
+    );
+    expect(rawOnSource?.lineSourceOnPoint).toMatchObject({ x: 30, y: 0 });
+
+    // A snap within the clamped 10 m cap still survives.
+    const fresh = pickPhaseB(
+      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1' },
+      { x: 55, y: 0 },
+      100,
+    );
+    expect(fresh?.lineSourceOnPoint).toMatchObject({ x: 50, y: 0 });
+  });
+
   it('rejects a point-range with any invalid token atomically (no silent discard)', () => {
     const harness = makeHarness(
       buildCadLineL1Project({

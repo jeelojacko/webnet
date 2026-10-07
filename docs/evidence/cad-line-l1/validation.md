@@ -199,3 +199,24 @@ moves first), so this is pinned at the session level only.
 After this pass: focused L1 **8 files, 119/119**; combined **12 files, 168/168**;
 neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
 **7/7** zero page/console/unhandled errors.
+
+## 15. Correction pass (round-5 reviewer finding)
+
+The §14 revalidation compared the snap-to-click distance against the UNCLAMPED
+`pickToleranceWorld`, while the resolver clamps to the `[1e-6 m, 10 m]` window:
+at coarse zoom (viewport tolerance 100 m) a snap 50 m from the raw click
+survived revalidation even though the raw click would fail the resolver's 10 m
+limit.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P2) | Revalidation and resolver used divergent tolerance limits. | Export one engine helper `resolveCadLineSourceResidualTolerance` (the `[1e-6 m, 10 m]` clamp) and call it in BOTH `projectCadLinePointOntoSource` and the session's `cadLineOnSourcePickPoint`, so the two limits cannot diverge. Normal-scale behavior is unchanged (the clamp only bites outside the window). |
+
+Pinned by the `tests/cad_line_l1_sessions.test.ts` coarse-zoom test (viewport
+tolerance 100 m: a 50 m-off snap is discarded and the raw click is judged by
+the 10 m cap; a raw click on the source is accepted; a snap within the cap
+survives).
+
+After this pass: focused L1 **8 files, 120/120**; combined **12 files, 169/169**;
+neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
+**7/7** zero page/console/unhandled errors.

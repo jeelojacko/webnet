@@ -63,7 +63,15 @@ export const CAD_LINE_SOURCE_TOLERANCE_CAP = 10;
  */
 export const CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK = 1;
 
-const resolveResidualTolerance = (tolerance: number | undefined): number => {
+/**
+ * Single source of truth for the effective on-source residual tolerance: clamp
+ * the supplied viewport tolerance into the absolute `[floor, cap]` window
+ * (defaulting when absent/non-finite). The resolver and the session-side snap
+ * revalidation both call this, so the two limits cannot diverge.
+ */
+export const resolveCadLineSourceResidualTolerance = (
+  tolerance: number | undefined,
+): number => {
   const value = Number.isFinite(tolerance)
     ? (tolerance as number)
     : CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK;
@@ -136,7 +144,7 @@ export const projectCadLinePointOntoSource = (
   residualTolerance: number = CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK,
 ): CadLineResult<CadWorldPoint> => {
   if (!isFinitePoint(pick)) return cadLineFail('NON_FINITE', 'Pick point is not finite.');
-  const tolerance = resolveResidualTolerance(residualTolerance);
+  const tolerance = resolveCadLineSourceResidualTolerance(residualTolerance);
   if (entity.type === 'line') {
     const start = { x: entity.fromX, y: entity.fromY };
     const end = { x: entity.toX, y: entity.toY };
