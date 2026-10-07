@@ -321,7 +321,38 @@ export interface CadLineL1PointPickOptions {
    * engine fallback applies.
    */
   pickToleranceWorld?: number;
+  /**
+   * Raw (unsnapped) click world point for this pick. Used to revalidate a
+   * latched/active snap that may have gone stale when the viewport changed
+   * without a pointer move; see {@link cadLineOnSourcePickPoint}.
+   */
+  rawWorldPoint?: { x: number; y: number } | null;
 }
+
+/**
+ * Corrected TANGENT/PERP phase B pick. Snapping refreshes on pointer updates,
+ * not viewport changes, so a latched/active snap can sit outside the live pick
+ * radius after a zoom/pan (or an entity edit/undo). Revalidate the snapped
+ * point against the RAW click at the live pick tolerance: a snap outside the
+ * radius is discarded and the raw click is used, so the on-source resolver can
+ * never accept coordinates the operator did not actually pick. A fresh snap
+ * (within tolerance) passes trivially.
+ */
+const cadLineOnSourcePickPoint = (
+  snapped: CommandPoint,
+  rawWorldPoint: { x: number; y: number } | null | undefined,
+  pickToleranceWorld: number | undefined,
+): { x: number; y: number; label: string } => {
+  if (
+    rawWorldPoint == null ||
+    pickToleranceWorld == null ||
+    !Number.isFinite(pickToleranceWorld) ||
+    Math.hypot(snapped.x - rawWorldPoint.x, snapped.y - rawWorldPoint.y) <= pickToleranceWorld
+  ) {
+    return { x: snapped.x, y: snapped.y, label: snapped.label };
+  }
+  return { x: rawWorldPoint.x, y: rawWorldPoint.y, label: snapped.label };
+};
 
 const commitSingleSegment = (
   options: Pick<CadLineL1PointPickOptions, 'applyHistoryUpdate' | 'replaceSession' | 'current'>,
@@ -563,7 +594,11 @@ export const handleCadLineL1PointPick = (options: CadLineL1PointPickOptions): bo
         return true;
       }
       if (!current.lineSourceOnPoint) {
-        const frame = resolveCadLineOnSourcePoint(entity, point, options.pickToleranceWorld);
+        const frame = resolveCadLineOnSourcePoint(
+          entity,
+          cadLineOnSourcePickPoint(point, options.rawWorldPoint, options.pickToleranceWorld),
+          options.pickToleranceWorld,
+        );
         if (!frame.ok) {
           replaceSession({ ...current, inputValue: '', resultText: `${current.key}: ${frame.error.message}` });
           return true;

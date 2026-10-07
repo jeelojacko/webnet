@@ -61,6 +61,7 @@ export interface SurveyCadPreviewProps {
       snapKind?: CadSnapKind;
       extendMode?: boolean;
       pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
     },
   ) => void;
   onPointerWorldPointChange: (

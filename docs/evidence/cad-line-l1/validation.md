@@ -179,3 +179,23 @@ the path unreachable by construction.
 After this pass: focused L1 **8 files, 118/118**; combined **12 files, 167/167**;
 neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
 **7/7** zero page/console/unhandled errors.
+
+## 14. Correction pass (round-4 reviewer finding)
+
+Snapping refreshes on pointer updates, not viewport changes, and the shared
+`consumeLatchedOrActiveSnap` commits a latched/active snap without checking it
+against the cursor. Zoom-about-a-stationary-cursor could therefore leave a
+formerly-near snap outside the new pick radius while its on-source coordinates
+still passed the resolver.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P2) | Stale latched/active snap consumed at click. | Scope the fix to the L1 on-source pick (the shared consumer intentionally commits hovered snaps regardless of click position, per existing tests): the raw click world point is threaded alongside the pick tolerance (`rawWorldPoint`) and `handleCadLineL1PointPick` revalidates the snap against it — a snap farther than the live pick tolerance is discarded and the raw click is used, so the resolver can never accept coordinates the operator did not pick. Fresh snaps (within tolerance) pass trivially. |
+
+Pinned by the `tests/cad_line_l1_sessions.test.ts` stale/fresh/raw-on-source
+revalidation test. Playwright cannot synthesise a stale snap (`mouse.click`
+moves first), so this is pinned at the session level only.
+
+After this pass: focused L1 **8 files, 119/119**; combined **12 files, 168/168**;
+neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
+**7/7** zero page/console/unhandled errors.

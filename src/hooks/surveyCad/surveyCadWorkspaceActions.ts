@@ -15,6 +15,8 @@ type InteractionOptions = {
   snapKind?: CadSnapKind;
   /** Viewport's effective snap tolerance (world units) at click time. */
   pickToleranceWorld?: number;
+  /** Raw (unsnapped) click world point; revalidates a possibly-stale snap. */
+  rawWorldPoint?: { x: number; y: number } | null;
 };
 
 type SurveyCadWorkspaceActionsOptions = {
@@ -294,6 +296,7 @@ export const useSurveyCadWorkspaceActions = ({
             snapKind: activeSnap.kind,
             extendMode: options?.extendMode,
             pickToleranceWorld: options?.pickToleranceWorld,
+            rawWorldPoint: options?.rawWorldPoint,
           },
         );
         return;

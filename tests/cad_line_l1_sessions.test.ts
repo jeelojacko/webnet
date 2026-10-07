@@ -768,6 +768,69 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
     expect(pickOnSource(5, point(50_000, 30, 'far'))?.lineSourceOnPoint).toBeNull();
   });
 
+  it('revalidates a possibly-stale snap against the raw click at the live tolerance', () => {
+    const project = buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100, 0)] });
+    const pickPhaseB = (
+      snap: CommandPoint,
+      rawWorldPoint: { x: number; y: number },
+      tolerance: number,
+    ) => {
+      let history = createCadHistoryState(project);
+      let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+      const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
+        history = updater(history);
+      };
+      const replaceSession = (next: CadLineL1SessionState | null) => {
+        session = next;
+      };
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' },
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: tolerance,
+        rawWorldPoint,
+      });
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: snap,
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: tolerance,
+        rawWorldPoint,
+      });
+      return session;
+    };
+
+    // Stale snap 50 m from the raw click with a 1 m live tolerance: the snap is
+    // discarded and the (off-source) raw click is used → resolver rejects.
+    const stale = pickPhaseB(
+      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1' },
+      { x: 50, y: 50 },
+      1,
+    );
+    expect(stale?.lineSourceOnPoint).toBeNull();
+    expect(stale?.resultText).toMatch(/not on the source line/i);
+
+    // Fresh snap within the live tolerance: the snap coordinates are used.
+    const fresh = pickPhaseB(
+      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1' },
+      { x: 50, y: 0.3 },
+      1,
+    );
+    expect(fresh?.lineSourceOnPoint).toMatchObject({ x: 50, y: 0 });
+
+    // Stale snap discarded; the raw click on the source is what the resolver sees.
+    const rawOnSource = pickPhaseB(
+      { ...point(80, 0, 'snap'), snapSourceEntityId: 'line:1' },
+      { x: 30, y: 0.2 },
+      1,
+    );
+    expect(rawOnSource?.lineSourceOnPoint).toMatchObject({ x: 30, y: 0 });
+  });
+
   it('rejects a point-range with any invalid token atomically (no silent discard)', () => {
     const harness = makeHarness(
       buildCadLineL1Project({

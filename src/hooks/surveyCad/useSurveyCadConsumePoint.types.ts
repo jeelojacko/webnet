@@ -27,6 +27,8 @@ export interface HandleSurveyCadConsumePointOptions {
   point: CommandPoint;
   /** Viewport's effective snap tolerance in world units (canvas-derived). */
   pickToleranceWorld?: number;
+  /** Raw (unsnapped) click world point; revalidates a possibly-stale snap. */
+  rawWorldPoint?: { x: number; y: number } | null;
   projectStationIds: string[];
   publishReport: SurveyCadReportPublisher;
   replaceSession: ReplaceSession;

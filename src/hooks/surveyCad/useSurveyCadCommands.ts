@@ -245,7 +245,11 @@ export const useSurveyCadCommands = ({
 
   const consumePoint = (
     point: CommandPoint,
-    options?: { suppressPointLabel?: boolean; pickToleranceWorld?: number },
+    options?: {
+      suppressPointLabel?: boolean;
+      pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
+    },
   ) => {
     const current = sessionRef.current;
     if (!current) return;
@@ -257,6 +261,7 @@ export const useSurveyCadCommands = ({
       onReportComputation,
       point,
       pickToleranceWorld: options?.pickToleranceWorld,
+      rawWorldPoint: options?.rawWorldPoint,
       projectStationIds,
       publishReport,
       replaceSession,

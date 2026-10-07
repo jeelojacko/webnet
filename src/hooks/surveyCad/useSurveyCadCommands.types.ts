@@ -214,6 +214,8 @@ export interface UseSurveyCadCommandsResult {
       snapSourceEntityId?: string;
       snapKind?: CadSnapKind;
       extendMode?: boolean;
+      pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
     },
   ) => void;
   handleEnterKey: () => void;
