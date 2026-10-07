@@ -20,6 +20,12 @@ export type CommandPoint = CadNamedPoint & {
   snapSourceSegmentId?: string;
   snapSourceEntityId?: string;
   snapKind?: CadSnapKind;
+  /**
+   * World-unit snap tolerance the consumed snap was computed at (viewport
+   * scale proxy). Used by the corrected L1 on-source pick to reject a snap
+   * that is stale after a viewport change; absent for raw/typed points.
+   */
+  snapComputedScale?: number;
   extendMode?: boolean;
   /**
    * CAD Draw L1 label provenance: true when `label` is an authoritative

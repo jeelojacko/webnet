@@ -57,6 +57,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onCancelGripEdit = () => undefined,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onSnapToleranceWorldChange,
   onToggleParcelLabels = () => undefined,
   onCommandHoverTargetChange = () => undefined,
   onSnapPreferenceChange,
@@ -109,6 +110,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   useEffect(() => {
     activeSnapRef.current = activeSnap;
   }, [activeSnap]);
+
+  useEffect(() => {
+    onSnapToleranceWorldChange?.(snapToleranceScreenUnits / scale);
+  }, [onSnapToleranceWorldChange, snapToleranceScreenUnits, scale]);
 
   const resolveGripCommitPoint = useCallback((rawWorldPoint: { x: number; y: number }) => {
     const currentSnap = activeSnapRef.current;
@@ -192,6 +197,9 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         extendMode,
         pickToleranceWorld: snapToleranceScreenUnits / scale,
         rawWorldPoint: rawWorldPoint ?? null,
+        ...(snapCandidate.computedScale != null
+          ? { snapComputedScale: snapCandidate.computedScale }
+          : {}),
       },
     );
   };

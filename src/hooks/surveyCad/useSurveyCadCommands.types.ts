@@ -29,6 +29,11 @@ import type { ProjectTransformPanelState } from './useSurveyCadProjectTransformP
 
 export interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
+  /**
+   * Live viewport snap tolerance ref (updated on zoom/pan too), read by the
+   * keyboard active-snap commit so stale snaps can be expired.
+   */
+  liveSnapToleranceRef?: { current: number | null };
   previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;
@@ -216,6 +221,7 @@ export interface UseSurveyCadCommandsResult {
       extendMode?: boolean;
       pickToleranceWorld?: number;
       rawWorldPoint?: { x: number; y: number } | null;
+      snapComputedScale?: number;
     },
   ) => void;
   handleEnterKey: () => void;

@@ -459,6 +459,7 @@ export interface UseSurveyCadWorkspaceResult {
       extendMode?: boolean;
       pickToleranceWorld?: number;
       rawWorldPoint?: { x: number; y: number } | null;
+      snapComputedScale?: number;
     },
   ) => void;
   handleEnterKey: () => void;
@@ -478,6 +479,8 @@ export interface UseSurveyCadWorkspaceResult {
       restrictedGripHandles?: readonly CadGripHandle[];
     },
   ) => void;
+  /** Live viewport snap tolerance (updated on zoom/pan and pointer moves). */
+  setLiveSnapTolerance: (_toleranceWorld: number) => void;
   setCommandHoverTarget: (_hoverTarget: CommandHoverTarget | null) => void;
   setSnapPreference: (_kind: keyof CadSnapPreferences, _enabled: boolean) => void;
   cycleActiveSnap: () => void;

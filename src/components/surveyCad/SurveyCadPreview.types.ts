@@ -62,6 +62,7 @@ export interface SurveyCadPreviewProps {
       extendMode?: boolean;
       pickToleranceWorld?: number;
       rawWorldPoint?: { x: number; y: number } | null;
+      snapComputedScale?: number;
     },
   ) => void;
   onPointerWorldPointChange: (
@@ -73,6 +74,12 @@ export interface SurveyCadPreviewProps {
       restrictedGripHandles?: readonly CadGripHandle[];
     },
   ) => void;
+  /**
+   * Live viewport snap tolerance (`snapToleranceScreenUnits / scale`) reported
+   * whenever it changes, including zoom/pan (unlike pointer moves). Used only
+   * to expire stale snaps on click-less keyboard commits.
+   */
+  onSnapToleranceWorldChange?: (_toleranceWorld: number) => void;
   onToggleParcelLabels?: () => void;
   onCommandHoverTargetChange?: (
     _hoverTarget: {

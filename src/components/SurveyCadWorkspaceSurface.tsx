@@ -340,6 +340,7 @@ const SurveyCadWorkspaceSurface = ({
         onCancelGripEdit={workspace.cancelGripEdit}
         onConsumeInteractionPoint={workspace.consumeInteractionPoint}
         onPointerWorldPointChange={workspace.updatePointerWorldPoint}
+        onSnapToleranceWorldChange={workspace.setLiveSnapTolerance}
         surfacePickActive={surfacePickActive}
         onSurfacePickPoint={onSurfacePickPoint}
         selectedSurfaceId={selectedSurfaceId}

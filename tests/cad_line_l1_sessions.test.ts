@@ -952,6 +952,52 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
     expect(near?.lineSourceOnPoint?.y).toBeCloseTo(50, 9);
   });
 
+  it('expires a keyboard snap whose scale stamp is stale; fresh stamps proceed', () => {
+    const project = buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100, 0)] });
+    const pickPhaseB = (snap: CommandPoint, pickToleranceWorld: number) => {
+      let history = createCadHistoryState(project);
+      let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+      const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
+        history = updater(history);
+      };
+      const replaceSession = (next: CadLineL1SessionState | null) => {
+        session = next;
+      };
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' },
+        project: history.present.project,
+        replaceSession,
+      });
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: snap,
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld,
+      });
+      return session;
+    };
+
+    // Keyboard commit after a zoom: the snap was computed at stamp 1, the live
+    // viewport tolerance is 5 → expired, stays active, zero mutation.
+    const stale = pickPhaseB(
+      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1', snapComputedScale: 1 },
+      5,
+    );
+    expect(stale?.lineSourceOnPoint).toBeNull();
+    expect(stale?.resultText).toMatch(/snap expired/i);
+
+    // Fresh keyboard commit at the same scale: the stamp matches and proceeds.
+    const fresh = pickPhaseB(
+      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1', snapComputedScale: 5 },
+      5,
+    );
+    expect(fresh?.lineSourceOnPoint).toMatchObject({ x: 50, y: 0 });
+  });
+
   it('rejects a point-range with any invalid token atomically (no silent discard)', () => {
     const harness = makeHarness(
       buildCadLineL1Project({

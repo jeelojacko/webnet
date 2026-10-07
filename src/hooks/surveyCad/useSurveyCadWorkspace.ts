@@ -159,6 +159,13 @@ export const useSurveyCadWorkspace = (
     [cadProject.entities],
   );
   const activeGripHandleRef = useRef<CadGripHandle | null>(null);
+  // Live viewport snap tolerance (updated on zoom/pan as well as pointer
+  // moves). Read only by the L1 keyboard active-snap commit to expire stale
+  // snaps; the click paths compute the tolerance at pick time.
+  const liveSnapToleranceRef = useRef<number | null>(null);
+  const setLiveSnapTolerance = useCallback((toleranceWorld: number) => {
+    liveSnapToleranceRef.current = Number.isFinite(toleranceWorld) ? toleranceWorld : null;
+  }, []);
 
   // View-layer filter (spec §6): OFF/frozen-layer primitives hide at the
   // viewport consumer — never inside buildCadDisplayScene (export scene
@@ -389,6 +396,7 @@ export const useSurveyCadWorkspace = (
   const commandState = useSurveyCadWorkspaceCommandController({
     activeSnap,
     activeDraft: drawing.draft,
+    liveSnapToleranceRef,
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
@@ -768,6 +776,7 @@ export const useSurveyCadWorkspace = (
     ...parcelReportActions,
     ...selectionActions,
     ...workspaceActions,
+    setLiveSnapTolerance,
   };
 };
 

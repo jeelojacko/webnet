@@ -239,3 +239,23 @@ line/arc/circle constructor `rawWorldPoint` test.
 After this pass: focused L1 **8 files, 121/121**; combined **12 files, 170/170**;
 neighbour circle/workspace **58 files, 234 passed + 1 skipped**; browser A–G
 **7/7** zero page/console/unhandled errors.
+
+## 17. Correction pass (round-7 reviewer finding)
+
+The keyboard `useActiveSnap` commit passed `activeSnap` with no raw cursor or
+pick-time tolerance; snaps refresh on pointer moves, not viewport changes, so
+zoom-with-no-pointer-move + keyboard commit could accept a stale on-source
+phase-B point.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P2) | Stale snap on the click-less keyboard path. | Snap candidates are stamped additively with `computedScale` (the world snap tolerance in effect at computation; `CadSnapCandidate.computedScale`, produced by `useSurveyCadSnapping.withCadSnapComputedScale`). The stamp flows onto the `CommandPoint` (`snapComputedScale`) for snapped/active/latched picks. The `SurveyCadPreview` reports the live tolerance on zoom/pan (`onSnapToleranceWorldChange` → `setLiveSnapTolerance`), which the keyboard action passes as `pickToleranceWorld`. The L1 on-source pick rejects a stamped snap whose scale differs from the live tolerance beyond the documented epsilon (`/snap expired/`, stays active, zero mutation); matching stamps proceed through the existing raw-click revalidation. No global snap invalidation. |
+
+Pinned by the `tests/cad_line_l1_sessions.test.ts` stale/fresh keyboard-stamp
+test and `tests/cad_snap_scale_stamp.test.ts` stamp unit coverage. Snap,
+workspace, and spatial-index neighbour suites stayed green, proving the stamp
+is purely additive.
+
+After this pass: focused L1 **8 files, 122/122**; combined **12 files, 171/171**;
+neighbour circle/workspace/spatial-index **64 files, 257 passed + 1 skipped**;
+browser A–G **7/7** zero page/console/unhandled errors.

@@ -343,9 +343,10 @@ export interface CadLineL1PointPickOptions {
  * Every body-click constructor (line/arc/circle primitive and snap/latched
  * consumption) threads the true raw click, so the `rawWorldPoint == null`
  * fallback is only reached by paths with no cursor position — the keyboard
- * `useActiveSnap` pick (whose snap is the live hover snap) and session-less
- * unit callers. Retaining the snapped point there is safe because there is no
- * raw cursor to compare against.
+ * `useActiveSnap` pick (already scale-stamp validated by
+ * {@link isCadLineSnapExpired} before reaching here) and session-less unit
+ * callers. Retaining the snapped point there is safe because there is no raw
+ * cursor to compare against and the snap is known fresh.
  */
 const cadLineOnSourcePickPoint = (
   snapped: CommandPoint,
@@ -360,6 +361,32 @@ const cadLineOnSourcePickPoint = (
     return { x: snapped.x, y: snapped.y, label: snapped.label };
   }
   return { x: rawWorldPoint.x, y: rawWorldPoint.y, label: snapped.label };
+};
+
+/**
+ * A keyboard/latched snap whose stamp differs from the live viewport scale was
+ * computed before a zoom/pan without a pointer move; it is expired. Documented
+ * epsilon: the larger of 1e-9 absolute or 1e-6 relative. Raw/typed points carry
+ * no stamp and are never expired.
+ */
+const CAD_LINE_SNAP_SCALE_EPSILON = 1e-9;
+const isCadLineSnapExpired = (
+  snapComputedScale: number | undefined,
+  pickToleranceWorld: number | undefined,
+): boolean => {
+  if (
+    snapComputedScale == null ||
+    !Number.isFinite(snapComputedScale) ||
+    pickToleranceWorld == null ||
+    !Number.isFinite(pickToleranceWorld)
+  ) {
+    return false;
+  }
+  const scale = Math.max(Math.abs(snapComputedScale), Math.abs(pickToleranceWorld));
+  return (
+    Math.abs(snapComputedScale - pickToleranceWorld) >
+    Math.max(CAD_LINE_SNAP_SCALE_EPSILON, scale * 1e-6)
+  );
 };
 
 const commitSingleSegment = (
@@ -602,6 +629,14 @@ export const handleCadLineL1PointPick = (options: CadLineL1PointPickOptions): bo
         return true;
       }
       if (!current.lineSourceOnPoint) {
+        if (isCadLineSnapExpired(point.snapComputedScale, options.pickToleranceWorld)) {
+          replaceSession({
+            ...current,
+            inputValue: '',
+            resultText: `${current.key}: snap expired after a viewport change; re-hover the source point.`,
+          });
+          return true;
+        }
         const frame = resolveCadLineOnSourcePoint(
           entity,
           cadLineOnSourcePickPoint(point, options.rawWorldPoint, options.pickToleranceWorld),

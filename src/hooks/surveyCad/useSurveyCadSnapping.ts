@@ -80,6 +80,17 @@ const isConstructionLockKind = (
   kind: CadSnapKind,
 ): kind is CadSnapLock['kind'] => CONSTRUCTION_LOCK_KINDS.has(kind);
 
+/**
+ * Purely additive stamp: annotate a snap candidate with the world tolerance
+ * (viewport-scale proxy) it was computed at. Existing consumers ignore the
+ * extra optional field; the corrected L1 on-source pick uses it to reject a
+ * candidate computed at a different viewport scale than the pick.
+ */
+export const withCadSnapComputedScale = (
+  candidate: CadSnapCandidate,
+  computedScale: number,
+): CadSnapCandidate => ({ ...candidate, computedScale });
+
 export const useSurveyCadSnapping = (
   project: CadProject,
   constructionContext: CadSnapConstructionContext,
@@ -158,10 +169,15 @@ export const useSurveyCadSnapping = (
         const gripTolerance = dynamicToleranceWorld ?? toleranceWorld;
         const nextNearbySnaps = restrictedGripCandidates
           .filter((candidate) => allowedKinds.includes(candidate.kind))
-          .map((candidate) => ({
-            ...candidate,
-            distance: Math.hypot(candidate.x - worldPoint.x, candidate.y - worldPoint.y),
-          }))
+          .map((candidate) =>
+            withCadSnapComputedScale(
+              {
+                ...candidate,
+                distance: Math.hypot(candidate.x - worldPoint.x, candidate.y - worldPoint.y),
+              },
+              gripTolerance,
+            ),
+          )
           .filter((candidate) => candidate.distance <= gripTolerance)
           .sort((left, right) => {
             if (SNAP_KIND_ORDER.indexOf(left.kind) !== SNAP_KIND_ORDER.indexOf(right.kind)) {
@@ -177,20 +193,23 @@ export const useSurveyCadSnapping = (
         }
         return;
       }
-      const nextNearbySnaps = spatialIndex.querySnapCandidates(
-        worldPoint,
-        dynamicToleranceWorld ?? toleranceWorld,
-        allowedKinds,
-        {
-          ...constructionContext,
-          lockedSnap: options?.lockConstruction ? lockedConstructionSnap : transientConstructionLock,
-        },
-        options?.visibleBounds ?? null,
-      );
+      const snapTolerance = dynamicToleranceWorld ?? toleranceWorld;
+      const nextNearbySnaps = spatialIndex
+        .querySnapCandidates(
+          worldPoint,
+          snapTolerance,
+          allowedKinds,
+          {
+            ...constructionContext,
+            lockedSnap: options?.lockConstruction ? lockedConstructionSnap : transientConstructionLock,
+          },
+          options?.visibleBounds ?? null,
+        )
+        .map((candidate) => withCadSnapComputedScale(candidate, snapTolerance));
       setNearbySnaps(nextNearbySnaps);
-      const nextSnap = spatialIndex.queryNearestSnap(
+      const nextSnapRaw = spatialIndex.queryNearestSnap(
         worldPoint,
-        dynamicToleranceWorld ?? toleranceWorld,
+        snapTolerance,
         allowedKinds,
         {
           ...constructionContext,
@@ -198,6 +217,9 @@ export const useSurveyCadSnapping = (
         },
         options?.visibleBounds ?? null,
       );
+      const nextSnap = nextSnapRaw
+        ? withCadSnapComputedScale(nextSnapRaw, snapTolerance)
+        : null;
       setActiveSnap(nextSnap);
       if (options?.lockConstruction) {
         const nextLock =

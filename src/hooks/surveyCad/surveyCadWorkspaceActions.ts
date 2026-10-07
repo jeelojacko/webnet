@@ -17,6 +17,8 @@ type InteractionOptions = {
   pickToleranceWorld?: number;
   /** Raw (unsnapped) click world point; revalidates a possibly-stale snap. */
   rawWorldPoint?: { x: number; y: number } | null;
+  /** World tolerance the consumed snap was computed at (scale stamp). */
+  snapComputedScale?: number;
 };
 
 type SurveyCadWorkspaceActionsOptions = {
@@ -297,6 +299,7 @@ export const useSurveyCadWorkspaceActions = ({
             extendMode: options?.extendMode,
             pickToleranceWorld: options?.pickToleranceWorld,
             rawWorldPoint: options?.rawWorldPoint,
+            snapComputedScale: options?.snapComputedScale,
           },
         );
         return;

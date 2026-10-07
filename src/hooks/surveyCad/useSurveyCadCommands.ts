@@ -54,6 +54,7 @@ export type { UseSurveyCadCommandsArgs, UseSurveyCadCommandsResult } from './use
 export const useSurveyCadCommands = ({
   activeSnap,
   activeDraft,
+  liveSnapToleranceRef,
   previewPoint,
   history,
   selectionCount,
@@ -371,6 +372,7 @@ export const useSurveyCadCommands = ({
     activeSnap,
     buildBatchCogoDraftForInput,
     consumePoint,
+    liveSnapToleranceRef,
     session,
     updateSession,
   });

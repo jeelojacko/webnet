@@ -1033,6 +1033,14 @@ export interface CadSnapCandidate {
   y: number;
   distance: number;
   label: string;
+  /**
+   * World-unit snap tolerance in effect when this candidate was computed (a
+   * viewport-scale proxy). Optional and additive — consumers that ignore it
+   * are unaffected. The corrected L1 tangent/perp on-source pick uses it to
+   * reject a candidate computed at a different viewport scale than the pick
+   * (e.g. after a zoom without a pointer move).
+   */
+  computedScale?: number;
   guideSegments?: Array<[CadDisplayPoint, CadDisplayPoint]>;
   compoundKinds?: CadSnapKind[];
   lockGuidePoint?: CadDisplayPoint;
