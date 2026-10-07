@@ -10,6 +10,7 @@ import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { expandBlockReference, findBlockDefinition } from './cadBlocks';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import { buildCandidate } from './cadSpatialSnapCandidates';
 import type {
   CadBlockReferenceEntity,
@@ -80,6 +81,54 @@ export const buildBlockReferenceSnapCandidates = (
         break;
       case 'polyline':
       case 'polygon': {
+        if (
+          child.type === 'polyline' &&
+          (child.segmentGeometry != null || child.segmentWidths != null)
+        ) {
+          const courses = resolveCadPolylineCourses(child);
+          if (courses) {
+            courses.forEach((course) => {
+              if (course.kind === 'arc' && course.metrics != null) {
+                const metrics = course.metrics;
+                if (allowed.has('endpoint')) {
+                  candidates.push(
+                    buildCandidate('endpoint', entity.id, course.from, worldPoint, `${label} arc start`, undefined, scope),
+                    buildCandidate('endpoint', entity.id, course.to, worldPoint, `${label} arc end`, undefined, scope),
+                  );
+                }
+                if (allowed.has('midpoint')) {
+                  candidates.push(
+                    buildCandidate('midpoint', entity.id, cadArcMidpoint(metrics.center, metrics.radius, metrics.startAngleDeg, metrics.startAngleDeg + metrics.signedSweepDeg), worldPoint, `${label} arc mid`, undefined, scope),
+                  );
+                }
+                if (allowed.has('center')) {
+                  candidates.push(
+                    buildCandidate('center', entity.id, { x: metrics.center.x, y: metrics.center.y }, worldPoint, `${label} center`, undefined, scope),
+                  );
+                }
+                return;
+              }
+              if (allowed.has('endpoint')) {
+                candidates.push(buildCandidate('endpoint', entity.id, course.from, worldPoint, `${label} vertex`, undefined, scope));
+              }
+              if (allowed.has('midpoint')) {
+                candidates.push(buildCandidate('midpoint', entity.id, cadMidpoint(course.from, course.to), worldPoint, `${label} mid`, undefined, scope));
+              }
+            });
+            if (allowed.has('center') && child.vertices.length > 0) {
+              const centroid = {
+                x: child.vertices.reduce((sum, vertex) => sum + vertex.x, 0) / child.vertices.length,
+                y: child.vertices.reduce((sum, vertex) => sum + vertex.y, 0) / child.vertices.length,
+              };
+              candidates.push(
+                buildCandidate('center', entity.id, centroid, worldPoint, `${label} center`, undefined, scope),
+              );
+            }
+          }
+          // Present-but-unresolvable metadata fails closed with no snap
+          // candidates for this polyline, never the chord fallback below.
+          break;
+        }
         const ring = child.type === 'polyline'
           ? cadPolylineVerticesWrapToFirst(child.vertices, child.closed)
             ? [...child.vertices, child.vertices[0]].filter(

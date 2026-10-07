@@ -127,6 +127,17 @@ export const buildTransformedPreviewPrimitives = (
           strokeDasharray: '8 6',
         };
       }
+      case 'band': {
+        return {
+          ...primitive,
+          id,
+          sourceEntityId: id,
+          stroke,
+          fill: stroke,
+          points: primitive.points.map((point) => applyPoint(transform, point)),
+          opacity,
+        };
+      }
     }
   });
 }

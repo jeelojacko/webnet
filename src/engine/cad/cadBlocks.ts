@@ -24,6 +24,12 @@
 
 import { cadIsAngleOnArcSweep, cadNormalizeAngleDeg } from './cadGeometry';
 import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
+import { mirrorParcelCourseGeometry } from './cadParcelArcGeometry';
+import {
+  cadPolylineHasArcCourse,
+  cadPolylineHasNonzeroWidth,
+  cadPolylineWidthEnvelopePoints,
+} from './cadPolylineCourses';
 import type {
   CadBlockChild,
   CadBlockDefinition,
@@ -147,6 +153,25 @@ export const blockReferenceScalesDistortCircle = (
 ): boolean =>
   scaleX !== scaleY && definition.entities.some((child) => child.type === 'circle');
 
+/**
+ * Phase C2: a non-uniform reference must never mean-scale or shear a
+ * bulged/wide polyline child (an arc would become an ellipse and a band
+ * would distort). The Circle precedent is followed — fail closed, no
+ * approximation.
+ */
+export const blockReferenceScalesDistortPolylineCurve = (
+  definition: CadBlockDefinition,
+  scaleX: number,
+  scaleY: number,
+): boolean => {
+  if (scaleX === scaleY) return false;
+  return definition.entities.some(
+    (child) =>
+      child.type === 'polyline' &&
+      (cadPolylineHasArcCourse(child) || cadPolylineHasNonzeroWidth(child)),
+  );
+};
+
 export interface CadWorldPoint {
   x: number;
   y: number;
@@ -171,6 +196,50 @@ export const transformBlockPointToWorld = (
   };
 };
 
+/**
+ * Phase C2 polyline child under a block placement. Non-uniform scale with
+ * any arc or nonzero width fails closed (never mean-scale/shear a curve or
+ * a band); reflection flips every bulge sign and leaves widths positive;
+ * uniform scale scales widths by the uniform factor.
+ */
+const transformBlockPolylineChildToWorld = (
+  child: Extract<CadBlockChild, { type: 'polyline' }>,
+  definition: CadBlockDefinition,
+  reference: BlockPlacement,
+): CadBlockChild => {
+  const geometry = child.segmentGeometry;
+  const widths = child.segmentWidths;
+  if (
+    reference.scaleX !== reference.scaleY &&
+    (cadPolylineHasArcCourse(child) || cadPolylineHasNonzeroWidth(child))
+  ) {
+    throw new Error(
+      `CAD_BLOCK_POLYLINE_NON_UNIFORM_ARC_WIDTH_UNSUPPORTED: block reference scales a bulged/wide polyline child non-uniformly (scaleX=${reference.scaleX}, scaleY=${reference.scaleY}); refusing instead of distorting the curve.`,
+    );
+  }
+  const vertices = child.vertices.map((vertex) =>
+    transformBlockPointToWorld(vertex, definition, reference),
+  );
+  const carriedGeometry =
+    geometry != null && reference.mirrored === true
+      ? mirrorParcelCourseGeometry(geometry)
+      : geometry;
+  const scale = reference.scaleX;
+  const carriedWidths =
+    widths != null && scale !== 1
+      ? widths.map((entry) => ({
+          startWidth: entry.startWidth * scale,
+          endWidth: entry.endWidth * scale,
+        }))
+      : widths;
+  return {
+    ...child,
+    vertices,
+    ...(carriedGeometry !== geometry ? { segmentGeometry: carriedGeometry } : {}),
+    ...(carriedWidths !== widths ? { segmentWidths: carriedWidths } : {}),
+  };
+};
+
 /** Pure: block-local child -> world-space child (same id, same styling intent). */
 export const transformBlockChildToWorld = (
   child: CadBlockChild,
@@ -184,7 +253,20 @@ export const transformBlockChildToWorld = (
       const to = transformBlockPointToWorld({ x: child.toX, y: child.toY }, definition, reference);
       return { ...child, fromX: from.x, fromY: from.y, toX: to.x, toY: to.y };
     }
-    case 'polyline':
+    case 'polyline': {
+      // Phase C2: bulge+width survive translation/rotation/uniform-scale
+      // exactly (bulges unchanged, widths x uniform scale); reflection flips
+      // every bulge sign with widths kept positive; non-uniform scale with
+      // any arc or nonzero width fails closed (named diagnostic), never the
+      // arc mean-scale approximation.
+      if (child.segmentGeometry != null || child.segmentWidths != null) {
+        return transformBlockPolylineChildToWorld(child, definition, reference);
+      }
+      return {
+        ...child,
+        vertices: child.vertices.map((vertex) => transformBlockPointToWorld(vertex, definition, reference)),
+      };
+    }
     case 'polygon':
       return {
         ...child,
@@ -311,6 +393,9 @@ const childPoints = (child: CadBlockChild): CadWorldPoint[] => {
         { x: child.toX, y: child.toY },
       ];
     case 'polyline':
+      return child.segmentGeometry != null || child.segmentWidths != null
+        ? [...child.vertices, ...cadPolylineWidthEnvelopePoints(child)]
+        : [...child.vertices];
     case 'polygon':
       return [...child.vertices];
     case 'arc':

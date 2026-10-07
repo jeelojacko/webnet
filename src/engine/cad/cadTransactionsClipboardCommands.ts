@@ -117,6 +117,15 @@ export const buildCopiedEntities = (
                 courseGeometry: entity.courseGeometry.map((entry) => ({ ...entry })),
               }
             : {}),
+          // Phase C2: a polyline copy owns its bulge/width arrays too — the
+          // endpoint-relative bulge/value copy translates exactly and never
+          // shares a mutable array with the source.
+          ...(entity.type === 'polyline' && entity.segmentGeometry != null
+            ? { segmentGeometry: entity.segmentGeometry.map((entry) => ({ ...entry })) }
+            : {}),
+          ...(entity.type === 'polyline' && entity.segmentWidths != null
+            ? { segmentWidths: entity.segmentWidths.map((entry) => ({ ...entry })) }
+            : {}),
           // Phase 19D COPY policy (matrix row 7): the copy carries
           // role/description but NEVER the designation (shadowed even when
           // the source has designation-only planInfo).

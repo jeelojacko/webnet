@@ -291,11 +291,48 @@ export interface CadLineEntity extends CadBaseEntity {
   sourceObservationIds: number[];
 }
 
+/**
+ * Phase C2 polyline segment geometry: endpoint-owned, same signed
+ * CAD-standard bulge convention as CadParcelCourseGeometry /
+ * CadFeatureLineSegmentGeometry (b = tan(sweepRad/4); positive = CCW =
+ * center-left; |b| > 1 = major arc). Entry [index] describes the course
+ * starting at vertices[index]; for a closed ring the final entry is the
+ * last->first course. Absent array = legacy all-line (no migration).
+ */
+export type CadPolylineSegmentGeometry = { kind: 'line' } | { kind: 'arc'; bulge: number };
+
+/**
+ * Phase C2 polyline segment width: full band width in model units (metres),
+ * centred on the course centreline — NOT a lineweight and never a resolved
+ * display value. startWidth applies at the course start vertex, endWidth at
+ * the course end vertex; the band tapers linearly between them. Entry [index]
+ * describes the course starting at vertices[index]. Absent array = legacy
+ * zero-width (hairline) polyline.
+ */
+export interface CadPolylineSegmentWidth {
+  startWidth: number;
+  endWidth: number;
+}
+
 export interface CadPolylineEntity extends CadBaseEntity {
   type: 'polyline';
   vertices: CadDisplayPoint[];
   vertexLabels: string[];
   closed: boolean;
+  /**
+   * Contract: when present, segmentGeometry.length === course count
+   * (vertices.length - 1 open, vertices.length closed), entry [index]
+   * describes the course starting at vertices[index]. Absent = all-line.
+   * Trailing optional field (no version bump): legacy files omit it.
+   */
+  segmentGeometry?: CadPolylineSegmentGeometry[];
+  /**
+   * Contract: when present, segmentWidths.length === course count, entry
+   * [index] carries the full centred band width (metres) for the course
+   * starting at vertices[index]. Absent = zero-width legacy polyline.
+   * Trailing optional field (no version bump): legacy files omit it.
+   */
+  segmentWidths?: CadPolylineSegmentWidth[];
 }
 
 export interface CadArcEntity extends CadBaseEntity {

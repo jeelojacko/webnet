@@ -46,6 +46,15 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y, z: 0 })),
           closed: entity.type === 'polyline' ? entity.closed : true,
           vertexLabels: entity.vertexLabels,
+          // Phase C2: preserve per-course bulge/width metadata (the generic
+          // spike geometry record is truthful). Never silently straighten a
+          // bulged or wide polyline into a plain vertex ring.
+          ...(entity.type === 'polyline' && entity.segmentGeometry != null
+            ? { segmentGeometry: entity.segmentGeometry.map((entry) => ({ ...entry })) }
+            : {}),
+          ...(entity.type === 'polyline' && entity.segmentWidths != null
+            ? { segmentWidths: entity.segmentWidths.map((entry) => ({ ...entry })) }
+            : {}),
         },
         metadata: {
           nativeEntityId: entity.id,

@@ -170,6 +170,12 @@ export const buildSnapConstructionContext = (
     case 'PLINE':
     case 'TRAVERSE':
     case 'ARC_3PT':
+      // Phase C2: a pending PLINE arc through-point is the live chaining
+      // base (the arc END is entered relative to it); otherwise the last
+      // completed vertex owns the base as before.
+      if (session.key === 'PLINE' && session.plineArcThrough != null) {
+        return pointConstructionContext(session.plineArcThrough);
+      }
       return lastPointConstructionContext(session.points, { includeTangentSeed: true });
     case 'ARC_SCE':
     case 'ARC_CSE':

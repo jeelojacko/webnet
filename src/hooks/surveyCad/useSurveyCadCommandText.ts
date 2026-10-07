@@ -2,6 +2,14 @@ import type { CommandSession } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import { cadLineL1Prompt } from './useSurveyCadLineL1Session';
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import {
+  plineArcThroughOf,
+  plineDrawModeOf,
+  plineWidthPhaseOf,
+  plineWidthSummary,
+  PLINE_WIDTH_PROMPT_MESSAGE,
+  type PlineCommandSession,
+} from './useSurveyCadPlineSession';
 
 export const polygonModeLabel = (mode: 'inscribed' | 'circumscribed'): string =>
   mode === 'inscribed' ? 'Inscribed' : 'Circumscribed';
@@ -20,13 +28,41 @@ const polygonPromptForPhase = (
   return `POLYGON active. ${session.sides} sides ${modeLabel}. Center ${session.center!.label} captured. Click or enter the radius point.`;
 };
 
-const plinePromptForCount = (count: number): string => {
-  if (count === 0) return 'PLINE active. Click or enter the first vertex. [Undo]';
-  if (count === 1) return 'PLINE active. 1 vertex captured. Click the next point or type it. [Undo]';
-  if (count === 2) {
-    return 'PLINE active. 2 vertices captured. Click the next point or press Enter to finish open. [Undo]';
+/**
+ * Phase C2 PLINE prompt: the draw mode, pending arc state, and active
+ * nonzero width are always visible, with the C1 option set extended by
+ * A/ARC, L/LINE, and W/WIDTH. Legacy C1 status substrings (`N vertices
+ * captured`, `first vertex`) are preserved for existing workflows.
+ */
+const plinePromptForSession = (session: PlineCommandSession): string => {
+  if (plineWidthPhaseOf(session)) return PLINE_WIDTH_PROMPT_MESSAGE;
+  const widthSuffix = plineWidthSummary(session) == null ? '' : ` (${plineWidthSummary(session)})`;
+  const count = session.points.length;
+  if (plineDrawModeOf(session) === 'arc') {
+    const options = '[L Line / W Width / C Close / U Undo]';
+    if (count === 0) {
+      return `PLINE active (Arc). Click or enter the first vertex (arc start).${widthSuffix} ${options}`;
+    }
+    const start = session.points[session.points.length - 1]!;
+    if (plineArcThroughOf(session) == null) {
+      return count === 1
+        ? `PLINE active (Arc). Start ${start.label} captured. Click or enter the arc through-point.${widthSuffix} ${options}`
+        : `PLINE active (Arc). ${count} vertices captured. Start ${start.label} captured. Click or enter the arc through-point.${widthSuffix} ${options}`;
+    }
+    return `PLINE active (Arc). Through-point captured from ${start.label}. Click or enter the arc end point.${widthSuffix} ${options}`;
   }
-  return `PLINE active. ${count} vertices captured. Press Enter to finish open, or type Close to close the ring. [Close/Undo]`;
+  const options =
+    count < 2 ? '[A Arc / W Width / U Undo]' : '[A Arc / W Width / C Close / U Undo]';
+  if (count === 0) {
+    return `PLINE active (Line). Click or enter the first vertex.${widthSuffix} ${options}`;
+  }
+  if (count === 1) {
+    return `PLINE active (Line). 1 vertex captured. Click the next point or type it.${widthSuffix} ${options}`;
+  }
+  if (count === 2) {
+    return `PLINE active (Line). 2 vertices captured. Click the next point or press Enter to finish open.${widthSuffix} ${options}`;
+  }
+  return `PLINE active (Line). ${count} vertices captured. Press Enter to finish open, or type Close to close the ring.${widthSuffix} ${options}`;
 };
 
 export const promptForSession = (session: CommandSession | null, fallbackStatus: string): string => {
@@ -85,7 +121,7 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
     case 'POLYGON':
       return session.resultText ?? polygonPromptForPhase(session);
     case 'PLINE':
-      return session.resultText ?? plinePromptForCount(session.points.length);
+      return session.resultText ?? plinePromptForSession(session);
     case 'TRAVERSE':
       return session.resultText ??
         (session.points.length > 0

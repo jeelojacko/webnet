@@ -70,3 +70,16 @@
   document, don't fix in tool phases.
 - BestFit/Hatch without prior design will repeat the planned-row trap:
   UI first, semantics never. Design docs first.
+
+## Addendum — Phase C1/C2 current state (2026-10-07)
+
+Historical baseline above is unchanged. Item 4 (Polyline capability upgrades)
+and Phase C are now largely delivered: Phase C1 (`feat/cad-polyline-close-backstep-c1`,
+baseline `5aa6441`) shipped Close + session backstep schema-free, and Phase C2
+(`feat/cad-polyline-bulge-width-c2`) shipped per-course arc legs + centred band
+width via additive trailing optional `segmentGeometry`/`segmentWidths` (no
+version bump, no migration). Remaining from item 4: vertex insert/delete. Still
+missing globally: line chaining, Point Z, DXF/DWG import, ortho/polar/grid,
+repeat, right-click finish. Evidence:
+`docs/evidence/cad-polyline-c1-close-backstep/`,
+`docs/evidence/cad-polyline-c2-bulge-width/`.

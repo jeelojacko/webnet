@@ -146,3 +146,26 @@ Properties rows; grips stay one-per-vertex. Still deferred: bulge/width/arc,
 Z, line-chaining, right-click, repeat, and closed-edge segmenting in
 trim/extend/fillet. Evidence:
 `docs/evidence/cad-polyline-c1-close-backstep/`.
+
+## Addendum — Phase C2 current state (2026-10-07)
+
+Historical baseline and the C1 addendum above are unchanged. Polyline update
+after Phase C2 (branch `feat/cad-polyline-bulge-width-c2`): per-course arc
+legs are now SUPPORTED — `A`/`ARC` switches to 3-point legs (pending
+through-point, fail-closed degenerate triples) with the signed bulge from the
+shared parcel seam — and per-course centred band width is now SUPPORTED via
+`W`/`WIDTH` (constant or `start,end` taper, applied to future segments only).
+The engine adds additive trailing optional
+`CadPolylineEntity.segmentGeometry`/`segmentWidths` (no version bump), one
+canonical path normalizer (`sanitizeCadPolylinePath`), and one shared
+consumer resolver (`resolveCadPolylineCourses`). Renderer emits native arc
+primitives plus one aggregated band primitive, spatial index/snaps/
+intersections use true line/arc courses (never the chord), bounds use true arc
+extrema + width envelope, Properties reports arc/line rows and true total
+length, DXF attaches groups 42/40/41 to the course start vertex, and
+rotation/uniform-scale/reflection carry the metadata while non-uniform
+transforms over arcs/width fail closed. Still deferred: vertex
+insert/delete, Z, line-chaining, right-click finish, command repeat, raw
+direct bulge-entry UI, arc-midpoint/width grips, full mixed-segment
+trim/extend/fillet, and general DXF import. Evidence:
+`docs/evidence/cad-polyline-c2-bulge-width/`.

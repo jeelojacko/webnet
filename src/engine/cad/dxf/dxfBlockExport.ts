@@ -1,7 +1,8 @@
 import { findBlockDefinition } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
-import type { CadEntity, CadProject } from '../cadTypes';
-import type { DxfPoint } from './dxfExportModel';
+import type { CadBlockChild, CadEntity, CadProject } from '../cadTypes';
+import { resolveCadPolylineCourses } from '../cadPolylineCourses';
+import type { DxfPoint, DxfPolylineVertex } from './dxfExportModel';
 
 export interface DxfBlockChildLine {
   layer: string;
@@ -11,7 +12,7 @@ export interface DxfBlockChildLine {
 
 export interface DxfBlockChildPolyline {
   layer: string;
-  vertices: DxfPoint[];
+  vertices: DxfPolylineVertex[];
   closed: boolean;
 }
 
@@ -119,6 +120,32 @@ const finiteAngle = (deg: number): boolean => Number.isFinite(deg);
 const finiteVertices = (vertices: ReadonlyArray<{ x: number; y: number }>): boolean =>
   vertices.every((vertex) => finitePair(vertex.x, vertex.y));
 
+/**
+ * Phase C2: block-local LWPOLYLINE vertices with per-course bulge/width
+ * metadata (bulge is translation-invariant, so base-shifting the ring keeps
+ * the endpoint-owned values valid).
+ */
+const blockPolylineVertices = (
+  child: Extract<CadBlockChild, { type: 'polyline' }>,
+  shift: (_point: { x: number; y: number }) => DxfPoint,
+): DxfPolylineVertex[] | null => {
+  const vertices: DxfPolylineVertex[] = child.vertices.map((vertex) => shift(vertex));
+  if (child.segmentGeometry == null && child.segmentWidths == null) return vertices;
+  // Fail closed: a malformed metadata ring must never be exported as a
+  // valid-looking straight zero-width polyline. The caller omits the child
+  // with an explicit warning.
+  const courses = resolveCadPolylineCourses(child);
+  if (!courses) return null;
+  for (const course of courses) {
+    const vertex = vertices[course.index];
+    if (!vertex) continue;
+    if (course.kind === 'arc') vertex.bulge = (course.geometry as { bulge: number }).bulge;
+    if (course.width.startWidth !== 0) vertex.startWidth = course.width.startWidth;
+    if (course.width.endWidth !== 0) vertex.endWidth = course.width.endWidth;
+  }
+  return vertices;
+};
+
 export const buildDxfBlockTable = (args: {
   project: CadProject;
   referencedIds: ReadonlySet<string>;
@@ -152,7 +179,14 @@ export const buildDxfBlockTable = (args: {
             args.warn({ code: 'SKIPPED_ENTITY', message: `block ${name} ${child.type} child ${child.id} has fewer than 2 finite vertices` });
             break;
           }
-          entry.polylines.push({ layer: args.registerLayer(child.layerId), vertices: ring.map(shift), closed: child.type === 'polygon' ? true : child.closed });
+          const vertices = child.type === 'polyline'
+            ? blockPolylineVertices(child, shift)
+            : ring.map(shift);
+          if (vertices == null) {
+            args.warn({ code: 'SKIPPED_ENTITY', message: `block ${name} polyline child ${child.id} has malformed segment metadata (geometry/width arrays do not match its vertices)` });
+            break;
+          }
+          entry.polylines.push({ layer: args.registerLayer(child.layerId), vertices, closed: child.type === 'polygon' ? true : child.closed });
           break;
         }
         case 'arc':

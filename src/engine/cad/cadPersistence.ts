@@ -7,6 +7,7 @@ import type {
   CadParcelCourseGeometry,
   CadParcelLayoutSettings,
   CadParcelLayoutUiState,
+  CadPolylineEntity,
   CadProject,
   CadStyleLibrary,
   SurveyCadPersistedState,
@@ -63,6 +64,7 @@ import {
   withoutGradingGroupsKey,
 } from './grading/gradingGroupPersistence';
 import { ensureParcelCourseIds } from './cadParcelCourses';
+import { validateCadPolylineSegmentMetadata } from './cadPolylineGeometry';
 import { backfillAnalysisMaps, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 
@@ -96,6 +98,47 @@ const cloneParcelCourseGeometry = (
     throw new Error('parcel courseGeometry fails validation');
   }
   return cloned;
+};
+
+/**
+ * Phase C2 verbatim polyline bulge/width clone. Arrays deep-copy as values;
+ * anything malformed (bad shape, length mismatch, non-finite/negative width,
+ * degenerate arc) throws so both load sanitizers (each try/catch) reject the
+ * file instead of silently straightening a curve. Legacy polylines without
+ * the new fields stay absent (shape-compatible, no migration).
+ */
+const clonePolylineSegmentMetadata = (
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+): Pick<CadPolylineEntity, 'segmentGeometry' | 'segmentWidths'> => {
+  if (
+    !validateCadPolylineSegmentMetadata(
+      entity.vertices,
+      entity.closed,
+      entity.segmentGeometry,
+      entity.segmentWidths,
+    ).ok
+  ) {
+    throw new Error('polyline segment metadata fails validation');
+  }
+  return {
+    ...(entity.segmentGeometry != null
+      ? {
+          segmentGeometry: entity.segmentGeometry.map((entry) =>
+            entry.kind === 'arc'
+              ? ({ kind: 'arc', bulge: entry.bulge } as const)
+              : ({ kind: 'line' } as const),
+          ),
+        }
+      : {}),
+    ...(entity.segmentWidths != null
+      ? {
+          segmentWidths: entity.segmentWidths.map((entry) => ({
+            startWidth: entry.startWidth,
+            endWidth: entry.endWidth,
+          })),
+        }
+      : {}),
+  };
 };
 
 const cloneJsonValue = <TValue>(value: TValue): TValue => {
@@ -274,6 +317,9 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         appearance: cloneAppearance(entity.appearance),
         vertices: entity.vertices.map(clonePoint),
         vertexLabels: [...entity.vertexLabels],
+        // Phase C2: polyline bulge/width metadata clones verbatim (additive
+        // trailing). Malformed fields throw (see clonePolylineSegmentMetadata).
+        ...(entity.type === 'polyline' ? clonePolylineSegmentMetadata(entity) : {}),
         // Phase 19A: parcel course ids clone as values; absent stays absent
         // so legacy shape is preserved and load paths own the backfill.
         ...(entity.type === 'parcel' && entity.courseIds != null

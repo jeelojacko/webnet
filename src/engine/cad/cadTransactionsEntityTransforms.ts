@@ -10,6 +10,11 @@ import {
 import { replaceCadProjectEntities } from './cadProjectState';
 import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
 import { sanitizeFeatureLine } from './cadFeatureLines';
+import {
+  cadPolylinePointsMatch,
+  countDistinctPlinePositions,
+  revalidateCadPolylineVertexMove,
+} from './cadPolylineGeometry';
 import type { CadCommand } from './cadTransactions.types';
 import type {
   CadEntity,
@@ -260,7 +265,43 @@ const updateEntityFromGrip = (
         };
       }
       return null;
-    case 'polyline':
+    case 'polyline': {
+      if (gripKind !== 'vertex' || vertexIndex == null || vertexIndex < 0 || vertexIndex >= entity.vertices.length) {
+        return null;
+      }
+      const vertices = entity.vertices.map((vertex, index) =>
+        index === vertexIndex ? { x: point.x, y: point.y } : vertex,
+      );
+      // Stored bulge/width values ride verbatim through a vertex move; only
+      // the moved endpoints change, so metrics re-derive from them. Degenerate
+      // results (coincident arc chord, collapsed adjacent edge, closed ring
+      // below 3 distinct vertices) fail closed instead of silently shifting or
+      // straightening metadata.
+      if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+      for (let index = 1; index < vertices.length; index += 1) {
+        if (cadPolylinePointsMatch(vertices[index - 1]!, vertices[index]!)) return null;
+      }
+      if (entity.closed) {
+        if (
+          vertices.length >= 2 &&
+          cadPolylinePointsMatch(vertices[0]!, vertices[vertices.length - 1]!)
+        ) {
+          return null;
+        }
+        if (countDistinctPlinePositions(vertices) < 3) return null;
+      }
+      if (
+        revalidateCadPolylineVertexMove(
+          vertices,
+          entity.closed,
+          entity.segmentGeometry,
+          entity.segmentWidths,
+        ).length > 0
+      ) {
+        return null;
+      }
+      return { ...entity, vertices };
+    }
     case 'polygon':
       if (gripKind !== 'vertex' || vertexIndex == null || vertexIndex < 0 || vertexIndex >= entity.vertices.length) {
         return null;

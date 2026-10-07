@@ -29,6 +29,7 @@ import {
 } from '../annotation/cadAnnotationPlacement';
 import { deriveBearingDistanceLabel, deriveCurveLabel } from '../annotation/cadSurveyLabels';
 import { expandBlockReference, findBlockDefinition } from '../cadBlocks';
+import { cadPolylineVerticesWrapToFirst } from '../cadPolylineGeometry';
 
 export interface DxfAnnotationPoint {
   x: number;
@@ -152,7 +153,13 @@ const pushAnnotationArrow = (
       vertices.slice(0, -1).forEach((vertex, index) => {
         primitives.lines.push({ from: vertex, to: vertices[index + 1] as DxfAnnotationPoint });
       });
-      if (child.type === 'polygon' && vertices.length > 2) {
+      // Closing edge: polygons always wrap, and a C1 closed polyline stores
+      // no duplicate closure vertex (a legacy ring that repeats first keeps
+      // its stored edges untouched).
+      const wraps =
+        child.type === 'polygon' ||
+        cadPolylineVerticesWrapToFirst(child.vertices, child.closed === true);
+      if (wraps && vertices.length > 2) {
         primitives.lines.push({ from: vertices[vertices.length - 1] as DxfAnnotationPoint, to: vertices[0] as DxfAnnotationPoint });
       }
     }

@@ -27,6 +27,7 @@ import type {
   CadSnapCandidate,
 } from './cadTypes';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import {
   describeParcelArcCourse,
   parcelCourseCanonicalKind,
@@ -311,6 +312,54 @@ const buildFeatureLineSnapCandidates = (
   return candidates;
 };
 
+/**
+ * Phase C2 polyline routing: line courses keep the exact chord-segment
+ * path (endpoint/midpoint/nearest/perp/parallel); arc courses expose the
+ * existing arc snap types (endpoint/arc-midpoint/center/quadrant/nearest/
+ * tangent/perpendicular) through the one arc engine — never chord math.
+ * `entitySegments` already excludes arc courses, so the segment pass never
+ * emits a bulged chord.
+ */
+const buildPolylineSnapCandidates = (
+  context: CadSpatialEntityCandidateContext,
+  entity: CadPolylineEntity,
+): CadSnapCandidate[] => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  const arcCourses = courses.filter((course) => course.kind === 'arc' && course.metrics != null);
+  if (arcCourses.length === 0) return buildSegmentEntitySnapCandidates(context, entity);
+  const candidates: CadSnapCandidate[] = [];
+  candidates.push(...buildSegmentEntitySnapCandidates(context, entity));
+  arcCourses.forEach((course) => {
+    const metrics = course.metrics!;
+    const pseudo: CadArcEntity = {
+      id: entity.id,
+      type: 'arc',
+      layerId: entity.layerId,
+      visible: true,
+      locked: false,
+      centerX: metrics.center.x,
+      centerY: metrics.center.y,
+      radius: metrics.radius,
+      startAngleDeg: metrics.startAngleDeg,
+      endAngleDeg: metrics.startAngleDeg + metrics.signedSweepDeg,
+    };
+    candidates.push(
+      ...buildArcEntitySnapCandidates(context, pseudo, {
+        sourceEntityId: entity.id,
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.startAngleDeg + metrics.signedSweepDeg,
+        startPoint: { x: course.from.x, y: course.from.y },
+        endPoint: { x: course.to.x, y: course.to.y },
+        label: `${getCadEntityDisplayLabel(entity)}#${course.index}`,
+      }),
+    );
+  });
+  return candidates;
+};
+
 export const buildArcEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
   entity: CadArcEntity,
@@ -569,9 +618,11 @@ export const buildCadSpatialEntitySnapCandidates = (
         }
         break;
       case 'line':
-      case 'polyline':
       case 'polygon':
         candidates.push(...buildSegmentEntitySnapCandidates(context, entity));
+        break;
+      case 'polyline':
+        candidates.push(...buildPolylineSnapCandidates(context, entity));
         break;
       case 'parcel':
         candidates.push(...buildParcelSnapCandidates(context, entity));

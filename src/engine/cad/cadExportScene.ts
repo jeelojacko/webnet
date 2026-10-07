@@ -303,6 +303,28 @@ const primitiveToPaper = (
         },
       ];
     }
+    case 'band': {
+      // Phase C2 width band: ONE filled closed polyline in paper space, so
+      // SVG/PDF render the exact model-space band the viewport shows
+      // (never a pixel strokeWidth). Points transform through the same
+      // viewport projection as every other primitive.
+      const points = primitive.points.map((point) => {
+        const q = toPaper(point.x, point.y);
+        return { x: q.xMm, y: q.yMm };
+      });
+      if (points.length < 3) return [];
+      return [
+        {
+          kind: 'polyline',
+          layer,
+          clipId,
+          points,
+          close: true,
+          fill: primitive.fill,
+          ...paint,
+        },
+      ];
+    }
     default:
       return [];
   }

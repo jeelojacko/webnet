@@ -1,4 +1,5 @@
 import type { CadEntity, CadProject } from '../cadTypes';
+import { resolveCadPolylineCourses } from '../cadPolylineCourses';
 import type { ModelLabelPlacement } from '../cadExportScene';
 import { DEFAULT_RESOLVED_LINEWEIGHT_MM, resolveCadEntityAppearance } from '../cadAppearance';
 import {
@@ -23,7 +24,7 @@ export type {
   DxfBlockEntry,
   DxfInsert,
 } from './dxfBlockExport';
-import { expandBlockReference, findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
+import { blockReferenceScalesDistortPolylineCurve, expandBlockReference, findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
 import { resolveCadParcelCourses } from '../cadParcelCourses';
 import { tessellateCadFeatureLine } from '../cadFeatureLines';
@@ -59,6 +60,20 @@ export interface DxfPoint {
   y: number;
 }
 
+/**
+ * Phase C2: LWPOLYLINE vertex with optional per-course metadata. Group 42
+ * (bulge) rides on the START vertex of an arc course; groups 40/41
+ * (startWidth/endWidth) ride on the START vertex of a course with a nonzero
+ * centred band width. The open final vertex carries nothing; the closed
+ * final stored vertex carries the last→first metadata. Absent = legacy
+ * straight zero-width vertex (byte-identical 10/20 only).
+ */
+export interface DxfPolylineVertex extends DxfPoint {
+  bulge?: number;
+  startWidth?: number;
+  endWidth?: number;
+}
+
 /** Phase 20A: true 3D vertex (DXF POLYLINE/VERTEX form, real group 30). */
 export interface DxfPoint3D {
   x: number;
@@ -85,7 +100,7 @@ export interface DxfExportModel {
   layers: string[];
   points: Array<{ layer: string; at: DxfPoint } & DxfEntryStyle>;
   lines: Array<{ layer: string; from: DxfPoint; to: DxfPoint } & DxfEntryStyle>;
-  polylines: Array<{ layer: string; vertices: DxfPoint[]; closed: boolean } & DxfEntryStyle>;
+  polylines: Array<{ layer: string; vertices: DxfPolylineVertex[]; closed: boolean } & DxfEntryStyle>;
   /**
    * Phase 20A classic 3D POLYLINE form (group 70 bit 8 + VERTEX group 30).
    * LWPOLYLINE cannot carry Z, so 3D feature lines use this separate shape.
@@ -185,6 +200,38 @@ const finiteAngle = (deg: number): boolean => Number.isFinite(deg);
  *  invalid rings are omitted with a warning instead of corrupting output. */
 const finiteVertices = (vertices: ReadonlyArray<{ x: number; y: number }>): boolean =>
   vertices.every((vertex) => finitePair(vertex.x, vertex.y));
+
+/**
+ * Phase C2: attach per-course bulge (42) / startWidth (40) / endWidth (41)
+ * to the START vertex of each course. Zero-width straights attach nothing
+ * (legacy 10/20 only). Returns plain vertices for legacy/absent metadata.
+ */
+const polylineDxfVertices = (
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+): DxfPolylineVertex[] | null => {
+  const vertices: DxfPolylineVertex[] = entity.vertices.map((vertex) => ({
+    x: vertex.x,
+    y: vertex.y,
+  }));
+  if (entity.segmentGeometry == null && entity.segmentWidths == null) {
+    return vertices;
+  }
+  // Fail closed: a malformed metadata ring must never be exported as a
+  // valid-looking straight zero-width polyline. The caller omits the entity
+  // with an explicit warning.
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return null;
+  for (const course of courses) {
+    const vertex = vertices[course.index];
+    if (!vertex) continue;
+    if (course.kind === 'arc') {
+      vertex.bulge = (course.geometry as { bulge: number }).bulge;
+    }
+    if (course.width.startWidth !== 0) vertex.startWidth = course.width.startWidth;
+    if (course.width.endWidth !== 0) vertex.endWidth = course.width.endWidth;
+  }
+  return vertices;
+};
 
 export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportResult<DxfExportModel> => {
   const result = emptyExportResult<DxfExportModel>({
@@ -332,9 +379,17 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           result.omittedEntityIds.push(entity.id);
           break;
         }
+        const dxfVertices = polylineDxfVertices(entity);
+        if (dxfVertices == null) {
+          // Fail closed: an unresolvable course ring (mismatched bulge/width
+          // arrays or an underivable arc) must not silently straighten.
+          warn({ code: 'SKIPPED_ENTITY', message: `polyline ${entity.id} has malformed segment metadata (geometry/width arrays do not match its vertices)`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
         model.polylines.push({
           layer: registerLayer(entity.layerId),
-          vertices: entity.vertices.map((v) => ({ x: v.x, y: v.y })),
+          vertices: dxfVertices,
           closed: entity.closed,
           ...entryStyle(entity),
         });
@@ -614,6 +669,15 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           definition.entities.some((child) => child.type === 'circle')
         ) {
           warn({ code: 'SKIPPED_ENTITY', message: `block-reference ${entity.id} has non-uniform scale over a Circle child; INSERT omitted rather than distorted`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        // Phase C2: same fail-closed rule at the DXF boundary for bulged or
+        // wide polyline children — a non-uniform INSERT would let an external
+        // host shear the arc into an ellipse and distort the band. The Circle
+        // precedent applies (omit + explicit warning, never approximate).
+        if (blockReferenceScalesDistortPolylineCurve(definition, entity.scaleX, entity.scaleY)) {
+          warn({ code: 'SKIPPED_ENTITY', message: `block-reference ${entity.id} has non-uniform scale over a bulged/wide polyline child; INSERT omitted rather than distorted`, entityId: entity.id });
           result.omittedEntityIds.push(entity.id);
           break;
         }

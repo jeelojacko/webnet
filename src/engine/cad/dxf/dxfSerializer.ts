@@ -1,4 +1,4 @@
-import type { DxfExportModel } from './dxfExportModel';
+import type { DxfExportModel, DxfPolylineVertex } from './dxfExportModel';
 import { isDxfNativeBlockName } from './dxfBlockExport';
 import { dxfLinetypeName, DXF_LINETYPE_CATALOG, isKnownDxfLinetype, nearestAci } from './dxfColorMap';
 import { emptyExportResult, finalizeExportResult, type ExportResult } from '../exportResult';
@@ -25,6 +25,19 @@ const fmt = (value: number): string => {
 };
 
 const pair = (code: number, value: string): string => `${code}\n${value}`;
+
+/**
+ * Phase C2 LWPOLYLINE vertex pairs. Legacy vertices emit 10/20 only; a
+ * bulged course adds 42, a nonzero band adds 40/41 on the same START
+ * vertex. Order is fixed (10,20,40,41,42) for deterministic bytes.
+ */
+const polylineVertexPairs = (vertex: DxfPolylineVertex): string[] => {
+  const out = [pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y))];
+  if (vertex.startWidth != null) out.push(pair(40, fmt(vertex.startWidth)));
+  if (vertex.endWidth != null) out.push(pair(41, fmt(vertex.endWidth)));
+  if (vertex.bulge != null) out.push(pair(42, fmt(vertex.bulge)));
+  return out;
+};
 
 const layerAci = (model: DxfExportModel, layer: string): number => {
   const aci = nearestAci(model.layerColors?.[layer] ?? '#ffffff');
@@ -142,7 +155,7 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
       block.polylines.forEach((polyline) => {
         out.push(pair(0, 'LWPOLYLINE'), pair(8, polyline.layer), pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'));
         polyline.vertices.forEach((vertex) => {
-          out.push(pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)));
+          out.push(...polylineVertexPairs(vertex));
         });
       });
       block.arcs.forEach((arc) => {
@@ -192,7 +205,7 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
   model.polylines.forEach((polyline) => {
     out.push(pair(0, 'LWPOLYLINE'), pair(8, polyline.layer), ...colorOf(polyline.layer, polyline.colorHex), ...linetypeOf(polyline.layer, polyline.linetypeId), ...invisibleOf(polyline.invisible), pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'));
     polyline.vertices.forEach((vertex) => {
-      out.push(pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)));
+      out.push(...polylineVertexPairs(vertex));
     });
   });
   // Phase 20A: true 3D POLYLINE + VERTEX records (real group 30). R12

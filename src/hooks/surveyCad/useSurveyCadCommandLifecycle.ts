@@ -10,7 +10,11 @@ import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import { cadLineL1CanFinish } from './useSurveyCadLineL1Session';
 import type { CadProject } from '../../engine/cad/cadTypes';
 import { recalculateTraverseSideshotPoint } from './useSurveyCadCommandSession';
-import { commitPlineSession } from './useSurveyCadPlineSession';
+import {
+  commitPlineSession,
+  plineWidthPhaseOf,
+  PLINE_WIDTH_CANCELLED_MESSAGE,
+} from './useSurveyCadPlineSession';
 
 type ReplaceSession = (_nextSession: CommandSession | null) => void;
 type ApplyHistoryUpdate = (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
@@ -151,6 +155,17 @@ export const useSurveyCadCommandLifecycle = ({
     }
     if (session.key === 'FILLET' && session.inputValue.trim().length === 0) {
       replaceSession(null);
+      return;
+    }
+    // Phase C2: an empty Enter while the width prompt is open cancels the
+    // prompt (default unchanged) instead of finishing the draft.
+    if (session.key === 'PLINE' && session.inputValue.trim().length === 0 && plineWidthPhaseOf(session)) {
+      replaceSession({
+        ...session,
+        plineWidthPhase: false,
+        inputValue: '',
+        resultText: PLINE_WIDTH_CANCELLED_MESSAGE,
+      });
       return;
     }
     if (session.key === 'PLINE' && session.inputValue.trim().length === 0 && session.points.length >= 2) {

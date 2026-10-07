@@ -34,6 +34,8 @@ import type {
   CadPointLabelStyleId,
   CadPointStyle,
   CadPointStyleId,
+  CadPolylineSegmentGeometry,
+  CadPolylineSegmentWidth,
   CadProject,
   CadSectionStyle,
   CadStationEquation,
@@ -425,6 +427,12 @@ export type CadCommand =
       /** Absent/false = open polyline. True = closed ring stored without a
        *  duplicate closure vertex (the renderer/segment law wraps to first). */
       closed?: boolean;
+      /** Phase C2 optional per-course bulge metadata; absent = all-line.
+       *  Trailing optional (no version bump). */
+      segmentGeometry?: CadPolylineSegmentGeometry[];
+      /** Phase C2 optional per-course full centred band widths (metres);
+       *  absent = zero-width. Trailing optional (no version bump). */
+      segmentWidths?: CadPolylineSegmentWidth[];
     }
   | {
       key: 'TRAVERSE';

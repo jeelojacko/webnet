@@ -11,6 +11,7 @@ import type {
   CadPolylineEntity,
   CadProject,
 } from './cadTypes';
+import { cadPolylineHasCurveOrWidth } from './cadPolylineCourses';
 export type CadTrimEntity = CadLineEntity | CadPolylineEntity | CadArcEntity;
 
 export interface CadTrimSegmentRef {
@@ -37,7 +38,11 @@ export interface CadTrimPieceBuildOptions {
 export const TRIM_EPSILON = 1e-6;
 
 export const isTrimmableEntity = (entity: CadEntity): entity is CadTrimEntity =>
-  entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc';
+  (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc') &&
+  // Phase C2: bulged or wide polylines are refused by the chord-based
+  // straight-only trim/extend/fillet kernels (no chord treatment, no width
+  // loss). Line/arc entities and legacy polylines are unchanged.
+  !(entity.type === 'polyline' && cadPolylineHasCurveOrWidth(entity));
 
 export const buildTrimSegments = (entity: CadLineEntity | CadPolylineEntity): CadTrimSegmentRef[] => {
   if (entity.type === 'line') {
@@ -53,6 +58,9 @@ export const buildTrimSegments = (entity: CadLineEntity | CadPolylineEntity): Ca
       },
     ];
   }
+  // Phase C2 second-layer guard: never chord a bulged/wide polyline even if
+  // a caller bypasses the isTrimmableEntity gate.
+  if (cadPolylineHasCurveOrWidth(entity)) return [];
 
   const segments: CadTrimSegmentRef[] = [];
   let startDistance = 0;

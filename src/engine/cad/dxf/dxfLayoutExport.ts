@@ -464,7 +464,11 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'),
     ]);
     polyline.vertices.forEach((vertex) => {
-      emitModelEntity([pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y))]);
+      const codes = [pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y))];
+      if (vertex.startWidth != null) codes.push(pair(40, fmt(vertex.startWidth)));
+      if (vertex.endWidth != null) codes.push(pair(41, fmt(vertex.endWidth)));
+      if (vertex.bulge != null) codes.push(pair(42, fmt(vertex.bulge)));
+      emitModelEntity(codes);
     });
   });
   // Phase 20A: 3D POLYLINE/VERTEX (real 30) in R2000 model space too.

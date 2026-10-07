@@ -1,5 +1,6 @@
 import { cadIsAngleOnArcSweep } from './cadGeometry';
 import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
+import { cadPolylineWidthEnvelopePoints } from './cadPolylineCourses';
 import { getFeatureLineCourseCount } from './cadFeatureLines';
 import type { CadFeatureLineEntity, CadParcelEntity } from './cadTypes';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
@@ -106,6 +107,11 @@ export const buildCadBounds = (
       case 'parcel':
         entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));
         if (entity.type === 'parcel') includeParcelArcExtrema(entity, includePoint);
+        if (entity.type === 'polyline' && (entity.segmentGeometry != null || entity.segmentWidths != null)) {
+          // Phase C2: true arc extrema + half-width band envelope join the
+          // drawing bounds (malformed metadata stays vertex-only, fail safe).
+          cadPolylineWidthEnvelopePoints(entity).forEach((point) => includePoint(point.x, point.y));
+        }
         break;
       case 'feature-line':
         entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));

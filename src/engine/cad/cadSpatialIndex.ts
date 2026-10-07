@@ -24,8 +24,9 @@ import {
   validateParcelCourseGeometry,
 } from './cadParcelArcGeometry';
 import { resolveCadFeatureLine } from './cadFeatureLines';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
-import { arcRefFromEntity, circleRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments } from './cadSpatialEntityRefs';
+import { arcRefFromEntity, circleRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments, polylineCourseArcs, polylineCourseSegments } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, expandBlockReference } from './cadBlocks';
 import { buildCadProjectLookup } from './cadProjectLookup';
 import type { CadArcRef, CadCircleRef, CadSegmentRef, CadSpatialIndex } from './cadSpatialIndexTypes';
@@ -168,6 +169,19 @@ const featureLineArcExtraBoundsPoints = (entity: CadFeatureLineEntity): CadWorld
   });
 };
 
+/** Phase C2: polyline arc-course extrema (+ center) for cursor-box culling. */
+const polylineArcExtraBoundsPoints = (entity: CadPolylineEntity): CadWorldPoint[] => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  return courses.flatMap((course) => {
+    if (course.kind !== 'arc' || course.metrics == null) return [];
+    return [
+      { x: course.metrics.center.x, y: course.metrics.center.y },
+      ...parcelArcBoundsPoints(course.from, course.to, (course.geometry as { bulge: number }).bulge),
+    ];
+  });
+};
+
 const circleBounds = (ref: CadCircleRef): PreparedCircle => ({
   ref,
   minX: ref.center.x - ref.radius,
@@ -274,6 +288,38 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
         if (Number.isFinite(minX) && Number.isFinite(minY)) {
           preparedEntities.push({ entity, minX, minY, maxX, maxY });
         }
+      } else if (entity.type === 'polyline') {
+        // Phase C2: line courses join the segment set, arc courses the arc
+        // set (a bulged course is NEVER indexed as its chord). Extra
+        // in-sweep extrema keep cursor-box culling honest for bulges that
+        // reach outside the chord box.
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        for (const ref of polylineCourseSegments(entity)) {
+          const prepared = segmentBounds(ref);
+          preparedSegments.push(prepared);
+          segmentById.set(ref.segmentId, ref);
+          minX = Math.min(minX, prepared.minX);
+          minY = Math.min(minY, prepared.minY);
+          maxX = Math.max(maxX, prepared.maxX);
+          maxY = Math.max(maxY, prepared.maxY);
+        }
+        for (const ref of polylineCourseArcs(entity)) {
+          const prepared = arcBounds(ref);
+          preparedArcs.push(prepared);
+          arcBySourceId.set(ref.sourceEntityId, ref);
+        }
+        for (const point of polylineArcExtraBoundsPoints(entity)) {
+          minX = Math.min(minX, point.x);
+          minY = Math.min(minY, point.y);
+          maxX = Math.max(maxX, point.x);
+          maxY = Math.max(maxY, point.y);
+        }
+        if (Number.isFinite(minX) && Number.isFinite(minY)) {
+          preparedEntities.push({ entity, minX, minY, maxX, maxY });
+        }
       } else {
         const refs = entitySegments(entity);
         let minX = Number.POSITIVE_INFINITY;
@@ -343,8 +389,14 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     const arcs: CadArcRef[] = [];
     const circles: CadCircleRef[] = [];
     for (const child of children) {
-      if (child.type === 'line' || child.type === 'polyline' || child.type === 'polygon') {
+      if (child.type === 'line' || child.type === 'polygon') {
         segments.push(...entitySegments({ ...child, id: block.entity.id }));
+      } else if (child.type === 'polyline') {
+        // Phase C2: line courses as segments, arc courses as true arcs (the
+        // chord is never indexed). Metadata arrays ride on the child copy.
+        const childPolyline = { ...child, id: block.entity.id };
+        segments.push(...entitySegments(childPolyline));
+        arcs.push(...polylineCourseArcs(childPolyline));
       } else if (child.type === 'arc') {
         const ref = arcRefFromEntity(project, { ...child, id: block.entity.id });
         arcs.push({ ...ref, sourceEntityId: block.entity.id });

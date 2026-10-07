@@ -19,6 +19,7 @@ import {
   cadSignedSweepDeg,
 } from './cadGeometry';
 import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
+import { cadPolylineHasCurveOrWidth } from './cadPolylineCourses';
 import {
   applyPoint,
   applyVector,
@@ -121,7 +122,45 @@ export const transformCadEntityGeometry = (
         entity: { ...entity, fromX: from.x, fromY: from.y, toX: to.x, toY: to.y },
       };
     }
-    case 'polyline':
+    case 'polyline': {
+      // Phase C2: translation/rotation carry bulge+width verbatim; uniform
+      // scale keeps bulges (sweep is scale-invariant) and scales widths;
+      // reflection flips every bulge sign and keeps widths positive.
+      // General affine (non-uniform/shear) would turn an arc into an ellipse,
+      // so any arc or any nonzero width FAILS CLOSED with a named diagnostic —
+      // never a chord, ellipse, or stretched band.
+      const geometry = entity.segmentGeometry;
+      const widths = entity.segmentWidths;
+      // Fail closed through the SHARED guards (never a local `.some`): a
+      // present-but-malformed metadata array (sparse, non-array, wrong
+      // count) is treated as arc/width, so GENERAL_AFFINE refuses exactly
+      // what the resolver rejects rather than silently straightening it.
+      if (classification.kind === 'GENERAL_AFFINE' && cadPolylineHasCurveOrWidth(entity)) {
+        return { ok: false, reason: 'CAD_TRANSFORM_POLYLINE_NON_UNIFORM_ARC_WIDTH_UNSUPPORTED' };
+      }
+      const vertices = entity.vertices.map((vertex) => applyPoint(transform, vertex));
+      const carriedGeometry =
+        geometry != null && isReflection(classification)
+          ? mirrorParcelCourseGeometry(geometry)
+          : geometry;
+      const magnitude = Math.abs(classification.scale);
+      const carriedWidths =
+        widths != null && magnitude !== 1
+          ? widths.map((entry) => ({
+              startWidth: entry.startWidth * magnitude,
+              endWidth: entry.endWidth * magnitude,
+            }))
+          : widths;
+      return {
+        ok: true,
+        entity: {
+          ...entity,
+          vertices,
+          ...(carriedGeometry !== geometry ? { segmentGeometry: carriedGeometry } : {}),
+          ...(carriedWidths !== widths ? { segmentWidths: carriedWidths } : {}),
+        },
+      };
+    }
     case 'polygon': {
       // Every vertex transforms; order is NEVER reversed under reflection.
       return {

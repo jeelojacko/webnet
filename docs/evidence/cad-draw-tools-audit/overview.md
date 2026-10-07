@@ -45,7 +45,7 @@ No right-click finish, no command repeat. Persistent kinds live in the
 | Point | EN | USABLE_BUT_INCOMPLETE | HIGH | Z entry, symbol-at-creation (creates survey-point+text, 2D typed only) |
 | Line | EN | USABLE_BUT_INCOMPLETE | HIGH | chain mode, Z (single segment, full snaps/grips/trim/DXF) |
 | Traverse | EN | USABLE_BUT_INCOMPLETE | MED-HIGH | LSQ integration; backsight label-only (commits points+lines+polyline, 3 adjustments) |
-| Polyline | EN | USABLE_BUT_INCOMPLETE | HIGH | close/backstep/bulge/width/vertex insert-delete (`closed:false` hardcoded) |
+| Polyline | EN | USABLE_BUT_INCOMPLETE | HIGH | vertex insert/delete, Z (close/backstep C1 and bulge/width/arc C2 delivered) |
 | Arc | EN | PRODUCTION_READY | HIGH | only Z + standalone bulge round-trip (11 modes, fail-closed degeneracy) |
 | Circle | DIS | PLACEHOLDER_ONLY | HIGH | everything (no entity/command/primitive; 360° arc explicitly blocked) |
 | Best Fit | DIS | PLACEHOLDER_ONLY | MEDIUM | design first: inputs/output entity/residuals undefined; zero fit functions |
