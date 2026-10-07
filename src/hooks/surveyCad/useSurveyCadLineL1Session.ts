@@ -23,6 +23,7 @@ import {
   resolveCadLineRayClick,
   type CadLineSourceMode,
 } from '../../engine/cad/cadLineOnSourceResolvers';
+import { surfaceEditPickTolerance } from '../../engine/cad/cadSurfaceEditPicking';
 import type { CadLineFromEndEndpoint } from '../../engine/cad/cadLineEntityResolvers';
 import { resolveCadLinePointByStationId } from '../../engine/cad/cadLineSurveyResolvers';
 import { isCadLineSegmentValid } from '../../engine/cad/cadLineBatch';
@@ -556,7 +557,11 @@ export const handleCadLineL1PointPick = (options: CadLineL1PointPickOptions): bo
         return true;
       }
       if (!current.lineSourceOnPoint) {
-        const frame = resolveCadLineOnSourcePoint(entity, point);
+        const frame = resolveCadLineOnSourcePoint(
+          entity,
+          point,
+          surfaceEditPickTolerance(project.bounds),
+        );
         if (!frame.ok) {
           replaceSession({ ...current, inputValue: '', resultText: `${current.key}: ${frame.error.message}` });
           return true;

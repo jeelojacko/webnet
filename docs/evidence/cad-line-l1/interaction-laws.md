@@ -91,10 +91,15 @@ grammar differs. All engine conventions come from Worker A's
 - **TANGENT/PERP (corrected, source-point-on-object → ray):** both are
   three-phase. **(A)** pick a line/arc/circle body (source captured, no
   mutation). **(B)** pick the start point **ON** the source: the pick is projected
-  onto it — a line must land on the finite segment (residual tolerance = 5% of
-  the segment length or the degenerate floor), an arc on the finite sweep, a
-  circle anywhere on the circle; off-object / off-sweep / degenerate picks fail
-  closed with an explicit `resultText` and no mutation. **(C)** enter a **signed
+  onto it — a line must land on the finite segment (residual tolerance = the
+  **production CAD pick tolerance** `surfaceEditPickTolerance(bounds)`: 1% of the
+  drawing extent, floored at 0.5 m — never a source-length/radius fraction, so a
+  30 m pick off a 1 km line rejects), an arc on the finite sweep, a circle
+  anywhere on the circle; off-object / off-sweep / degenerate picks fail closed
+  with an explicit `resultText` and no mutation. Short sources project through a
+  floor-safe segment projection: the 1e-9 creation floor is unchanged, and a
+  valid 1e-7 line's far-endpoint pick resolves to the far endpoint rather than
+  collapsing to the start. **(C)** enter a **signed
   distance**, or click an endpoint constrained to the two source-frame rays
   (nearest ray wins by the projection sign; a perpendicular-bisector tie fails
   closed so the operator repicks). `TANGENT` travels the source tangent

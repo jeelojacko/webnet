@@ -24,10 +24,10 @@ import {
   cadDistance,
   cadIsAngleOnArcSweep,
   cadPointOnCircle,
-  cadProjectPointOntoInfiniteLine,
   cadSignedSweepDeg,
   type CadWorldPoint,
 } from './cadGeometry';
+import { surfaceEditPickTolerance } from './cadSurfaceEditPicking';
 import {
   CAD_LINE_DEGENERATE_FLOOR,
   cadLineFail,
@@ -43,16 +43,19 @@ export type CadLineSourceEntity = CadLineEntity | CadArcEntity | CadCircleEntity
 export type CadLineSourceMode = 'tangent' | 'normal';
 
 /**
- * Production residual tolerance: a pick must lie within this fraction of the
- * source's characteristic size (line length / radius) of the source curve, or
- * within the canonical line floor, whichever is larger. The resolved start is
- * always the exact projection, so this only rejects wildly-off picks; it never
- * moves the start off the source.
+ * On-source residual tolerance is the **production CAD pick tolerance** — the
+ * same world-unit radius the shell uses for snapping/body picks
+ * (`surfaceEditPickTolerance`: 1% of the drawing extent, floored at 0.5 m) —
+ * never a fraction of the source length or radius. The session layer passes the
+ * live bounds-derived value; this fallback keeps the engine math screen-free and
+ * well-defined when the caller has no bounds.
  */
-export const CAD_LINE_SOURCE_RESIDUAL_RATIO = 0.05;
+export const CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK = surfaceEditPickTolerance(null);
 
-export const cadLineSourceResidualTolerance = (characteristicSize: number): number =>
-  Math.max(Math.abs(characteristicSize) * CAD_LINE_SOURCE_RESIDUAL_RATIO, CAD_LINE_DEGENERATE_FLOOR);
+const resolveResidualTolerance = (tolerance: number | undefined): number => {
+  const value = tolerance ?? CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK;
+  return Number.isFinite(value) && value >= 0 ? value : CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK;
+};
 
 /** Narrow a `CadEntity` to the source kinds the corrected modes accept. */
 export const isCadLineSourceEntity = (
@@ -85,6 +88,30 @@ export interface CadLineSourceFrame {
 }
 
 /**
+ * Safe projection onto the finite source segment's supporting line.
+ * `cadProjectPointOntoInfiniteLine` collapses whenever squared length
+ * ≤ 1e-12 (length ≤ 1e-6) — coarser than the 1e-9 creation floor this resolver
+ * accepts — which would send a genuinely short segment's far-endpoint pick to
+ * its start. `projectCadLinePointOntoSource` rejects sources at/below the
+ * 1e-9 floor first, so `lengthSquared > 1e-18` and this division is safe for
+ * every accepted source. The 1e-9 creation floor is unchanged.
+ */
+const projectPointOntoSegmentLine = (
+  pick: CadWorldPoint,
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+): { point: CadWorldPoint; t: number } => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const t = ((pick.x - start.x) * dx + (pick.y - start.y) * dy) / lengthSquared;
+  return {
+    point: { x: start.x + dx * t, y: start.y + dy * t },
+    t,
+  };
+};
+
+/**
  * Project a pick onto the source and enforce membership: a line pick must land
  * on the finite segment (within the residual tolerance), an arc pick must land
  * on the finite sweep, and a circle pick has no sweep restriction. Non-finite
@@ -93,8 +120,10 @@ export interface CadLineSourceFrame {
 export const projectCadLinePointOntoSource = (
   entity: CadLineSourceEntity,
   pick: CadWorldPoint,
+  residualTolerance: number = CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK,
 ): CadLineResult<CadWorldPoint> => {
   if (!isFinitePoint(pick)) return cadLineFail('NON_FINITE', 'Pick point is not finite.');
+  const tolerance = resolveResidualTolerance(residualTolerance);
   if (entity.type === 'line') {
     const start = { x: entity.fromX, y: entity.fromY };
     const end = { x: entity.toX, y: entity.toY };
@@ -102,9 +131,8 @@ export const projectCadLinePointOntoSource = (
     if (!Number.isFinite(length) || length <= CAD_LINE_DEGENERATE_FLOOR) {
       return cadLineFail('DEGENERATE', 'Source line has zero length.');
     }
-    const tolerance = cadLineSourceResidualTolerance(length);
-    const projection = cadProjectPointOntoInfiniteLine(pick, start, end);
-    if (cadDistance(pick, projection.point) > tolerance) {
+    const projection = projectPointOntoSegmentLine(pick, start, end);
+    if (!Number.isFinite(projection.t) || cadDistance(pick, projection.point) > tolerance) {
       return cadLineFail('NO_SOLUTION', 'Pick is not on the source line.');
     }
     const parameterTolerance = tolerance / length;
@@ -123,7 +151,7 @@ export const projectCadLinePointOntoSource = (
     return cadLineFail('DEGENERATE', 'Source circle/arc has an unusable radius.');
   }
   const radialDistance = cadDistance(pick, center);
-  if (Math.abs(radialDistance - entity.radius) > cadLineSourceResidualTolerance(entity.radius)) {
+  if (Math.abs(radialDistance - entity.radius) > tolerance) {
     return cadLineFail('NO_SOLUTION', 'Pick is not on the source arc/circle.');
   }
   const angleDeg = cadAngleDegFromCenter(center, pick);
@@ -167,8 +195,9 @@ export const resolveCadLineSourceFrame = (
 export const resolveCadLineOnSourcePoint = (
   entity: CadLineSourceEntity,
   pick: CadWorldPoint,
+  residualTolerance: number = CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK,
 ): CadLineResult<CadLineSourceFrame> => {
-  const projected = projectCadLinePointOntoSource(entity, pick);
+  const projected = projectCadLinePointOntoSource(entity, pick, residualTolerance);
   if (!projected.ok) return projected;
   return resolveCadLineSourceFrame(entity, projected.value);
 };

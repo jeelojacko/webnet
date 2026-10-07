@@ -21,7 +21,7 @@ bridge seam, tests, browser spec). Engine math and icons are Worker A/C.
 |---|---|
 | `tests/cad_line_l1_parsers.test.ts` (Worker A) | 13 tests: engine parsers incl. strict whole-request point-range rejection (invalid/empty tokens, cap, safe-integer guards) + signed distances |
 | `tests/cad_line_l1_construction.test.ts` (Worker A) | directional/endpoint math + the retained perpendicular-foot helper |
-| `tests/cad_line_l1_on_source.test.ts` (Worker A) | 18 tests: corrected TANGENT/PERP on-source engine — line finite-segment membership/residual, arc/circle radial projection + finite sweep, source tangent/normal frames and sign law, signed ray endpoint, two-ray click tie |
+| `tests/cad_line_l1_on_source.test.ts` (Worker A) | 21 tests: corrected TANGENT/PERP on-source engine — line finite-segment membership/residual with the production pick tolerance (far-pick rejection, custom tolerance), short-line floor consistency (1e-7 far-endpoint resolves, at/below-floor rejects), arc/circle radial projection + finite sweep, source tangent/normal frames and sign law, signed ray endpoint, two-ray click tie |
 | `tests/cad_line_l1_coordinate_context.test.ts` (Worker A) | CRS fail-closed + success + no mutation |
 | `tests/cad_line_l1_survey.test.ts` (Worker A) | station/offset + side shots |
 | `tests/cad_line_l1_entity.test.ts` (Worker A) | from-end/extension edits |
@@ -32,7 +32,7 @@ bridge seam, tests, browser spec). Engine math and icons are Worker A/C.
 | `tests/cad_ribbon_controls.test.tsx` | planned-row + sticky laws |
 | `tests/cad_ribbon_icon_manifest.test.tsx` | 17 icons + activation |
 
-Combined focused run: **12 files, 161/161** (`npx vitest run --config
+Combined focused run: **12 files, 164/164** (`npx vitest run --config
 vitest.agent.config.ts tests/cad_line_l1_*.test.ts tests/cad_app_bridge.test.ts
 tests/cad_ribbon_tool_families.test.ts tests/cad_ribbon_controls.test.tsx
 tests/cad_ribbon_icon_manifest.test.tsx`).
@@ -129,3 +129,13 @@ Browser QA after the correction: `npx playwright test cad-draw-line-l1
 errors**. Geometry evidence pins a tangent start on the source, a tangent exactly
 perpendicular to the circle radius, and a perpendicular exactly normal to the
 line source (`geometry.json`).
+
+## 11. Correction pass (round-1 reviewer findings)
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P1) | On-source residual tolerance was a source-length/radius fraction (5%), so a 30 m pick off a 1 km line was silently accepted as on-source. | Replaced the fraction with the **existing production CAD pick tolerance** (`surfaceEditPickTolerance`, the same `1% of drawing extent, floor 0.5 m` law used by snapping/body picks; not a new fraction). The engine helper now takes `residualTolerance` as a parameter (fallback `surfaceEditPickTolerance(null)`), and the session layer passes `surfaceEditPickTolerance(project.bounds)`, so engine math stays screen-free. Arc/circle use the same absolute law. Pinned by `tests/cad_line_l1_on_source.test.ts` (far-pick rejection, explicit-tolerance accept/reject). |
+| 2 (P2) | A valid 1e-7 source line's far-endpoint pick was sent to the start because the shared `cadProjectPointOntoInfiniteLine` collapses at squared length ≤ 1e-12 (length ≤ 1e-6), coarser than the 1e-9 creation floor. | Scoped a floor-safe segment projection inside `cadLineOnSourceResolvers` (safe for every source above the unchanged 1e-9 creation floor, so `lengthSquared > 1e-18`), avoiding any shared-helper behavior change across its many callers. Pinned by 1e-7 far-endpoint/mid resolution and at/below-floor rejection tests. |
+
+After this pass: focused L1 **8 files, 115/115**; combined **12 files, 164/164**;
+browser A–G **7/7** zero errors.

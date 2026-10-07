@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cadLineLeftNormal,
   cadLineSourceDirection,
-  cadLineSourceResidualTolerance,
+  CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK,
   isCadLineSourceEntity,
   projectCadLinePointOntoSource,
   resolveCadLineOnSourcePoint,
@@ -80,35 +80,57 @@ describe('L1 on-source: source narrowing and tolerances', () => {
     ).toBe(false);
   });
 
-  it('scales the residual tolerance with the source but never below the floor', () => {
-    expect(cadLineSourceResidualTolerance(100)).toBeCloseTo(5, 9);
-    expect(cadLineSourceResidualTolerance(0)).toBeGreaterThan(0);
+  it('uses the production pick tolerance (absolute), not a source-length fraction', () => {
+    // Fallback is the shell's production pick radius (surfaceEditPickTolerance(null) = 1 m).
+    expect(CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK).toBe(1);
+    // A 1 km source does NOT get a 50 m residual band: a 30 m off pick rejects.
+    const longLine = line(0, 0, 1000, 0);
+    expect(projectCadLinePointOntoSource(longLine, { x: 500, y: 30 })).toMatchObject({
+      ok: false,
+      error: { code: 'NO_SOLUTION' },
+    });
+    // An explicit bounds-derived tolerance is honoured (accept inside / reject outside).
+    expect(projectCadLinePointOntoSource(longLine, { x: 500, y: 8 }, 10)).toEqual({
+      ok: true,
+      value: { x: 500, y: 0 },
+    });
+    expect(projectCadLinePointOntoSource(longLine, { x: 500, y: 12 }, 10)).toMatchObject({
+      ok: false,
+      error: { code: 'NO_SOLUTION' },
+    });
   });
 });
 
 describe('L1 on-source: line finite-segment membership', () => {
   const source = line(0, 0, 100, 0);
 
-  it('projects an interior pick exactly onto the segment', () => {
-    expect(projectCadLinePointOntoSource(source, { x: 40, y: 3 })).toEqual({
+  it('projects an interior pick within pick tolerance exactly onto the segment', () => {
+    expect(projectCadLinePointOntoSource(source, { x: 40, y: 0.4 })).toEqual({
       ok: true,
       value: { x: 40, y: 0 },
     });
   });
 
+  it('rejects an interior pick outside pick tolerance', () => {
+    expect(projectCadLinePointOntoSource(source, { x: 40, y: 3 })).toMatchObject({
+      ok: false,
+      error: { code: 'NO_SOLUTION' },
+    });
+  });
+
   it('clamps a pick within tolerance of an endpoint to the exact endpoint', () => {
-    expect(projectCadLinePointOntoSource(source, { x: 103, y: 0 })).toEqual({
+    expect(projectCadLinePointOntoSource(source, { x: 100.5, y: 0 })).toEqual({
       ok: true,
       value: { x: 100, y: 0 },
     });
   });
 
   it('rejects a pick beyond the finite segment and a wildly-off pick', () => {
-    expect(projectCadLinePointOntoSource(source, { x: 120, y: 0 })).toMatchObject({
+    expect(projectCadLinePointOntoSource(source, { x: 102, y: 0 })).toMatchObject({
       ok: false,
       error: { code: 'NO_SOLUTION' },
     });
-    expect(projectCadLinePointOntoSource(source, { x: 50, y: 30 })).toMatchObject({
+    expect(projectCadLinePointOntoSource(source, { x: 50, y: 3 })).toMatchObject({
       ok: false,
       error: { code: 'NO_SOLUTION' },
     });
@@ -123,6 +145,30 @@ describe('L1 on-source: line finite-segment membership', () => {
       ok: false,
       error: { code: 'DEGENERATE' },
     });
+  });
+});
+
+describe('L1 on-source: short-line floor consistency', () => {
+  it('resolves a far-endpoint/mid pick on a 1e-7 source (shared projection would collapse)', () => {
+    const short = line(0, 0, 1e-7, 0);
+    const far = okValue(projectCadLinePointOntoSource(short, { x: 1e-7, y: 0 }, 1));
+    expect(far.x).toBeCloseTo(1e-7, 12);
+    expect(far.y).toBe(0);
+    const mid = okValue(projectCadLinePointOntoSource(short, { x: 5e-8, y: 0 }, 1));
+    expect(mid.x).toBeCloseTo(5e-8, 12);
+  });
+
+  it('rejects sources at/below the 1e-9 creation floor and accepts just above it', () => {
+    expect(projectCadLinePointOntoSource(line(0, 0, 1e-9, 0), { x: 0, y: 0 }, 1)).toMatchObject({
+      ok: false,
+      error: { code: 'DEGENERATE' },
+    });
+    expect(projectCadLinePointOntoSource(line(0, 0, 5e-10, 0), { x: 0, y: 0 }, 1)).toMatchObject({
+      ok: false,
+      error: { code: 'DEGENERATE' },
+    });
+    const above = okValue(projectCadLinePointOntoSource(line(0, 0, 2e-9, 0), { x: 2e-9, y: 0 }, 1));
+    expect(above.x).toBeCloseTo(2e-9, 12);
   });
 });
 
@@ -206,7 +252,7 @@ describe('L1 on-source: tangent and normal frames (sign law)', () => {
   });
 
   it('composes projection + frame for both modes', () => {
-    const tangent = okValue(resolveCadLineOnSourcePoint(line(0, 0, 100, 0), { x: 40, y: 2 }));
+    const tangent = okValue(resolveCadLineOnSourcePoint(line(0, 0, 100, 0), { x: 40, y: 0.4 }));
     expect(tangent.point).toEqual({ x: 40, y: 0 });
     expect(tangent.tangent).toEqual({ x: 1, y: 0 });
     const normal = okValue(resolveCadLineOnSourcePoint(circle(), { x: 50, y: 0 }));
