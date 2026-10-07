@@ -25,5 +25,6 @@ Flows:
 Each flow asserts zero page/console/unhandled-rejection errors. PNG evidence
 is written under this directory by the spec run.
 
-Status: spec authored and type-clean; execution is part of the parent pre-PR
-gate and is not claimed here.
+Status: executed and green. Production build, headless Chromium,
+`tests-browser/cad-draw-polyline-c1.spec.ts` 5/5 (flows A–E), with zero page
+errors, zero console errors, and zero unhandled rejections across all flows.

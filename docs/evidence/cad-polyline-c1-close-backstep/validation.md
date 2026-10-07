@@ -27,8 +27,19 @@
 - Dock: `C`/`U` visible in the single buffer and routed to the session; no
   autocomplete list while the session is active.
 
-## Not run in this scope
+## Higher-tier closeout
 
-`npm run typecheck` / lint / full agent tier / production build are owned by the parent pre-PR gate (Husky owns lint+typecheck
-at commit). LSP diagnostics were clean while editing. Browser spec
-`tests-browser/cad-draw-polyline-c1.spec.ts` executed by the parent pre-PR gate: 5/5 green headless Chromium (flows A-E); see `browser-qa.md`.
+- Browser: `tests-browser/cad-draw-polyline-c1.spec.ts` 5/5 green headless
+  Chromium (flows A–E), zero page/console/unhandled-rejection errors; see
+  `browser-qa.md`.
+- Production build (browser config): clean (~10 s).
+- `npm run test:agent`: 8758 passed + 1 skipped, plus 3 pre-existing,
+  unrelated study-desktop trio failures (`study_ai_unit_calibration`,
+  `study_ai_unit_calibration_v5`, `study_ai_unit_preflight`) — none reference
+  CAD C1.
+- Exact-head CI: check #1070 / run 37550404106 SUCCESS at the implementation
+  head 6806c2ee, all five jobs green (classify/static/tests/build-smoke/
+  numerical). That CI certifies the implementation/reviewed production head;
+  the docs-only closeout head requires its own exact-head CI after push.
+- Lint + typecheck are owned by Husky at commit; LSP diagnostics were clean
+  while editing.
