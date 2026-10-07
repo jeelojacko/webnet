@@ -76,13 +76,26 @@ export interface CadDisplayEllipsePrimitive extends CadDisplayPrimitiveBase {
   strokeWidth: number;
 }
 
+/**
+ * Phase C2 aggregated width-band fill: ONE closed model-space polygon per
+ * polyline (never a per-segment DOM explosion). `fill` is the resolved
+ * stroke color; the primitive is a visual overlay only — hit testing stays
+ * centreline-authoritative. Viewport, SVG and PDF share this one shape.
+ */
+export interface CadDisplayBandPrimitive extends CadDisplayPrimitiveBase {
+  kind: 'band';
+  points: CadDisplayPoint[];
+  fill: string;
+}
+
 export type CadDisplayPrimitive =
   | CadDisplayPointPrimitive
   | CadDisplayLinePrimitive
   | CadDisplayArcPrimitive
   | CadDisplayCirclePrimitive
   | CadDisplayTextPrimitive
-  | CadDisplayEllipsePrimitive;
+  | CadDisplayEllipsePrimitive
+  | CadDisplayBandPrimitive;
 
 export interface CadDisplayScene {
   bounds: CadBounds | null;

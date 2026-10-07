@@ -19,6 +19,7 @@ export const useSurveyCadWorkspaceCommandController = ({
         current.active === nextSnapConstructionContext.active &&
         current.scopeSeedSegmentId === nextSnapConstructionContext.scopeSeedSegmentId &&
         current.tangentSeedArcEntityId === nextSnapConstructionContext.tangentSeedArcEntityId &&
+        current.tangentSeedArcSegmentId === nextSnapConstructionContext.tangentSeedArcSegmentId &&
         current.basePoint?.x === nextSnapConstructionContext.basePoint?.x &&
         current.basePoint?.y === nextSnapConstructionContext.basePoint?.y &&
         current.tangentSeedPoint?.x === nextSnapConstructionContext.tangentSeedPoint?.x &&

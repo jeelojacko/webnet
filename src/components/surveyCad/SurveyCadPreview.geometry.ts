@@ -192,6 +192,20 @@ export const primitiveBounds = (
         maxY: center.y + radiusY,
       };
     }
+    case 'band': {
+      let minX = Number.POSITIVE_INFINITY;
+      let minY = Number.POSITIVE_INFINITY;
+      let maxX = Number.NEGATIVE_INFINITY;
+      let maxY = Number.NEGATIVE_INFINITY;
+      primitive.points.forEach((point) => {
+        const mapped = project(point.x, point.y);
+        minX = Math.min(minX, mapped.x);
+        minY = Math.min(minY, mapped.y);
+        maxX = Math.max(maxX, mapped.x);
+        maxY = Math.max(maxY, mapped.y);
+      });
+      return { minX, minY, maxX, maxY };
+    }
   }
 };
 

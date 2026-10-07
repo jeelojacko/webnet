@@ -12,6 +12,8 @@ import type {
   CadAlignmentEntity,
   CadArcEntity,
   CadParcelEntity,
+  CadPolylineSegmentGeometry,
+  CadPolylineSegmentWidth,
   CadSnapKind,
   CadSurveyTableKind,
 } from '../../engine/cad/cadTypes';
@@ -528,6 +530,42 @@ export type CommandSession =
       inputValue: string;
       points: CommandPoint[];
       resultText?: string;
+      /**
+       * Phase C2 draw mode. `'line'` completes one straight course per
+       * point; `'arc'` consumes 3-point legs (stored START vertex, pending
+       * THROUGH point, appended END vertex). Defaults to `'line'` when
+       * absent (legacy C1 sessions stay line-mode).
+       */
+      plineDrawMode?: 'line' | 'arc';
+      /**
+       * Phase C2 completed per-course geometry. Entry [index] describes the
+       * course starting at `points[index]`; length is `points.length - 1`
+       * when non-empty. Absent/empty = all-line (legacy C1 shape).
+       */
+      plineSegmentGeometry?: CadPolylineSegmentGeometry[];
+      /**
+       * Phase C2 completed per-course full centred band widths (metres).
+       * Entry [index] describes the course starting at `points[index]`.
+       * Absent/empty = zero-width (legacy C1 shape).
+       */
+      plineSegmentWidths?: CadPolylineSegmentWidth[];
+      /**
+       * Phase C2 pending arc through-point (arc mode only). Never a
+       * vertex: it is consumed together with the following END point into
+       * one bulged course. Null when no through-point is pending.
+       */
+      plineArcThrough?: CommandPoint | null;
+      /**
+       * Phase C2 width-setting phase. While true the next bare numeric
+       * input sets the default width pair instead of adding geometry.
+       */
+      plineWidthPhase?: boolean;
+      /**
+       * Phase C2 default full centred width pair (metres) applied to
+       * future courses. Persists until changed; backstep never alters it.
+       * Absent = zero-width (hairline) legacy default.
+       */
+      plineDefaultWidth?: CadPolylineSegmentWidth;
     }
   | {
       key: 'TRAVERSE';

@@ -126,6 +126,10 @@ export const useSurveyCadCommandStarters = ({
       key: 'PLINE',
       inputValue: '',
       points: [],
+      plineDrawMode: 'line',
+      plineArcThrough: null,
+      plineWidthPhase: false,
+      plineDefaultWidth: { startWidth: 0, endWidth: 0 },
     }),
   startTraverseCommand: () =>
     beginSession({

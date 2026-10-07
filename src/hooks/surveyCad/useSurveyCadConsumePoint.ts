@@ -28,6 +28,7 @@ import { handleAnnotationPointPick } from './useSurveyCadAnnotationSessions';
 import { handleSurveyCadEditPointPick } from './useSurveyCadEditPointPick';
 import { handleSurveyCadTransformPointPick } from './useSurveyCadTransformPointPick';
 import { handleSurveyCadParcelSplitPointPick } from './useSurveyCadParcelSplitPointPick';
+import { handlePlinePointPick } from './useSurveyCadPlineSession';
 import {
   handleInversePointPick,
   handlePerpendicularPointPick,
@@ -150,38 +151,31 @@ const handlePolylineOrTraversePointPick = ({
   HandleSurveyCadConsumePointOptions,
   'current' | 'point' | 'projectStationIds' | 'replaceSession'
 >): boolean => {
-  if (current.key !== 'PLINE' && current.key !== 'TRAVERSE') return false;
-  const draftPoint =
-    current.key === 'TRAVERSE'
-      ? normalizeDraftPoint(point, current.inputPoints, projectStationIds)
-      : normalizeDraftPoint(point, current.points, projectStationIds);
-  replaceSession(
-    current.key === 'TRAVERSE'
-      ? {
-          ...current,
-          points: [...current.inputPoints, draftPoint],
-          inputPoints: [...current.inputPoints, draftPoint],
-          legInputs:
-            current.inputPoints.length === 0
-              ? current.legInputs
-              : [
-                  ...current.legInputs,
-                  buildTraverseLegInputFromPoints(
-                    current.inputPoints[current.inputPoints.length - 1]!,
-                    draftPoint,
-                  ),
-                ],
-          adjustment: null,
-          inputValue: '',
-          resultText: undefined,
-        }
-      : {
-          ...current,
-          points: [...current.points, draftPoint],
-          inputValue: '',
-          resultText: undefined,
-        },
-  );
+  // Phase C2: PLINE owns arc legs, the pending through-point, and the
+  // width-phase point law; TRAVERSE keeps the legacy append path below.
+  if (current.key === 'PLINE') {
+    return handlePlinePointPick({ point, projectStationIds, replaceSession, session: current });
+  }
+  if (current.key !== 'TRAVERSE') return false;
+  const draftPoint = normalizeDraftPoint(point, current.inputPoints, projectStationIds);
+  replaceSession({
+    ...current,
+    points: [...current.inputPoints, draftPoint],
+    inputPoints: [...current.inputPoints, draftPoint],
+    legInputs:
+      current.inputPoints.length === 0
+        ? current.legInputs
+        : [
+            ...current.legInputs,
+            buildTraverseLegInputFromPoints(
+              current.inputPoints[current.inputPoints.length - 1]!,
+              draftPoint,
+            ),
+          ],
+    adjustment: null,
+    inputValue: '',
+    resultText: undefined,
+  });
   return true;
 };
 

@@ -225,6 +225,20 @@ export const useSurveyCadWorkspacePreviews = ({
             strokeDasharray: '8 6',
           };
         }
+        if (primitive.kind === 'band') {
+          return {
+            ...primitive,
+            id: `preview:translate:${index + 1}`,
+            sourceEntityId: `preview:translate:${index + 1}`,
+            stroke: previewStroke,
+            fill: previewStroke ?? primitive.fill,
+            points: primitive.points.map((point) => ({
+              x: point.x + commandPreview.deltaX,
+              y: point.y + commandPreview.deltaY,
+            })),
+            opacity: 0.6,
+          };
+        }
         return {
           ...primitive,
           id: `preview:translate:${index + 1}`,
@@ -365,7 +379,9 @@ export const useSurveyCadWorkspacePreviews = ({
       .map((primitive) => ({
         ...primitive,
         stroke: '#22d3ee',
-        fill: primitive.kind === 'point' ? '#22d3ee' : primitive.fill,
+        ...(primitive.kind === 'point' || primitive.kind === 'band'
+          ? { fill: '#22d3ee' }
+          : {}),
         opacity: 0.9,
         strokeDasharray:
           primitive.kind === 'text' || primitive.kind === 'point'

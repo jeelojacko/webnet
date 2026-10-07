@@ -1,0 +1,145 @@
+{
+  "flowA": {
+    "closed": false,
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 10
+      },
+      {
+        "x": 34.14213562373095,
+        "y": 24.14213562373095
+      }
+    ]
+  },
+  "flowB": {
+    "segmentGeometry": [
+      {
+        "kind": "line"
+      },
+      {
+        "kind": "arc",
+        "bulge": -0.9999999999999999
+      }
+    ],
+    "arcMidpoint": {
+      "x": 50,
+      "y": 9.999999999999998
+    },
+    "offChordMeters": 9.999999999999998,
+    "renderedOffChordPixels": 118.96553039550781,
+    "renderedChordPixels": 237.93103027343946
+  },
+  "flowC": {
+    "closed": true,
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 10
+      }
+    ],
+    "closingBulge": 0.38660687473185057,
+    "closingSweepDeg": 84.54737801218747
+  },
+  "flowD": {
+    "segmentWidths": [
+      {
+        "startWidth": 6,
+        "endWidth": 6
+      },
+      {
+        "startWidth": 2,
+        "endWidth": 8
+      }
+    ],
+    "modelBandArea": 280,
+    "firstZoom": {
+      "screenArea": 78948.23203091107,
+      "scale": 16.791604197901048,
+      "ratio": 1
+    },
+    "secondZoom": {
+      "screenArea": 99032.66225957492,
+      "scale": 18.806596701649177,
+      "ratio": 1.0000000000000004
+    }
+  },
+  "flowE": {
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      }
+    ],
+    "segmentGeometry": [
+      {
+        "kind": "arc",
+        "bulge": 0.4
+      }
+    ]
+  },
+  "flowF": {
+    "segmentGeometry": [
+      {
+        "kind": "arc",
+        "bulge": 0.4
+      },
+      {
+        "kind": "line"
+      }
+    ],
+    "segmentWidths": [
+      {
+        "startWidth": 0,
+        "endWidth": 0
+      },
+      {
+        "startWidth": 1.5,
+        "endWidth": 1.5
+      }
+    ],
+    "dxfExported": true
+  },
+  "flowH": {
+    "segmentGeometry": [
+      {
+        "kind": "arc",
+        "bulge": 1.1999999999999997
+      },
+      {
+        "kind": "arc",
+        "bulge": 1.1999999999999997
+      }
+    ],
+    "vertices": [
+      {
+        "x": 40,
+        "y": 8
+      },
+      {
+        "x": 50,
+        "y": 8
+      },
+      {
+        "x": 60,
+        "y": 8
+      }
+    ]
+  }
+}

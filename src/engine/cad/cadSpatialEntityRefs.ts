@@ -1,6 +1,12 @@
 import { cadPointOnCircle, type CadWorldPoint } from './cadGeometry';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
-import { CAD_PARCEL_BULGE_LINE_FLOOR } from './cadParcelArcGeometry';
+import {
+  CAD_PARCEL_BULGE_LINE_FLOOR,
+  describeParcelArcCourse,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
+import { cadPolylineCourseKind, resolveCadPolylineCourses } from './cadPolylineCourses';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import type {
@@ -26,6 +32,60 @@ export const lineSegments = (line: CadLineEntity): CadSegmentRef[] => [
     label: `${line.fromStationId}-${line.toStationId}`,
   },
 ];
+
+/**
+ * Phase C2: line-course refs of a PLINE. Arc courses are excluded so a
+ * bulged course is never indexed as its chord (the arc set owns them).
+ * Legacy polylines without metadata keep the byte-identical all-line path.
+ */
+export const polylineCourseSegments = (entity: CadPolylineEntity): CadSegmentRef[] => {
+  if (entity.segmentGeometry == null && entity.segmentWidths == null) {
+    return vertexEntitySegments(entity);
+  }
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  return courses
+    .filter((course) => course.kind === 'line')
+    .map((course) => ({
+      segmentId: `${entity.id}#${course.index}`,
+      sourceEntityId: entity.id,
+      start: { x: course.from.x, y: course.from.y },
+      end: { x: course.to.x, y: course.to.y },
+      startLabel: entity.vertexLabels[course.index] ?? `V${course.index + 1}`,
+      endLabel: entity.vertexLabels[course.index + 1] ?? `V${course.index + 2}`,
+      label: `${entity.vertexLabels[course.index] ?? `V${course.index + 1}`}-${entity.vertexLabels[course.index + 1] ?? `V${course.index + 2}`}`,
+    }));
+};
+
+/**
+ * Phase C2: true arc-course refs of a PLINE (never the chord). The segment
+ * id matches the line-course addressing so downstream snaps/intersections
+ * share one course identity across line and arc parts.
+ */
+export const polylineCourseArcs = (entity: CadPolylineEntity): CadArcRef[] => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  return courses
+    .filter((course) => course.kind === 'arc' && course.metrics != null)
+    .map((course) => {
+      const metrics = course.metrics!;
+      return {
+        sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${course.index}`,
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.startAngleDeg + metrics.signedSweepDeg,
+        startPoint: { x: course.from.x, y: course.from.y },
+        endPoint: { x: course.to.x, y: course.to.y },
+        label: `${getCadEntityDisplayLabel(entity)}#${course.index}`,
+      };
+    });
+};
+
+/** True when a polyline carries any canonical arc course (shared floor). */
+export const isPolylineArcCourse = (entity: CadPolylineEntity, index: number): boolean =>
+  cadPolylineCourseKind(entity.segmentGeometry?.[index]) === 'arc';
 
 export const vertexEntitySegments = (
   entity: CadPolylineEntity | CadPolygonEntity | CadParcelEntity,
@@ -67,6 +127,7 @@ export const entitySegments = (
 ): CadSegmentRef[] => {
   if (entity.type === 'line') return lineSegments(entity);
   if (entity.type === 'feature-line') return featureLineCourseSegments(entity);
+  if (entity.type === 'polyline') return polylineCourseSegments(entity);
   return vertexEntitySegments(entity);
 };
 
@@ -102,6 +163,7 @@ export const featureLineCourseArcs = (entity: CadFeatureLineEntity): CadArcRef[]
     )
     .map((course) => ({
       sourceEntityId: entity.id,
+      segmentId: `${entity.id}#${course.index}`,
       center: { ...course.center! },
       radius: course.radius!,
       startAngleDeg: course.startAngleDeg!,
@@ -116,6 +178,39 @@ export const featureLineCourseArcs = (entity: CadFeatureLineEntity): CadArcRef[]
 export const isFeatureLineArcCourse = (
   entry: { kind: 'line' } | { kind: 'arc'; bulge: number } | undefined,
 ): boolean => entry?.kind === 'arc' && Math.abs(entry.bulge) >= CAD_PARCEL_BULGE_LINE_FLOOR;
+
+/**
+ * Phase C2 correction: true arc-course refs of a parcel (never the chord),
+ * mirroring the polyline/feature-line course-arc seam and reusing the single
+ * parcel arc resolver. Invalid / legacy / all-line geometry yields none, so
+ * the legacy all-chord index path stays byte-identical.
+ */
+export const parcelCourseArcs = (entity: CadParcelEntity): CadArcRef[] => {
+  const geometry = entity.courseGeometry;
+  if (geometry == null || geometry.length !== entity.vertices.length) return [];
+  if (!validateParcelCourseGeometry(entity.vertices, geometry).ok) return [];
+  return geometry.flatMap((entry, index) => {
+    if (entry?.kind !== 'arc' || parcelCourseCanonicalKind(entry) !== 'arc') return [];
+    const from = entity.vertices[index];
+    const to = entity.vertices[(index + 1) % entity.vertices.length];
+    if (!from || !to) return [];
+    const metrics = describeParcelArcCourse(from, to, entry.bulge);
+    if (!metrics) return [];
+    return [
+      {
+        sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${index}`,
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.endAngleDeg,
+        startPoint: { ...from },
+        endPoint: { ...to },
+        label: `${entity.parcelName}#${index}`,
+      },
+    ];
+  });
+};
 
 export const circleRefFromEntity = (_project: CadProject, entity: CadCircleEntity): CadCircleRef => ({
   sourceEntityId: entity.id,

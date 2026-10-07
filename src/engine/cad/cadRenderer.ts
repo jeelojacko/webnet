@@ -22,6 +22,10 @@ import {
 import { cadSignedSweepDeg } from './cadGeometry';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import {
+  buildCadPolylineBandPoints,
+  resolveCadPolylineCourses,
+} from './cadPolylineCourses';
+import {
   cadAlignmentEndStation,
   cadAlignmentLength,
   cadAlignmentRawStationToDisplayStation,
@@ -245,6 +249,83 @@ const polylineSegments = (
     end: points[index + 1]!,
     idSuffix: `${index + 1}`,
   }));
+};
+
+/**
+ * Phase C2 polyline course primitives: arc courses emit NATIVE arc
+ * primitives (never a chord), line courses emit line primitives, and a
+ * nonzero-width polyline adds ONE aggregated filled band primitive. Legacy
+ * polylines without metadata keep the byte-identical `buildVertexPrimitives`
+ * path. Hit testing stays centreline-authoritative (the band is
+ * pointer-events:none in the viewport).
+ */
+const buildPolylineCoursePrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadPolylineEntity,
+): CadDisplayPrimitive[] | null => {
+  if (entity.segmentGeometry == null && entity.segmentWidths == null) return null;
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return null;
+  const style = entityScreenStyle(project, ctx, entity, 1.25);
+  const primitives: CadDisplayPrimitive[] = [];
+  // Band first so the centreline courses (and selection highlight) render on
+  // top; the band is a pointer-events:none visual overlay.
+  const bandPoints = buildCadPolylineBandPoints(entity);
+  if (bandPoints != null && bandPoints.length >= 3) {
+    primitives.push({
+      kind: 'band',
+      id: `primitive:${entity.id}:band`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      fill: style.stroke,
+      ...withOpacity(style),
+      points: bandPoints,
+    });
+  }
+  let accumulatedUnits = 0;
+  for (const course of courses) {
+    const offsetUnits = style.dashPatternUnits != null ? accumulatedUnits : undefined;
+    const id = `primitive:${entity.id}:${course.index + 1}`;
+    if (course.kind === 'arc' && course.metrics != null) {
+      const metrics = course.metrics;
+      accumulatedUnits += metrics.arcLength * ctx.linetypeScale;
+      primitives.push({
+        kind: 'arc',
+        id,
+        layerId: entity.layerId,
+        sourceEntityId: entity.id,
+        sourceSegmentId: `${entity.id}#${course.index}`,
+        stroke: style.stroke,
+        ...withOpacity(style),
+        ...withDash(style, offsetUnits ?? 0),
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.startAngleDeg + metrics.signedSweepDeg,
+        strokeWidth: style.widthPx(),
+      });
+      continue;
+    }
+    accumulatedUnits += Math.hypot(course.to.x - course.from.x, course.to.y - course.from.y) * ctx.linetypeScale;
+    primitives.push({
+      kind: 'line',
+      id,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      sourceSegmentId: `${entity.id}#${course.index}`,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style, offsetUnits ?? 0),
+      points: [
+        { x: course.from.x, y: course.from.y },
+        { x: course.to.x, y: course.to.y },
+      ],
+      strokeWidth: style.widthPx(),
+    });
+  }
+  return primitives;
 };
 
 const normalizeReadableLabelRotation = (rotationDeg: number): number => {
@@ -1383,11 +1464,18 @@ const toPrimitives = (
         },
       ];
     }
-    case 'polyline':
+    case 'polyline': {
+      const hasMetadata = entity.segmentGeometry != null || entity.segmentWidths != null;
+      const coursePrimitives = buildPolylineCoursePrimitives(project, ctx, entity);
+      // Present-but-unresolvable metadata fails closed: emit no primitives
+      // for this polyline at all, never a chord approximation. Absent
+      // metadata (legacy) keeps the straight vertex path.
+      if (hasMetadata && coursePrimitives == null) return [];
       return [
-        ...buildVertexPrimitives(project, ctx, entity),
+        ...(coursePrimitives ?? buildVertexPrimitives(project, ctx, entity)),
         ...buildTraverseLabelPrimitives(project, ctx, entity),
       ];
+    }
     case 'polygon':
       return buildVertexPrimitives(project, ctx, entity);
     case 'parcel': {

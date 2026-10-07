@@ -4,14 +4,15 @@ import {
   cadInfiniteLineIntersection,
   type CadWorldPoint,
 } from './cadGeometry';
-import { cadIsAngleOnArcSweep } from './cadGeometryArcPrimitives';
+import { cadIsAngleOnArcSweep, cadClosestPointOnArc } from './cadGeometryArcPrimitives';
 import {
   cadIntersectCircleCircle,
   cadIntersectInfiniteLineCircle,
   cadOffsetLineSegment,
 } from './cadGeometryCurveIntersections';
 import { CAD_XY_DEGENERATE_FLOOR, isValidCircleGeometry } from './cadGeometryShapeBuilders';
-import type { CadEntityId, CadProject } from './cadTypes';
+import type { CadEntityId, CadPolylineEntity, CadProject } from './cadTypes';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 
 /**
  * Phase B2 — pure tangent-circle solvers (Tan/Tan/Radius + Tan/Tan/Tan).
@@ -51,6 +52,13 @@ export interface CadTangentCirclePrimitive {
 export interface CadTangentArcPrimitive {
   kind: 'arc';
   entityId: CadEntityId;
+  /**
+   * Phase C2: exact polyline/feature-line course identity when this arc is a
+   * course of a multi-course entity; absent for standalone `CadArcEntity`s.
+   * Two picks of a shared polyline resolve to the same course only when this
+   * matches, so same-entity multi-arc picks stay distinct.
+   */
+  segmentId?: string;
   center: CadWorldPoint;
   radius: number;
   startAngleDeg: number;
@@ -197,6 +205,7 @@ const samePrimitive = (a: CadTangentPrimitive, b: CadTangentPrimitive): boolean 
   if (a.kind !== b.kind) return false;
   if (a.entityId !== b.entityId) return false;
   if (a.kind === 'line' && b.kind === 'line') return a.segmentId === b.segmentId;
+  if (a.kind === 'arc' && b.kind === 'arc') return a.segmentId === b.segmentId;
   return true;
 };
 
@@ -837,6 +846,24 @@ export const resolveCadTangentSource = (
     };
   }
   if (entity.type === 'polyline') {
+    return resolvePolylineTangentSource(entity, entityId, pickPoint, segmentId);
+  }
+  return null;
+};
+
+/**
+ * Phase C2: a polyline pick resolves its true course. Line courses keep the
+ * existing finite-segment path; arc courses expose a native arc primitive
+ * (center/radius/sweep) so CIRCLE TTR/TTT and LINE L1 treat a bulged course
+ * as an arc, never its chord. Malformed metadata fails closed (null).
+ */
+const resolvePolylineTangentSource = (
+  entity: CadPolylineEntity,
+  entityId: CadEntityId,
+  pickPoint: CadWorldPoint,
+  segmentId: string | undefined,
+): CadTangentSource | null => {
+  if (entity.segmentGeometry == null && entity.segmentWidths == null) {
     const line = resolvePolylineSegment(
       entityId,
       segmentId,
@@ -846,15 +873,59 @@ export const resolveCadTangentSource = (
     );
     if (!line) return null;
     return {
+      primitive: { kind: 'line', entityId, segmentId: line.segmentId, start: line.start, end: line.end },
+      pickPoint: { x: pickPoint.x, y: pickPoint.y },
+    };
+  }
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return null;
+  let best: { course: (typeof courses)[number]; distance: number } | null = null;
+  for (const course of courses) {
+    const id = `${entityId}#${course.index}`;
+    if (segmentId != null && segmentId !== id) continue;
+    let distance: number;
+    if (course.kind === 'arc' && course.metrics != null) {
+      const foot = cadClosestPointOnArc(
+        pickPoint,
+        course.metrics.center,
+        course.metrics.radius,
+        course.metrics.startAngleDeg,
+        course.metrics.startAngleDeg + course.metrics.signedSweepDeg,
+      );
+      distance = cadDistance(pickPoint, foot);
+    } else {
+      const length = cadDistance(course.from, course.to);
+      if (length <= CAD_XY_DEGENERATE_FLOOR) continue;
+      const nx = -(course.to.y - course.from.y) / length;
+      const ny = (course.to.x - course.from.x) / length;
+      distance = Math.abs(nx * (pickPoint.x - course.from.x) + ny * (pickPoint.y - course.from.y));
+    }
+    if (!best || distance < best.distance) best = { course, distance };
+  }
+  if (!best) return null;
+  const course = best.course;
+  if (course.kind === 'arc' && course.metrics != null) {
+    return {
       primitive: {
-        kind: 'line',
+        kind: 'arc',
         entityId,
-        segmentId: line.segmentId,
-        start: line.start,
-        end: line.end,
+        segmentId: `${entityId}#${course.index}`,
+        center: { ...course.metrics.center },
+        radius: course.metrics.radius,
+        startAngleDeg: course.metrics.startAngleDeg,
+        endAngleDeg: course.metrics.startAngleDeg + course.metrics.signedSweepDeg,
       },
       pickPoint: { x: pickPoint.x, y: pickPoint.y },
     };
   }
-  return null;
+  return {
+    primitive: {
+      kind: 'line',
+      entityId,
+      segmentId: `${entityId}#${course.index}`,
+      start: { x: course.from.x, y: course.from.y },
+      end: { x: course.to.x, y: course.to.y },
+    },
+    pickPoint: { x: pickPoint.x, y: pickPoint.y },
+  };
 };

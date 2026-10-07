@@ -5,6 +5,7 @@ import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import {
   tangentSeedArcEntityIdFromPoint,
+  tangentSeedArcSegmentIdFromPoint,
   tangentSeedPointFromPoint,
 } from './useSurveyCadCommandSession';
 
@@ -21,6 +22,7 @@ const pointConstructionContext = (
   basePoint: { x: point.x, y: point.y },
   scopeSeedSegmentId: options?.includeScopeSeed ? point.snapSourceSegmentId ?? null : undefined,
   tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(point),
+  tangentSeedArcSegmentId: tangentSeedArcSegmentIdFromPoint(point),
   tangentSeedPoint: tangentSeedPointFromPoint(point),
 });
 
@@ -170,6 +172,12 @@ export const buildSnapConstructionContext = (
     case 'PLINE':
     case 'TRAVERSE':
     case 'ARC_3PT':
+      // Phase C2: a pending PLINE arc through-point is the live chaining
+      // base (the arc END is entered relative to it); otherwise the last
+      // completed vertex owns the base as before.
+      if (session.key === 'PLINE' && session.plineArcThrough != null) {
+        return pointConstructionContext(session.plineArcThrough);
+      }
       return lastPointConstructionContext(session.points, { includeTangentSeed: true });
     case 'ARC_SCE':
     case 'ARC_CSE':

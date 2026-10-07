@@ -27,6 +27,7 @@ import type {
   CadSnapCandidate,
 } from './cadTypes';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import {
   describeParcelArcCourse,
   parcelCourseCanonicalKind,
@@ -237,6 +238,7 @@ const buildParcelSnapCandidates = (
     candidates.push(
       ...buildArcEntitySnapCandidates(context, pseudo, {
         sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${index}`,
         center: { ...metrics.center },
         radius: metrics.radius,
         startAngleDeg: metrics.startAngleDeg,
@@ -298,6 +300,7 @@ const buildFeatureLineSnapCandidates = (
     candidates.push(
       ...buildArcEntitySnapCandidates(context, pseudo, {
         sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${course.index}`,
         center: { ...course.center! },
         radius: course.radius!,
         startAngleDeg,
@@ -305,6 +308,55 @@ const buildFeatureLineSnapCandidates = (
         startPoint: { x: course.from.x, y: course.from.y },
         endPoint: { x: course.to.x, y: course.to.y },
         label: `${entity.name ?? entity.id}#${course.index}`,
+      }),
+    );
+  });
+  return candidates;
+};
+
+/**
+ * Phase C2 polyline routing: line courses keep the exact chord-segment
+ * path (endpoint/midpoint/nearest/perp/parallel); arc courses expose the
+ * existing arc snap types (endpoint/arc-midpoint/center/quadrant/nearest/
+ * tangent/perpendicular) through the one arc engine — never chord math.
+ * `entitySegments` already excludes arc courses, so the segment pass never
+ * emits a bulged chord.
+ */
+const buildPolylineSnapCandidates = (
+  context: CadSpatialEntityCandidateContext,
+  entity: CadPolylineEntity,
+): CadSnapCandidate[] => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  const arcCourses = courses.filter((course) => course.kind === 'arc' && course.metrics != null);
+  if (arcCourses.length === 0) return buildSegmentEntitySnapCandidates(context, entity);
+  const candidates: CadSnapCandidate[] = [];
+  candidates.push(...buildSegmentEntitySnapCandidates(context, entity));
+  arcCourses.forEach((course) => {
+    const metrics = course.metrics!;
+    const pseudo: CadArcEntity = {
+      id: entity.id,
+      type: 'arc',
+      layerId: entity.layerId,
+      visible: true,
+      locked: false,
+      centerX: metrics.center.x,
+      centerY: metrics.center.y,
+      radius: metrics.radius,
+      startAngleDeg: metrics.startAngleDeg,
+      endAngleDeg: metrics.startAngleDeg + metrics.signedSweepDeg,
+    };
+    candidates.push(
+      ...buildArcEntitySnapCandidates(context, pseudo, {
+        sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${course.index}`,
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.startAngleDeg + metrics.signedSweepDeg,
+        startPoint: { x: course.from.x, y: course.from.y },
+        endPoint: { x: course.to.x, y: course.to.y },
+        label: `${getCadEntityDisplayLabel(entity)}#${course.index}`,
       }),
     );
   });
@@ -319,6 +371,11 @@ export const buildArcEntitySnapCandidates = (
   const { allowed, basePoint, constructionContext, hasPerpendicularStartSeed, project, worldPoint } =
     context;
   const candidates: CadSnapCandidate[] = [];
+  // Phase C2: arc-course identity rides on every arc candidate so a locked
+  // tangent/perp, Circle TTR/TTT, or Line L1 source selection can resolve the
+  // exact course of a multi-arc polyline/feature-line. Standalone arc refs
+  // leave `segmentId` absent and keep the legacy entity-only attribution.
+  const sourceSegmentId = arc.segmentId;
 
   if (allowed.has('endpoint')) {
     candidates.push(
@@ -328,6 +385,8 @@ export const buildArcEntitySnapCandidates = (
         arc.startPoint,
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-start'),
+        undefined,
+        sourceSegmentId,
       ),
       buildCandidate(
         'endpoint',
@@ -335,6 +394,8 @@ export const buildArcEntitySnapCandidates = (
         arc.endPoint,
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-end'),
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -346,6 +407,8 @@ export const buildArcEntitySnapCandidates = (
         arc.center,
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'center'),
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -357,6 +420,8 @@ export const buildArcEntitySnapCandidates = (
         cadArcMidpoint(arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-midpoint'),
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -370,6 +435,8 @@ export const buildArcEntitySnapCandidates = (
           cadPointOnCircle(arc.center, arc.radius, angleDeg),
           worldPoint,
           getCadEntitySubpartDisplayLabel(project, entity.id, 'quadrant', { quadrantAngleDeg: angleDeg }),
+          undefined,
+          sourceSegmentId,
         ),
       );
     });
@@ -382,6 +449,8 @@ export const buildArcEntitySnapCandidates = (
         cadClosestPointOnArc(worldPoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
         worldPoint,
         arc.label,
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -409,6 +478,7 @@ export const buildArcEntitySnapCandidates = (
           [basePoint, perpendicularPoint],
           [arc.center, perpendicularPoint],
         ],
+        sourceSegmentId,
       ),
     );
   }
@@ -435,7 +505,7 @@ export const buildArcEntitySnapCandidates = (
             [basePoint, tangentPoint],
             [arc.center, tangentPoint],
           ],
-          undefined,
+          sourceSegmentId,
           tangentLineDistance,
           tangentPoint,
         ),
@@ -569,9 +639,11 @@ export const buildCadSpatialEntitySnapCandidates = (
         }
         break;
       case 'line':
-      case 'polyline':
       case 'polygon':
         candidates.push(...buildSegmentEntitySnapCandidates(context, entity));
+        break;
+      case 'polyline':
+        candidates.push(...buildPolylineSnapCandidates(context, entity));
         break;
       case 'parcel':
         candidates.push(...buildParcelSnapCandidates(context, entity));

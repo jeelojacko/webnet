@@ -2,6 +2,7 @@ import type { CadBounds, CadFeatureLineEntity, CadParcelEntity, CadProject } fro
 import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
 import type { CadWorldPoint } from './cadGeometry';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { arcRefFromEntity } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
@@ -193,6 +194,30 @@ const pointsIntersectBounds = (points: CadWorldPoint[], bounds: CadBounds): bool
   return !(maxX < bounds.minX || minX > bounds.maxX || maxY < bounds.minY || minY > bounds.maxY);
 };
 
+/**
+ * Phase C2 polyline bound selection: line courses keep the chord-segment
+ * path (optionally widened by half the band width), arc courses use true
+ * in-sweep quadrant extrema. Malformed metadata fails closed (no match)
+ * rather than silently treating the curve as a chord.
+ */
+const polylineIntersectsBounds = (entity: Extract<CadProject['entities'][number], { type: 'polyline' }>, bounds: CadBounds): boolean => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return false;
+  return courses.some((course) => {
+    const half = Math.max(course.width.startWidth, course.width.endWidth) / 2;
+    const testBounds = half > 0 ? expandBounds(bounds, half) : bounds;
+    if (course.kind === 'line') {
+      return segmentIntersectsBounds(course.from, course.to, testBounds);
+    }
+    const points = parcelArcBoundsPoints(
+      course.from,
+      course.to,
+      (course.geometry as { bulge: number }).bulge,
+    );
+    return pointsIntersectBounds(points, testBounds);
+  });
+};
+
 export const entityIntersectsBounds = (
   project: CadProject,
   entity: CadProject['entities'][number],
@@ -215,6 +240,11 @@ export const entityIntersectsBounds = (
     case 'polyline':
     case 'polygon':
     case 'parcel': {
+      // Phase C2: polylines with bulge/width metadata must use true arc
+      // extrema + half-width envelope, never the chord ring.
+      if (entity.type === 'polyline' && (entity.segmentGeometry != null || entity.segmentWidths != null)) {
+        return polylineIntersectsBounds(entity, bounds);
+      }
       const points =
         entity.type === 'polyline'
           ? cadPolylineVerticesWrapToFirst(entity.vertices, entity.closed)

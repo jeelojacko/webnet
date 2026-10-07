@@ -282,7 +282,7 @@ export const useSurveyCadCommands = ({
     const live = sessionRef.current;
     if (!live) return;
     const session = live;
-    if (handleSurveyCadPlineSubmit({ applyHistoryUpdate, replaceSession, session })) {
+    if (handleSurveyCadPlineSubmit({ applyHistoryUpdate, projectStationIds, replaceSession, session })) {
       return;
     }
     if (

@@ -351,5 +351,27 @@ export const renderPrimitive = ({
         </g>
       );
     }
+    case 'band': {
+      // Phase C2 width band: aggregated filled polygon. pointerEvents none
+      // keeps hit testing centreline-authoritative (the line/arc primitives
+      // remain the pick targets).
+      const points = primitive.points
+        .map((point) => {
+          const mapped = project(point.x, point.y);
+          return `${mapped.x},${mapped.y}`;
+        })
+        .join(' ');
+      return (
+        <polygon
+          key={primitive.id}
+          data-survey-cad-render-entity-id={primitive.sourceEntityId}
+          points={points}
+          fill={isSelected ? '#fbbf24' : primitive.fill}
+          stroke="none"
+          opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.55}
+          pointerEvents="none"
+        />
+      );
+    }
   }
 };

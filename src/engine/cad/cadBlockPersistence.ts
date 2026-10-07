@@ -40,6 +40,14 @@ const cloneBlockChild = (child: CadBlockChild): CadBlockChild => {
         appearance: child.appearance ? { ...child.appearance } : undefined,
         vertices: child.vertices.map((vertex) => ({ ...vertex })),
         vertexLabels: [...child.vertexLabels],
+        // Phase C2: polyline bulge/width arrays clone as owned values so a
+        // loaded definition never shares mutable arrays with its source.
+        ...(child.type === 'polyline' && child.segmentGeometry != null
+          ? { segmentGeometry: child.segmentGeometry.map((entry) => ({ ...entry })) }
+          : {}),
+        ...(child.type === 'polyline' && child.segmentWidths != null
+          ? { segmentWidths: child.segmentWidths.map((entry) => ({ ...entry })) }
+          : {}),
         metadata: child.metadata ? { ...child.metadata } : undefined,
       };
     case 'text':

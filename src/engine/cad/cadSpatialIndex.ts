@@ -24,8 +24,9 @@ import {
   validateParcelCourseGeometry,
 } from './cadParcelArcGeometry';
 import { resolveCadFeatureLine } from './cadFeatureLines';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
-import { arcRefFromEntity, circleRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments } from './cadSpatialEntityRefs';
+import { arcRefFromEntity, circleRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments, parcelCourseArcs, polylineCourseArcs, polylineCourseSegments } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, expandBlockReference } from './cadBlocks';
 import { buildCadProjectLookup } from './cadProjectLookup';
 import type { CadArcRef, CadCircleRef, CadSegmentRef, CadSpatialIndex } from './cadSpatialIndexTypes';
@@ -168,6 +169,19 @@ const featureLineArcExtraBoundsPoints = (entity: CadFeatureLineEntity): CadWorld
   });
 };
 
+/** Phase C2: polyline arc-course extrema (+ center) for cursor-box culling. */
+const polylineArcExtraBoundsPoints = (entity: CadPolylineEntity): CadWorldPoint[] => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  return courses.flatMap((course) => {
+    if (course.kind !== 'arc' || course.metrics == null) return [];
+    return [
+      { x: course.metrics.center.x, y: course.metrics.center.y },
+      ...parcelArcBoundsPoints(course.from, course.to, (course.geometry as { bulge: number }).bulge),
+    ];
+  });
+};
+
 const circleBounds = (ref: CadCircleRef): PreparedCircle => ({
   ref,
   minX: ref.center.x - ref.radius,
@@ -226,6 +240,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
   const preparedBlocks: PreparedBlock[] = [];
   const segmentById = new Map<string, CadSegmentRef>();
   const arcBySourceId = new Map<string, CadArcRef>();
+  const arcBySegmentId = new Map<string, CadArcRef>();
 
   for (const entity of project.entities) {
     if (!entity.visible) continue;
@@ -264,12 +279,88 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
           const prepared = arcBounds(ref);
           preparedArcs.push(prepared);
           arcBySourceId.set(ref.sourceEntityId, ref);
+          if (ref.segmentId != null) arcBySegmentId.set(ref.segmentId, ref);
         }
         for (const point of featureLineArcExtraBoundsPoints(entity)) {
           minX = Math.min(minX, point.x);
           minY = Math.min(minY, point.y);
           maxX = Math.max(maxX, point.x);
           maxY = Math.max(maxY, point.y);
+        }
+        if (Number.isFinite(minX) && Number.isFinite(minY)) {
+          preparedEntities.push({ entity, minX, minY, maxX, maxY });
+        }
+      } else if (entity.type === 'polyline') {
+        // Phase C2: line courses join the segment set, arc courses the arc
+        // set (a bulged course is NEVER indexed as its chord). Extra
+        // in-sweep extrema keep cursor-box culling honest for bulges that
+        // reach outside the chord box.
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        for (const ref of polylineCourseSegments(entity)) {
+          const prepared = segmentBounds(ref);
+          preparedSegments.push(prepared);
+          segmentById.set(ref.segmentId, ref);
+          minX = Math.min(minX, prepared.minX);
+          minY = Math.min(minY, prepared.minY);
+          maxX = Math.max(maxX, prepared.maxX);
+          maxY = Math.max(maxY, prepared.maxY);
+        }
+        for (const ref of polylineCourseArcs(entity)) {
+          const prepared = arcBounds(ref);
+          preparedArcs.push(prepared);
+          arcBySourceId.set(ref.sourceEntityId, ref);
+          if (ref.segmentId != null) arcBySegmentId.set(ref.segmentId, ref);
+        }
+        for (const point of polylineArcExtraBoundsPoints(entity)) {
+          minX = Math.min(minX, point.x);
+          minY = Math.min(minY, point.y);
+          maxX = Math.max(maxX, point.x);
+          maxY = Math.max(maxY, point.y);
+        }
+        if (Number.isFinite(minX) && Number.isFinite(minY)) {
+          preparedEntities.push({ entity, minX, minY, maxX, maxY });
+        }
+      } else if (entity.type === 'parcel') {
+        // Phase C2 correction: parcel arc courses join the arc set as true
+        // refs (a bulged course is NEVER indexed as its chord) so a locked
+        // tangent/perp on a parcel arc resolves the arc geometry by its
+        // explicit `${id}#i` course id, mirroring polyline/feature-line.
+        // Line courses and legacy/all-line/invalid geometry keep the exact
+        // chord-segment path. In-sweep extrema keep cursor-box culling honest
+        // for bulges that reach outside the chord box.
+        const parcelArcs = parcelCourseArcs(entity);
+        const arcCourseIds = new Set(parcelArcs.map((ref) => ref.segmentId));
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        for (const ref of entitySegments(entity)) {
+          if (ref.segmentId != null && arcCourseIds.has(ref.segmentId)) continue;
+          const prepared = segmentBounds(ref);
+          preparedSegments.push(prepared);
+          segmentById.set(ref.segmentId, ref);
+          if (prepared.minX < minX) minX = prepared.minX;
+          if (prepared.minY < minY) minY = prepared.minY;
+          if (prepared.maxX > maxX) maxX = prepared.maxX;
+          if (prepared.maxY > maxY) maxY = prepared.maxY;
+        }
+        for (const ref of parcelArcs) {
+          const prepared = arcBounds(ref);
+          preparedArcs.push(prepared);
+          arcBySourceId.set(ref.sourceEntityId, ref);
+          if (ref.segmentId != null) arcBySegmentId.set(ref.segmentId, ref);
+        }
+        // Phase 19C: arc-course extrema join the entity bounds so cursor-box
+        // culling never hides a curved parcel whose bulge reaches outside
+        // its chords (segment boxes stay chord-based).
+        for (const point of parcelArcExtraBoundsPoints(entity)) {
+          if (point.x < minX) minX = point.x;
+          if (point.y < minY) minY = point.y;
+          if (point.x > maxX) maxX = point.x;
+          if (point.y > maxY) maxY = point.y;
         }
         if (Number.isFinite(minX) && Number.isFinite(minY)) {
           preparedEntities.push({ entity, minX, minY, maxX, maxY });
@@ -288,17 +379,6 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
           if (prepared.minY < minY) minY = prepared.minY;
           if (prepared.maxX > maxX) maxX = prepared.maxX;
           if (prepared.maxY > maxY) maxY = prepared.maxY;
-        }
-        if (entity.type === 'parcel') {
-          // Phase 19C: arc-course extrema join the entity bounds so
-          // cursor-box culling never hides a curved parcel whose bulge
-          // reaches outside its chords (segment boxes stay chord-based).
-          for (const point of parcelArcExtraBoundsPoints(entity)) {
-            if (point.x < minX) minX = point.x;
-            if (point.y < minY) minY = point.y;
-            if (point.x > maxX) maxX = point.x;
-            if (point.y > maxY) maxY = point.y;
-          }
         }
         if (refs.length > 0) preparedEntities.push({ entity, minX, minY, maxX, maxY });
       }
@@ -343,8 +423,14 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     const arcs: CadArcRef[] = [];
     const circles: CadCircleRef[] = [];
     for (const child of children) {
-      if (child.type === 'line' || child.type === 'polyline' || child.type === 'polygon') {
+      if (child.type === 'line' || child.type === 'polygon') {
         segments.push(...entitySegments({ ...child, id: block.entity.id }));
+      } else if (child.type === 'polyline') {
+        // Phase C2: line courses as segments, arc courses as true arcs (the
+        // chord is never indexed). Metadata arrays ride on the child copy.
+        const childPolyline = { ...child, id: block.entity.id };
+        segments.push(...entitySegments(childPolyline));
+        arcs.push(...polylineCourseArcs(childPolyline));
       } else if (child.type === 'arc') {
         const ref = arcRefFromEntity(project, { ...child, id: block.entity.id });
         arcs.push({ ...ref, sourceEntityId: block.entity.id });
@@ -354,6 +440,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
       }
     }
     const expanded = { segments, arcs, circles };
+    for (const ref of arcs) {
+      if (ref.segmentId != null) arcBySegmentId.set(ref.segmentId, ref);
+    }
     blockExpansionCache.set(block.entity.id, expanded);
     return expanded;
   };
@@ -469,14 +558,30 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
       }
     }
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
-    const scopeSeedSegmentId = constructionContext.scopeSeedSegmentId ?? null;
+    // A polyline/feature-line arc course id is a valid snap identity but not a
+    // segment scope seed: dropping it here matches the pre-C2 law where arc
+    // snaps carried no segment id, while a genuinely missing id still filters
+    // (see cadSpatialIndex.03 'line:missing#0').
+    const rawScopeSeedSegmentId = constructionContext.scopeSeedSegmentId ?? null;
+    const scopeSeedSegmentId =
+      rawScopeSeedSegmentId != null && arcBySegmentId.has(rawScopeSeedSegmentId)
+        ? null
+        : rawScopeSeedSegmentId;
     const scopeSeedSegment = scopeSeedSegmentId
       ? (segments.find((segment) => segment.segmentId === scopeSeedSegmentId) ?? segmentById.get(scopeSeedSegmentId) ?? null)
       : null;
     const tangentSeedArcEntityId = constructionContext.tangentSeedArcEntityId ?? null;
+    const tangentSeedArcSegmentId = constructionContext.tangentSeedArcSegmentId ?? null;
     const tangentSeedPoint = constructionContext.tangentSeedPoint ?? basePoint;
     const tangentSeedArc = tangentSeedArcEntityId
-      ? (arcs.find((arc) => arc.sourceEntityId === tangentSeedArcEntityId) ?? arcBySourceId.get(tangentSeedArcEntityId) ?? null)
+      ? (tangentSeedArcSegmentId != null
+          ? arcs.find((arc) => arc.segmentId === tangentSeedArcSegmentId) ??
+            arcBySegmentId.get(tangentSeedArcSegmentId) ??
+            null
+          : null) ??
+        arcs.find((arc) => arc.sourceEntityId === tangentSeedArcEntityId) ??
+        arcBySourceId.get(tangentSeedArcEntityId) ??
+        null
       : null;
     const hasPerpendicularStartSeed = scopeSeedSegment != null || tangentSeedArc != null;
     const parallelScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 1) : null;
@@ -540,7 +645,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
               [tangentSeedPoint, curveStartPerpendicularPoint],
               [tangentSeedArc.center, tangentSeedPoint],
             ],
-            undefined,
+            tangentSeedArc.segmentId,
             undefined,
             tangentSeedArc.center,
           ),
@@ -562,7 +667,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
               [basePoint, tangentPoint],
               [tangentSeedArc.center, basePoint],
             ],
-            undefined,
+            tangentSeedArc.segmentId,
             undefined,
             tangentPoint,
           ),
@@ -613,7 +718,18 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
       const lockedArc =
         constructionContext.lockedSnap.kind === 'tangent' ||
         constructionContext.lockedSnap.kind === 'perpendicular'
-          ? arcs.find((arc) => arc.sourceEntityId === constructionContext.lockedSnap?.sourceEntityId)
+          ? // Segment-addressed locks (arc courses of a multi-course entity)
+            // resolve their exact course first; the entity-id fallback is only
+            // for legacy/standalone arcs that carry no segment identity.
+            (constructionContext.lockedSnap.sourceSegmentId != null
+              ? arcs.find(
+                  (arc) =>
+                    arc.segmentId === constructionContext.lockedSnap?.sourceSegmentId,
+                ) ??
+                arcBySegmentId.get(constructionContext.lockedSnap.sourceSegmentId) ??
+                null
+              : null) ??
+            arcs.find((arc) => arc.sourceEntityId === constructionContext.lockedSnap?.sourceEntityId)
             ?? arcBySourceId.get(constructionContext.lockedSnap.sourceEntityId) ?? null
           : null;
       const tangentGuidePoint = constructionContext.lockedSnap.guidePoint ?? null;

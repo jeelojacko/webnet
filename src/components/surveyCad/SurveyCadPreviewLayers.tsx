@@ -80,6 +80,20 @@ export const TransientPreviewLayer: React.FC<{
             strokeDasharray={primitive.strokeDasharray ?? '8 6'}
             pointerEvents="none"
           />
+        ) : primitive.kind === 'band' ? (
+          <polygon
+            key={primitive.id}
+            data-survey-cad-command-preview-band
+            points={primitive.points
+              .map((point) => {
+                const mapped = project(point.x, point.y);
+                return `${mapped.x},${mapped.y}`;
+              })
+              .join(' ')}
+            fill={primitive.fill}
+            opacity={primitive.opacity ?? 0.55}
+            pointerEvents="none"
+          />
         ) : (
           <ellipse
             key={primitive.id}

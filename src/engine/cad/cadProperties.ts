@@ -41,6 +41,7 @@ import type {
 } from './cadPropertiesModel';
 import { resolveCadParcelCourses } from './cadParcelCourses';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import {
   cadParcelPlanDesignation,
   cadParcelPlanInfo,
@@ -278,6 +279,65 @@ const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }
 };
 
 /**
+ * Phase C2 polyline segment rows: true line vs arc type, arc length/radius/
+ * delta/bulge for arcs, chord length/azimuth for lines, and per-course
+ * centred band width (0 / constant / start→end). Only used when metadata is
+ * present so legacy polylines keep the byte-identical chord rows.
+ */
+const polylineSegmentRows = (entity: Extract<CadEntity, { type: 'polyline' }>): CadEntityPropertyRow[] => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return [];
+  const hasWidths = entity.segmentWidths != null;
+  return courses.flatMap((course) => {
+    const rows: CadEntityPropertyRow[] = [];
+    if (course.kind === 'arc' && course.metrics != null) {
+      const metrics = course.metrics;
+      const bulge = (course.geometry as { bulge: number }).bulge;
+      rows.push(
+        row(`segment:${course.index}:kind`, `Segment ${course.index + 1} type`, 'Arc'),
+        row(`segment:${course.index}:length`, `Segment ${course.index + 1} length`, numeric(metrics.arcLength)),
+        row(
+          `segment:${course.index}:curve`,
+          `Segment ${course.index + 1} curve`,
+          `R ${numeric(metrics.radius)} · Δ ${formatCadSweepDms(metrics.signedSweepDeg)} · ` +
+            `bulge ${numeric(bulge, 6)} · chord ${numeric(metrics.chordLength)} (${metrics.direction})`,
+        ),
+      );
+    } else {
+      const inverse = buildCadInverseSummary(course.from, course.to);
+      rows.push(
+        row(`segment:${course.index}:kind`, `Segment ${course.index + 1} type`, 'Line'),
+        row(`segment:${course.index}:length`, `Segment ${course.index + 1} length`, numeric(inverse.distance)),
+        row(
+          `segment:${course.index}:azimuth`,
+          `Segment ${course.index + 1} azimuth`,
+          formatCadNorthAzimuthDms(inverse.azimuthDeg),
+        ),
+      );
+    }
+    if (hasWidths) {
+      const { startWidth, endWidth } = course.width;
+      const text = startWidth === endWidth ? numeric(startWidth) : `${numeric(startWidth)} → ${numeric(endWidth)}`;
+      rows.push(row(`segment:${course.index}:width`, `Segment ${course.index + 1} width`, text));
+    }
+    return rows;
+  });
+};
+
+const polylineTrueLength = (entity: Extract<CadEntity, { type: 'polyline' }>): number => {
+  const courses = resolveCadPolylineCourses(entity);
+  if (!courses) return polylineLength(entity.vertices, entity.closed);
+  return courses.reduce(
+    (total, course) =>
+      total +
+      (course.kind === 'arc' && course.metrics != null
+        ? course.metrics.arcLength
+        : cadDistance(course.from, course.to)),
+    0,
+  );
+};
+
+/**
  * Phase 19C parcel inquiry: course counts + per-course curve metrics
  * (radius/delta/arc length/chord/direction). Line courses need no row
  * (vertices already listed); arc values are formatted metrics, never raw
@@ -462,18 +522,24 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       );
       return rows;
     }
-    case 'polyline':
+    case 'polyline': {
+      const hasMetadata = entity.segmentGeometry != null || entity.segmentWidths != null;
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
         row('vertices', 'Vertices', String(entity.vertices.length)),
         row('closed', 'Closed', yesNo(entity.closed)),
-        row('total-length', 'Total length', numeric(polylineLength(entity.vertices, entity.closed))),
+        row(
+          'total-length',
+          'Total length',
+          numeric(hasMetadata ? polylineTrueLength(entity) : polylineLength(entity.vertices, entity.closed)),
+        ),
       );
       if (entity.vertexLabels[0]) rows.push(row('start-label', 'Start label', entity.vertexLabels[0]));
       if (entity.vertexLabels.at(-1)) rows.push(row('end-label', 'End label', entity.vertexLabels.at(-1)!));
-      rows.push(...segmentRows(entity));
+      rows.push(...(hasMetadata ? polylineSegmentRows(entity) : segmentRows(entity)));
       rows.push(...vertexRows(entity));
       return rows;
+    }
     case 'polygon':
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),

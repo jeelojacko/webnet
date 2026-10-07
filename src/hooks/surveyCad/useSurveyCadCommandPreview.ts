@@ -40,6 +40,7 @@ import {
   parseAlignmentStationOffsetInput,
 } from './useSurveyCadCommandParsing';
 import { buildArcCommandPreview } from './useSurveyCadCommandArcPreview';
+import { buildPlinePreview } from './useSurveyCadPlinePreview';
 
 export type CadCommandPreviewState =
   | {
@@ -496,6 +497,7 @@ export const buildCommandPreview = ({
         ],
       };
     case 'PLINE':
+      return buildPlinePreview(session, previewPoint);
     case 'TRAVERSE':
       if (!previewPoint) return null;
       if (session.points.length === 0) {
