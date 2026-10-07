@@ -8,6 +8,7 @@ import {
 import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { expandBlockReference, findBlockDefinition } from './cadBlocks';
+import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
 import { buildCandidate } from './cadSpatialSnapCandidates';
 import type {
@@ -80,7 +81,11 @@ export const buildBlockReferenceSnapCandidates = (
       case 'polyline':
       case 'polygon': {
         const ring = child.type === 'polyline'
-          ? child.vertices
+          ? cadPolylineVerticesWrapToFirst(child.vertices, child.closed)
+            ? [...child.vertices, child.vertices[0]].filter(
+                (point): point is CadWorldPoint => point != null,
+              )
+            : child.vertices
           : [...child.vertices, child.vertices[0]].filter((point): point is CadWorldPoint => point != null);
         ring.slice(0, -1).forEach((vertex, vertexIndex) => {
           const next = ring[vertexIndex + 1]!;
@@ -96,9 +101,12 @@ export const buildBlockReferenceSnapCandidates = (
           }
         });
         if (allowed.has('center') && ring.length > 1) {
+          // C1: the duplicated ring closure is only for segment candidates;
+          // the center is the centroid of the N stored vertices (averaging
+          // the appended closure vertex would double-weight vertex 0).
           const centroid = {
-            x: ring.reduce((sum, vertex) => sum + vertex.x, 0) / ring.length,
-            y: ring.reduce((sum, vertex) => sum + vertex.y, 0) / ring.length,
+            x: child.vertices.reduce((sum, vertex) => sum + vertex.x, 0) / child.vertices.length,
+            y: child.vertices.reduce((sum, vertex) => sum + vertex.y, 0) / child.vertices.length,
           };
           candidates.push(
             buildCandidate('center', entity.id, centroid, worldPoint, `${label} center`, undefined, scope),

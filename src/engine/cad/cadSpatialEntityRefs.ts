@@ -1,4 +1,5 @@
 import { cadPointOnCircle, type CadWorldPoint } from './cadGeometry';
+import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import { CAD_PARCEL_BULGE_LINE_FLOOR } from './cadParcelArcGeometry';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
@@ -29,20 +30,30 @@ export const lineSegments = (line: CadLineEntity): CadSegmentRef[] => [
 export const vertexEntitySegments = (
   entity: CadPolylineEntity | CadPolygonEntity | CadParcelEntity,
 ): CadSegmentRef[] => {
-  const points =
-    entity.type === 'polyline'
-      ? entity.vertices
-      : [...entity.vertices, entity.vertices[0]].filter(
-          (point): point is CadWorldPoint => point != null,
-        );
+  const vertices = entity.vertices;
+  const isPolyline = entity.type === 'polyline';
+  // C1: a closed PLINE stores no duplicate closure vertex, so the segment
+  // iterator owns the last→first edge (label = first vertex label). A legacy
+  // closed ring that already repeats first (e.g. TRAVERSE) keeps its N-1
+  // stored edges untouched.
+  const wrapsToFirst =
+    isPolyline && cadPolylineVerticesWrapToFirst(vertices, entity.closed === true);
+  const points = isPolyline
+    ? wrapsToFirst
+      ? [...vertices, vertices[0]!]
+      : vertices
+    : [...vertices, vertices[0]].filter((point): point is CadWorldPoint => point != null);
+  const labels = wrapsToFirst
+    ? [...entity.vertexLabels, entity.vertexLabels[0] ?? 'V1']
+    : entity.vertexLabels;
   return points.slice(0, -1).map((vertex, index) => ({
     segmentId: `${entity.id}#${index}`,
     sourceEntityId: entity.id,
     start: vertex,
     end: points[index + 1]!,
-    startLabel: entity.vertexLabels[index] ?? `V${index + 1}`,
-    endLabel: entity.vertexLabels[index + 1] ?? `V${index + 2}`,
-    label: `${entity.vertexLabels[index] ?? `V${index + 1}`}-${entity.vertexLabels[index + 1] ?? `V${index + 2}`}`,
+    startLabel: labels[index] ?? `V${index + 1}`,
+    endLabel: labels[index + 1] ?? `V${index + 2}`,
+    label: `${labels[index] ?? `V${index + 1}`}-${labels[index + 1] ?? `V${index + 2}`}`,
   }));
 };
 

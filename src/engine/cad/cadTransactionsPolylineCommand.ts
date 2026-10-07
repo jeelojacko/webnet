@@ -2,6 +2,7 @@ import { createStableRuntimeId } from '../id';
 import { createCadSelectionState } from './cadSelection';
 import { resolveCurrentCadLayerId } from './cadLayers';
 import { nextEntityName } from './cadTransactionsEntityFactories';
+import { countDistinctPlinePositions, sanitizeCadPolylineVertices } from './cadPolylineGeometry';
 import {
   appendCadProjectEntities,
 } from './cadProjectState';
@@ -11,15 +12,14 @@ import type { CadPolylineEntity } from './cadTypes';
 export const polylineCommand: CadCommandDefinition<{
   key: 'PLINE';
   vertices: { x: number; y: number; label: string }[];
+  closed?: boolean;
 }> = {
   key: 'PLINE',
   execute: (snapshot, command) => {
-    const vertices = command.vertices.filter((vertex, index, list) => {
-      const previous = list[index - 1];
-      if (!previous) return true;
-      return Math.abs(vertex.x - previous.x) > 1e-9 || Math.abs(vertex.y - previous.y) > 1e-9;
-    });
-    if (vertices.length < 2) return null;
+    const closed = command.closed === true;
+    const vertices = sanitizeCadPolylineVertices(command.vertices, closed);
+    if (vertices.length < (closed ? 3 : 2)) return null;
+    if (closed && countDistinctPlinePositions(vertices) < 3) return null;
     const polylineName = nextEntityName(snapshot.project, 'PL');
     const polylineEntity: CadPolylineEntity = {
       id: createStableRuntimeId('cad-polyline'),
@@ -29,7 +29,7 @@ export const polylineCommand: CadCommandDefinition<{
       locked: false,
       vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
       vertexLabels: vertices.map((vertex) => vertex.label),
-      closed: false,
+      closed,
       metadata: {
         createdBy: 'PLINE',
         entityName: polylineName,
@@ -45,7 +45,9 @@ export const polylineCommand: CadCommandDefinition<{
       commandState: {
         key: 'PLINE',
         phase: 'committed',
-        prompt: `PLINE committed with ${vertices.length} vertices.`,
+        prompt: closed
+          ? `PLINE closed with ${vertices.length} vertices.`
+          : `PLINE committed with ${vertices.length} vertices.`,
       },
       transactionLabel: `PLINE (${polylineName})`,
       addedEntityIds: [polylineEntity.id],

@@ -20,6 +20,7 @@ import {
   formatCadSweepDms,
 } from './cadCogo';
 import { cadSignedSweepDeg } from './cadGeometry';
+import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import {
   cadAlignmentEndStation,
   cadAlignmentLength,
@@ -200,7 +201,8 @@ const buildVertexPrimitives = (
     entity.type === 'parcel' ? 1.5 : 1.25,
   );
   const points =
-    entity.type === 'polygon' || entity.type === 'parcel'
+    entity.type === 'polygon' || entity.type === 'parcel' ||
+    (entity.type === 'polyline' && cadPolylineVerticesWrapToFirst(entity.vertices, entity.closed))
       ? [...entity.vertices, entity.vertices[0]].filter(
           (point): point is { x: number; y: number } => point != null,
         )
@@ -234,11 +236,16 @@ const polylineSegments = (
   start: { x: number; y: number };
   end: { x: number; y: number };
   idSuffix: string;
-}> => entity.vertices.slice(0, -1).map((vertex, index) => ({
-  start: vertex,
-  end: entity.vertices[index + 1]!,
-  idSuffix: `${index + 1}`,
-}));
+}> => {
+  const points = cadPolylineVerticesWrapToFirst(entity.vertices, entity.closed)
+    ? [...entity.vertices, entity.vertices[0]!]
+    : entity.vertices;
+  return points.slice(0, -1).map((vertex, index) => ({
+    start: vertex,
+    end: points[index + 1]!,
+    idSuffix: `${index + 1}`,
+  }));
+};
 
 const normalizeReadableLabelRotation = (rotationDeg: number): number => {
   let normalized = ((rotationDeg + 180) % 360 + 360) % 360 - 180;

@@ -27,3 +27,15 @@ Legend: Y = yes, N = no, P = partial, — = not applicable. Confidence H/M/L.
 - Rubber-band preview, prompts, inline input bar: SUPPORTED.
 - Layer/style inheritance: SUPPORTED (ByLayer). Elevation/Z: GLOBAL_INFRA_MISSING (2D everywhere).
 - Marquee window/crossing: SUPPORTED (screen-space primitive bounds; engine bounds fn exists but unused by marquee).
+
+## Addendum — Phase C1 current state (2026-10-06)
+
+Historical baseline above is unchanged. Polyline update after Phase C1
+(baseline `5aa6441`): PLINE Close is now SUPPORTED (3+ distinct vertices) and
+active backstep (`U`/`UNDO`/`BACKSTEP`) is now SUPPORTED (session-local).
+The closed last→first edge is honored by the shared segment
+iterator/spatial index, renderer, bounds, and Properties rows; grips remain
+one-per-vertex. Still missing/deferred: bulge/width/arc segments, Z,
+line-chaining, right-click finish, command repeat, and trim/extend/fillet
+closed-edge segmenting. Evidence:
+`docs/evidence/cad-polyline-c1-close-backstep/`.

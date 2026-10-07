@@ -1,4 +1,5 @@
 import { buildCadInverseSummary } from '../../engine/cad/cadCogo';
+import { cadPolylineVerticesWrapToFirst } from '../../engine/cad/cadPolylineGeometry';
 import {
   CAD_EDIT_LOCKED_REASON,
   checkCadEntityEditable,
@@ -177,7 +178,13 @@ const runSurveyCadPropertiesEdit = ({
       return true;
     }
     const startVertex = targetEntity.vertices[field.segmentIndex];
-    const endVertex = targetEntity.vertices[field.segmentIndex + 1];
+    // C1: a closed ring persists no duplicate closure vertex, so the last
+    // segment row's end wraps to vertex 0 (same modulo law as segmentRows /
+    // vertexEntitySegments). Open polylines keep the exact index+1 endpoint.
+    const endVertexIndex = cadPolylineVerticesWrapToFirst(targetEntity.vertices, targetEntity.closed)
+      ? (field.segmentIndex + 1) % targetEntity.vertices.length
+      : field.segmentIndex + 1;
+    const endVertex = targetEntity.vertices[endVertexIndex];
     if (!startVertex || !endVertex) return false;
     const inverse = buildCadInverseSummary(startVertex, endVertex);
     const nextLength =
@@ -192,7 +199,7 @@ const runSurveyCadPropertiesEdit = ({
         entityId,
         edit: {
           kind: 'polyline-vertex',
-          vertexIndex: field.segmentIndex + 1,
+          vertexIndex: endVertexIndex,
           x: nextVertex.x,
           y: nextVertex.y,
         },

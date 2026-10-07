@@ -40,6 +40,7 @@ import type {
   CadPropertiesTypeGroup,
 } from './cadPropertiesModel';
 import { resolveCadParcelCourses } from './cadParcelCourses';
+import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import {
   cadParcelPlanDesignation,
   cadParcelPlanInfo,
@@ -246,12 +247,15 @@ const alignmentEndStationLabel = (entity: CadAlignmentEntity): string => {
 };
 
 /**
- * Segment rows: polyline emits the N-1 open edges; polygon emits all N ring
- * edges including the implicit last→first closing edge (polygons store no
- * duplicate closure vertex, so the ring wraps).
+ * Segment rows: polyline emits the N-1 open edges, or all N ring edges when
+ * closed (C1). Polygon emits all N ring edges including the implicit
+ * last→first closing edge (polygons store no duplicate closure vertex, so
+ * the ring wraps).
  */
 const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }>): CadEntityPropertyRow[] => {
-  const ringClosed = entity.type === 'polygon';
+  const ringClosed =
+    entity.type === 'polygon' ||
+    (entity.type === 'polyline' && cadPolylineVerticesWrapToFirst(entity.vertices, entity.closed));
   const segmentCount = ringClosed ? entity.vertices.length : entity.vertices.length - 1;
   return entity.vertices.slice(0, segmentCount).flatMap((vertex, index) => {
     const nextVertex = entity.vertices[(index + 1) % entity.vertices.length]!;
