@@ -1,0 +1,98 @@
+{
+  "flowA": {
+    "id": "cad-polyline-e6c203e4-ba53-4492-b3f9-bf71334fc428",
+    "closed": false,
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 10
+      },
+      {
+        "x": 34.14213562373095,
+        "y": 24.14213562373095
+      }
+    ],
+    "vertexLabels": [
+      "CAD1",
+      "CAD2",
+      "N45-00-00E,20"
+    ],
+    "createdBy": "PLINE"
+  },
+  "flowB": {
+    "id": "cad-polyline-936d3c60-5734-493b-9884-e208939ac59a",
+    "closed": false,
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      },
+      {
+        "x": 40,
+        "y": 0
+      }
+    ],
+    "vertexLabels": [
+      "CAD1",
+      "CAD2",
+      "CAD3"
+    ],
+    "createdBy": "PLINE"
+  },
+  "flowC": {
+    "id": "cad-polyline-3b9d8f0d-8a93-4510-9d23-381ccadfc6b7",
+    "closed": true,
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 0
+      },
+      {
+        "x": 20,
+        "y": 20
+      }
+    ],
+    "vertexLabels": [
+      "CAD1",
+      "CAD2",
+      "CAD3"
+    ],
+    "createdBy": "PLINE"
+  },
+  "flowE": {
+    "id": "cad-polyline-9d5973bb-da29-45be-8bc8-ef7ba1947a1d",
+    "closed": false,
+    "vertices": [
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 10,
+        "y": 0
+      },
+      {
+        "x": 10,
+        "y": 10
+      }
+    ],
+    "vertexLabels": [
+      "CAD1",
+      "CAD2",
+      "@0,10"
+    ],
+    "createdBy": "PLINE"
+  }
+}

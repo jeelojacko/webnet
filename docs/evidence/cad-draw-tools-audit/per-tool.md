@@ -132,3 +132,17 @@ Section/analysis fills are derived/approximated with warnings
 (families:172-182). Split honestly: solid-fill absent, pattern absent,
 associative absent. v1: solid hatch over closed boundary → derived filled
 region + DXF SOLID/HATCH-block approximation; patterns/associativity later.
+
+## Addendum — Phase C1 current state (2026-10-06)
+
+Historical baseline above is unchanged. Current-state note for Polyline
+(§ items on PLINE/close/backstep): Phase C1 (`feat/cad-polyline-close-backstep-c1`,
+baseline `5aa6441`) made PLINE close into the existing
+`CadPolylineEntity.closed` flag — schema-free, no duplicate closure vertex —
+and added session-local `C`/`CLOSE` and `U`/`UNDO`/`BACKSTEP` backstep. The
+closed last→first edge is now real for closed PLINEs in the shared segment
+iterator (spatial index/snaps/intersections), renderer, bounds, and
+Properties rows; grips stay one-per-vertex. Still deferred: bulge/width/arc,
+Z, line-chaining, right-click, repeat, and closed-edge segmenting in
+trim/extend/fillet. Evidence:
+`docs/evidence/cad-polyline-c1-close-backstep/`.

@@ -40,6 +40,7 @@ import {
 import { buildProjectTransformPanelState } from './useSurveyCadProjectTransformPanel';
 import { handleSurveyCadParcelNetworkSubmit } from './useSurveyCadParcelNetworkSubmit';
 import { handleSurveyCadTypedSubmit } from './useSurveyCadTypedSubmit';
+import { handleSurveyCadPlineSubmit } from './useSurveyCadPlineSession';
 import { handleSurveyCadConsumePoint } from './useSurveyCadConsumePoint';
 import { handleSurveyCadDefaultSubmit } from './useSurveyCadDefaultSubmit';
 import type {
@@ -271,6 +272,9 @@ export const useSurveyCadCommands = ({
     const live = sessionRef.current;
     if (!live) return;
     const session = live;
+    if (handleSurveyCadPlineSubmit({ applyHistoryUpdate, replaceSession, session })) {
+      return;
+    }
     if (
       handleSurveyCadTypedSubmit({
         applyHistoryUpdate,

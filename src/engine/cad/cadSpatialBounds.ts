@@ -1,6 +1,7 @@
 import type { CadBounds, CadFeatureLineEntity, CadParcelEntity, CadProject } from './cadTypes';
 import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
 import type { CadWorldPoint } from './cadGeometry';
+import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { arcRefFromEntity } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
@@ -216,7 +217,11 @@ export const entityIntersectsBounds = (
     case 'parcel': {
       const points =
         entity.type === 'polyline'
-          ? entity.vertices
+          ? cadPolylineVerticesWrapToFirst(entity.vertices, entity.closed)
+            ? [...entity.vertices, entity.vertices[0]].filter(
+                (point): point is CadWorldPoint => point != null,
+              )
+            : entity.vertices
           : [...entity.vertices, entity.vertices[0]].filter(
               (point): point is CadWorldPoint => point != null,
             );

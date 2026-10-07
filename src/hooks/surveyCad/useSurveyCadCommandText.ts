@@ -17,6 +17,15 @@ const polygonPromptForPhase = (
   return `POLYGON active. ${session.sides} sides ${modeLabel}. Center ${session.center!.label} captured. Click or enter the radius point.`;
 };
 
+const plinePromptForCount = (count: number): string => {
+  if (count === 0) return 'PLINE active. Click or enter the first vertex. [Undo]';
+  if (count === 1) return 'PLINE active. 1 vertex captured. Click the next point or type it. [Undo]';
+  if (count === 2) {
+    return 'PLINE active. 2 vertices captured. Click the next point or press Enter to finish open. [Undo]';
+  }
+  return `PLINE active. ${count} vertices captured. Press Enter to finish open, or type Close to close the ring. [Close/Undo]`;
+};
+
 export const promptForSession = (session: CommandSession | null, fallbackStatus: string): string => {
   if (!session) return fallbackStatus;
   switch (session.key) {
@@ -72,10 +81,7 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
     case 'POLYGON':
       return session.resultText ?? polygonPromptForPhase(session);
     case 'PLINE':
-      return session.resultText ??
-        (session.points.length > 0
-          ? `PLINE active. ${session.points.length} vertex${session.points.length === 1 ? '' : 'es'} captured. Click the next point or press Enter on an empty input to finish once 2+ vertices exist.`
-          : 'PLINE active. Click or enter the first vertex.');
+      return session.resultText ?? plinePromptForCount(session.points.length);
     case 'TRAVERSE':
       return session.resultText ??
         (session.points.length > 0

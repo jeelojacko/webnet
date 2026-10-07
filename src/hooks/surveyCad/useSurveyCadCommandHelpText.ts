@@ -56,8 +56,8 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return 'POLYGON radius point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the center.';
     case 'PLINE':
       return session.points.length > 0
-        ? 'PLINE next vertex: click in the model space or type `x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Press Enter on an empty input to finish after 2+ vertices.'
-        : 'PLINE first vertex: click in the model space or type `x,y` / `LABEL=x,y`.';
+        ? 'PLINE next vertex: click in the model space or type `x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Type `C`/`CLOSE` to close the ring once 3+ distinct vertices exist, `U`/`UNDO`/`BACKSTEP` to drop the newest vertex. Press Enter on an empty input to finish open after 2+ vertices. A closed ring stores no duplicate closure vertex.'
+        : 'PLINE first vertex: click in the model space or type `x,y` / `LABEL=x,y`. Type `U`/`UNDO`/`BACKSTEP` to clear the draft.';
     case 'TRAVERSE':
       return session.points.length > 0
         ? session.mode === 'point-to-point'

@@ -9,7 +9,7 @@ import { buildBaseCadPropertiesProject } from './cadPropertiesTestSupport';
 
 type Vertex = { x: number; y: number };
 
-const withShape = (vertices: Vertex[], type: 'polygon' | 'polyline') => {
+const withShape = (vertices: Vertex[], type: 'polygon' | 'polyline', closed = false) => {
   const base = {
     id: `${type}:test`,
     layerId: 'observation-lines',
@@ -22,7 +22,7 @@ const withShape = (vertices: Vertex[], type: 'polygon' | 'polyline') => {
   const entity =
     type === 'polygon'
       ? { ...base, type: 'polygon' as const }
-      : { ...base, type: 'polyline' as const, closed: false };
+      : { ...base, type: 'polyline' as const, closed };
   return appendCadProjectEntities(buildBaseCadPropertiesProject(), [entity]);
 };
 
@@ -97,5 +97,23 @@ describe('polygon closing segment property rows', () => {
     expect([...lengths.keys()]).toEqual([1, 2, 3]);
     expect(lengths.get(3)).toBe('4.000');
     expect(state.entity.properties.some((row) => row.label === 'Segment 4 length')).toBe(false);
+  });
+
+  // C1 pin: a closed PLINE stores no duplicate closure vertex, so its rows
+  // wrap exactly like a polygon ring. Open polylines stay N-1 (above).
+  it('emits the closing last→first row for a closed polyline', () => {
+    const project = withShape(vertices, 'polyline', true);
+    const polyline = project.entities.find((entity) => entity.id === 'polyline:test');
+    if (!polyline || polyline.type !== 'polyline') throw new Error('Polyline not found');
+
+    const state = buildCadPropertiesPanelState(project, [polyline]);
+    if (!state || state.mode !== 'single') throw new Error('Polyline properties missing');
+
+    const lengths = segmentRowValues(state.entity.properties, 'length');
+    const azimuths = segmentRowValues(state.entity.properties, 'azimuth');
+    expect([...lengths.keys()]).toEqual([1, 2, 3, 4]);
+    const expectedClosing = buildCadInverseSummary(vertices.at(-1)!, vertices[0]!);
+    expect(lengths.get(4)).toBe(expectedClosing.distance.toFixed(3));
+    expect(azimuths.get(4)).toBe('180\u00b000\'00"');
   });
 });

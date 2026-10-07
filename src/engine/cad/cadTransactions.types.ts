@@ -412,6 +412,9 @@ export type CadCommand =
   | {
       key: 'PLINE';
       vertices: { x: number; y: number; label: string }[];
+      /** Absent/false = open polyline. True = closed ring stored without a
+       *  duplicate closure vertex (the renderer/segment law wraps to first). */
+      closed?: boolean;
     }
   | {
       key: 'TRAVERSE';

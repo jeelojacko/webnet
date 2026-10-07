@@ -7,6 +7,7 @@ import {
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import type { CadProject } from '../../engine/cad/cadTypes';
 import { recalculateTraverseSideshotPoint } from './useSurveyCadCommandSession';
+import { commitPlineSession } from './useSurveyCadPlineSession';
 
 type ReplaceSession = (_nextSession: CommandSession | null) => void;
 type ApplyHistoryUpdate = (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
@@ -42,14 +43,13 @@ export const useSurveyCadCommandLifecycle = ({
   submitSessionInput,
 }: UseSurveyCadCommandLifecycleOptions): SurveyCadCommandLifecycle => {
   const finishPolylineSession = () => {
-    if (!session || session.key !== 'PLINE' || session.points.length < 2) return;
-    applyHistoryUpdate((existing) =>
-      runCadCommand(existing, {
-        key: 'PLINE',
-        vertices: session.points,
-      }),
-    );
-    replaceSession(null);
+    if (!session || session.key !== 'PLINE') return;
+    commitPlineSession({
+      applyHistoryUpdate,
+      closed: false,
+      replaceSession,
+      session,
+    });
   };
 
   const finishTraverseSession = () => {
