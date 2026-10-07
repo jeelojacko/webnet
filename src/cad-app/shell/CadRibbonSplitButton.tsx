@@ -17,12 +17,9 @@ import {
 import { CadRibbonIconButton, type CadRibbonIconButtonSize } from './CadRibbonIconButton';
 import { CadRibbonFlyout } from './CadRibbonFlyout';
 import {
-  CAD_RIBBON_FLYOUT_CARET_GAP_PX,
-  CAD_RIBBON_FLYOUT_MAX_HEIGHT_PX,
-  CAD_RIBBON_FLYOUT_MAX_WIDTH_PX,
-  CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
+  resolveCadRibbonFlyoutAnchor,
   type CadRibbonFlyoutAnchor,
-} from './cadRibbonFlyout.constants';
+} from './cadRibbonFlyout.anchor';
 import {
   resolveCadRibbonCurrentVariant,
   type CadRibbonToolFamily,
@@ -86,24 +83,16 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
       setOpen(true);
       return;
     }
-    const margin = CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
-    const gap = CAD_RIBBON_FLYOUT_CARET_GAP_PX;
-    const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
-    const spaceAbove = rect.top - gap - margin;
-    // Prefer whichever side has more room, then cap to the CSS max box so the
-    // menu is never taller than the contract and never off-viewport.
-    const openUp = spaceBelow < Math.min(CAD_RIBBON_FLYOUT_MAX_HEIGHT_PX, spaceAbove);
-    const maxHeight = Math.max(
-      1,
-      Math.min(CAD_RIBBON_FLYOUT_MAX_HEIGHT_PX, openUp ? spaceAbove : spaceBelow),
+    // The pure helper owns side selection, viewport capping, and horizontal
+    // clamping: natural content height wins on a full desktop viewport, while
+    // a short viewport caps the inline max-height to the actual room.
+    setAnchor(
+      resolveCadRibbonFlyoutAnchor(
+        { top: rect.top, bottom: rect.bottom, left: rect.left },
+        window.innerWidth,
+        window.innerHeight,
+      ),
     );
-    const top = openUp ? Math.max(margin, rect.top - gap - maxHeight) : rect.bottom + gap;
-    const maxLeft = Math.max(
-      margin,
-      window.innerWidth - CAD_RIBBON_FLYOUT_MAX_WIDTH_PX - margin,
-    );
-    const left = Math.max(margin, Math.min(rect.left, maxLeft));
-    setAnchor({ top, left, maxHeight });
     setOpen(true);
   };
 
@@ -113,29 +102,43 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
     if (restoreFocus) caretRef.current?.focus();
   };
 
-  // Outside click closes without stealing focus.
+  // Outside click / external scroll / resize close without stealing focus.
   useEffect(() => {
     if (!open) return undefined;
+    const flyoutElement = (): HTMLElement | null =>
+      containerRef.current?.querySelector<HTMLElement>('[data-cad-ribbon-flyout]') ?? null;
+    const isInsideFlyout = (target: EventTarget | null): boolean => {
+      const flyout = flyoutElement();
+      return flyout != null && target instanceof Node && flyout.contains(target);
+    };
     const onPointerDown = (event: MouseEvent): void => {
       // The open menu paints outside the split container (fixed anchor), so
-      // presses on its rows must not count as outside clicks (mousedown
-      // precedes the row click that selects the variant).
-      const target = event.target as Element | null;
-      if (target?.closest?.('[data-cad-ribbon-flyout]') != null) return;
-      if (containerRef.current != null && !containerRef.current.contains(event.target as Node)) {
+      // presses on its rows — and on its scrollbar track/thumb — must not count
+      // as outside clicks. Containment is checked against the real flyout DOM
+      // (not only the event target's closest() chain), because a scrollbar drag
+      // can target the flyout element itself.
+      const target = event.target;
+      if (isInsideFlyout(target)) return;
+      if (target instanceof Node && containerRef.current != null && !containerRef.current.contains(target)) {
         close(false);
       }
     };
-    // A fixed-anchored menu goes stale on scroll/resize: close it rather
-    // than paint at a dead origin.
-    const onReposition = (): void => close(false);
+    // A fixed-anchored menu goes stale on EXTERNAL scroll/resize: close it
+    // rather than paint at a dead origin. Scrolling INSIDE the open flyout is
+    // not an external scroll (and CSS overscroll-behavior: contain stops wheel
+    // chaining at the menu's top/bottom), so internal scroll keeps it open.
+    const onScrollCapture = (event: Event): void => {
+      if (isInsideFlyout(event.target)) return;
+      close(false);
+    };
+    const onResize = (): void => close(false);
     document.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('scroll', onReposition, true);
-    window.addEventListener('resize', onReposition);
+    window.addEventListener('scroll', onScrollCapture, true);
+    window.addEventListener('resize', onResize);
     return () => {
       document.removeEventListener('mousedown', onPointerDown);
-      window.removeEventListener('scroll', onReposition, true);
-      window.removeEventListener('resize', onReposition);
+      window.removeEventListener('scroll', onScrollCapture, true);
+      window.removeEventListener('resize', onResize);
     };
   }, [open]);
 

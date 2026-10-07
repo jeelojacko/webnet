@@ -5,6 +5,14 @@ import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CadRibbonSplitButton } from '../src/cad-app/shell/CadRibbonSplitButton';
 import {
+  resolveCadRibbonFlyoutAnchor,
+} from '../src/cad-app/shell/cadRibbonFlyout.anchor';
+import {
+  CAD_RIBBON_FLYOUT_CARET_GAP_PX,
+  CAD_RIBBON_FLYOUT_MAX_WIDTH_PX,
+  CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
+} from '../src/cad-app/shell/cadRibbonFlyout.constants';
+import {
   findCadRibbonToolFamily,
   type CadRibbonToolFamily,
 } from '../src/cad-app/shell/cadRibbonToolFamilies';
@@ -341,5 +349,123 @@ describe('phase 21A sticky/reset state (§81)', () => {
     await click(container.querySelector('[data-cad-test="pick-planned"]'));
     expect(lineId()).toBe('bestfit-line');
     await cleanup(container, root);
+  });
+});
+
+describe('post-L1 flyout scroll / anchor contract (L1)', () => {
+  const openArcFlyout = async (container: HTMLElement): Promise<Element | null> => {
+    await click(container.querySelector('[data-cad-family-caret="arc"]'));
+    return container.querySelector('[data-cad-ribbon-flyout="arc"]');
+  };
+
+  it('L1-A: keeps the flyout open when the flyout itself scrolls', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    const flyout = await openArcFlyout(container);
+    expect(flyout).not.toBeNull();
+    // A real internal scroll dispatches a non-bubbling scroll event whose
+    // target is the flyout (or a scrolling node inside it); capture must ignore it.
+    await act(async () => {
+      flyout?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    // A second scroll still must not close it (multiple-wheel scrolls).
+    await act(async () => {
+      flyout?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-B: closes on an external window scroll', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    await openArcFlyout(container);
+    await act(async () => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-C: mousedown inside the flyout (row and scrollbar target) does not close', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    const flyout = await openArcFlyout(container);
+    const row = container.querySelector('[data-cad-variant="arc-sce"]');
+    await act(async () => {
+      row?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    // A mousedown whose target is the flyout element itself stands in for a
+    // native scrollbar track/thumb press.
+    await act(async () => {
+      flyout?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-D: Escape closes and restores caret focus', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    await openArcFlyout(container);
+    await keyDown(document.activeElement, 'Escape');
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    expect(
+      (document.activeElement as HTMLElement).getAttribute('data-cad-family-caret'),
+    ).toBe('arc');
+    await cleanup(container, root);
+  });
+
+  it('L1-E: opens downward when there is more room below (top ribbon)', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 30, bottom: 50, left: 100 }, 1366, 768);
+    expect(anchor.side).toBe('down');
+    expect(anchor.top).toBe(50 + CAD_RIBBON_FLYOUT_CARET_GAP_PX);
+    expect(anchor.bottom).toBeNull();
+    const room = 768 - 50 - CAD_RIBBON_FLYOUT_CARET_GAP_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    expect(anchor.maxHeight).toBe(room);
+  });
+
+  it('L1-F: opens upward when there is more room above and uses bottom semantics', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 700, bottom: 720, left: 100 }, 1366, 768);
+    expect(anchor.side).toBe('up');
+    expect(anchor.top).toBeNull();
+    expect(anchor.bottom).toBe(768 - 700 + CAD_RIBBON_FLYOUT_CARET_GAP_PX);
+    const room = 700 - CAD_RIBBON_FLYOUT_CARET_GAP_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    expect(anchor.maxHeight).toBe(room);
+  });
+
+  it('L1-G: maxHeight is the available room, never a fixed 260px cap', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 40, bottom: 60, left: 100 }, 1366, 700);
+    const room = 700 - 60 - CAD_RIBBON_FLYOUT_CARET_GAP_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    expect(anchor.maxHeight).toBe(room);
+    expect(anchor.maxHeight).toBeGreaterThan(260);
+  });
+
+  it('L1-H: clamps left inside the viewport for a far-right caret', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 30, bottom: 50, left: 1300 }, 1366, 768);
+    expect(anchor.left).toBe(
+      1366 - CAD_RIBBON_FLYOUT_MAX_WIDTH_PX - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
+    );
+  });
+
+  it('L1-I: stays positive and bounded inside a tiny viewport', () => {
+    const anchor = resolveCadRibbonFlyoutAnchor({ top: 40, bottom: 50, left: 5 }, 100, 100);
+    expect(anchor.maxHeight).toBeGreaterThan(0);
+    expect(anchor.left).toBeGreaterThanOrEqual(CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX);
+    // The chosen side's far edge ends at the viewport margin.
+    const topEdge = anchor.side === 'up'
+      ? 100 - (anchor.bottom ?? 0) - anchor.maxHeight
+      : anchor.top ?? 0;
+    const bottomEdge = anchor.side === 'up'
+      ? 100 - (anchor.bottom ?? 0)
+      : (anchor.top ?? 0) + anchor.maxHeight;
+    expect(topEdge).toBeGreaterThanOrEqual(CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX - 0.001);
+    expect(bottomEdge).toBeLessThanOrEqual(100 - CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX + 0.001);
   });
 });

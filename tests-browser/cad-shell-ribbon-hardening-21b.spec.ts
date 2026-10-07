@@ -168,11 +168,13 @@ test.describe('Phase 21B sticky-face lifecycle @ 1366x768', () => {
 // 2. Flyout stays in viewport while the strip clips vertically
 // ---------------------------------------------------------------------------
 
+const DESKTOP_FAMILIES = ['line', 'arc', 'curves', 'circle'] as const;
+
 for (const resolution of RESOLUTIONS) {
   test.describe(`Phase 21B flyout hardening @ ${resolution.width}x${resolution.height}`, () => {
     test.use({ viewport: { width: resolution.width, height: resolution.height } });
 
-    test('strip is nowrap/vertically clipped and fixed flyouts stay on-screen', async ({ page }) => {
+    test('strip is nowrap/vertically clipped and desktop flyouts show their full list', async ({ page }) => {
       test.setTimeout(120_000);
       const errors: string[] = [];
       await bootCad(page, errors);
@@ -208,8 +210,10 @@ for (const resolution of RESOLUTIONS) {
       const vp = page.viewportSize();
       if (!vp) throw new Error('no viewport size');
 
-      // Every open flyout stays inside the viewport with a capped box.
-      for (const familyId of ['arc', 'line', 'curves']) {
+      // Desktop law (post-L1): every family shows its NATURAL full list —
+      // inside the viewport, no vertical overflow, no horizontal overflow,
+      // and no fixed product cap. Overflow is measured, never assumed.
+      for (const familyId of DESKTOP_FAMILIES) {
         await page.locator(`[data-cad-family-caret="${familyId}"]`).click({ force: true });
         const flyout = page.locator(`[data-cad-ribbon-flyout="${familyId}"]`);
         await expect(flyout).toBeVisible({ timeout: 5000 });
@@ -221,32 +225,38 @@ for (const resolution of RESOLUTIONS) {
         expect(box.y).toBeGreaterThanOrEqual(-0.5);
         expect(box.x + box.width).toBeLessThanOrEqual(vp.width + 0.5);
         expect(box.y + box.height).toBeLessThanOrEqual(vp.height + 0.5);
-        const capped = await flyout.evaluate((el) => ({
-          maxHeight: Number.parseFloat(window.getComputedStyle(el).maxHeight),
+        const metrics = await flyout.evaluate((el) => ({
+          scrollH: el.scrollHeight,
+          clientH: el.clientHeight,
+          scrollW: el.scrollWidth,
+          clientW: el.clientWidth,
           overflowY: window.getComputedStyle(el).overflowY,
+          docOverflow: document.documentElement.scrollHeight - window.innerHeight,
         }));
-        expect(capped.maxHeight).toBeLessThanOrEqual(260.5);
-        expect(capped.overflowY).toBe('auto');
+        expect(metrics.scrollH).toBeLessThanOrEqual(metrics.clientH + 1);
+        expect(metrics.scrollW).toBeLessThanOrEqual(metrics.clientW + 1);
+        expect(metrics.overflowY).toBe('auto');
+        expect(metrics.docOverflow).toBeLessThanOrEqual(1);
+        test.info().annotations.push({
+          type: `flyout-fit-${familyId}`,
+          description: `@ ${vp.width}x${vp.height} ${familyId}: ` +
+            `scrollH/clientH=${metrics.scrollH}/${metrics.clientH} (no vertical overflow)`,
+        });
         await page.keyboard.press('Escape');
         await expect(flyout).toHaveCount(0);
       }
 
-      // The line flyout has more rows than the 260px cap: it scrolls
-      // internally rather than growing the page.
+      // Selection still works from a desktop flyout.
       await page.locator('[data-cad-family-caret="line"]').click({ force: true });
       const lineFlyout = page.locator('[data-cad-ribbon-flyout="line"]');
       await expect(lineFlyout).toBeVisible({ timeout: 5000 });
-      const lineMetrics = await lineFlyout.evaluate((el) => ({
-        scrollH: el.scrollHeight,
-        clientH: el.clientHeight,
-        docOverflow: document.documentElement.scrollHeight - window.innerHeight,
-      }));
-      expect(lineMetrics.scrollH).toBeGreaterThan(lineMetrics.clientH);
-      expect(lineMetrics.docOverflow).toBeLessThanOrEqual(1);
-      await page.keyboard.press('Escape');
+      await page.locator('[data-cad-ribbon-flyout="line"] [data-cad-variant="line-create"]').click({ force: true });
+      await expect(lineFlyout).toHaveCount(0);
+      await expect(page.locator('[data-cad-family="line"] .cad-ribbon-split__primary').first())
+        .toHaveAttribute('aria-label', 'Line: Create Line');
 
       // A far-right family (clipped by the strip) still anchors on-screen:
-      // the caret math clamps with the shared flyout width constant.
+      // the anchor helper clamps with the shared flyout width constant.
       const hatchCaretLeft = await page
         .locator('[data-cad-family-caret="hatch"]')
         .evaluate((el) => el.getBoundingClientRect().left);
@@ -284,10 +294,99 @@ for (const resolution of RESOLUTIONS) {
 
       test.info().annotations.push({
         type: 'ribbon-flyout-fit',
-        description: `@ ${vp.width}x${vp.height} strip overflowY=hidden, flyouts in-viewport; ` +
+        description: `@ ${vp.width}x${vp.height} strip overflowY=hidden, desktop flyouts natural-height; ` +
           `hatch caret x=${hatchCaretLeft.toFixed(0)}`,
       });
       expect(errors).toEqual([]);
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// 3. Short-viewport fallback: internal scroll keeps the menu open
+// ---------------------------------------------------------------------------
+
+test.describe('Phase 21B short-viewport flyout fallback @ 1366x360', () => {
+  test.use({ viewport: { width: 1366, height: 360 } });
+
+  test('Line flyout scrolls internally, stays open, then a lower variant selects', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors: string[] = [];
+    await bootCad(page, errors);
+    await gotoHomeTab(page);
+
+    const vp = page.viewportSize();
+    if (!vp) throw new Error('no viewport size');
+
+    await page.locator('[data-cad-family-caret="line"]').click({ force: true });
+    const flyout = page.locator('[data-cad-ribbon-flyout="line"]');
+    await expect(flyout).toBeVisible({ timeout: 5000 });
+
+    const start = await flyout.evaluate((el) => ({
+      scrollH: el.scrollHeight,
+      clientH: el.clientHeight,
+      scrollTop: el.scrollTop,
+    }));
+    // Short viewport: the 17-row list overflows and must scroll internally.
+    expect(start.scrollH).toBeGreaterThan(start.clientH + 1);
+    expect(start.scrollTop).toBe(0);
+
+    // The box still stays fully inside the viewport.
+    const box = await flyout.boundingBox();
+    if (!box) throw new Error('line flyout has no box');
+    expect(box.y).toBeGreaterThanOrEqual(-0.5);
+    expect(box.y + box.height).toBeLessThanOrEqual(vp.height + 0.5);
+    expect(box.x + box.width).toBeLessThanOrEqual(vp.width + 0.5);
+
+    // Real wheel scroll: scrollTop moves and the menu REMAINS OPEN, across
+    // multiple scrolls (overscroll-behavior: contain stops page chaining).
+    const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.wheel(0, 200);
+    await expect.poll(() => flyout.evaluate((el) => el.scrollTop), { timeout: 5000 }).toBeGreaterThan(0);
+    await expect(flyout).toBeVisible();
+
+    const afterFirst = await flyout.evaluate((el) => el.scrollTop);
+    await page.mouse.wheel(0, 200);
+    await expect.poll(() => flyout.evaluate((el) => el.scrollTop), { timeout: 5000 }).toBeGreaterThan(afterFirst);
+    await expect(flyout).toBeVisible();
+
+    // Scrollbar drag: headless Chromium hides native scrollbars
+    // (offsetWidth === clientWidth), so a classic thumb/track drag is not
+    // reproducible. The equivalent internal-scroll contract is proven by the
+    // captured-scroll component test (tests/cad_ribbon_controls.test.tsx
+    // L1-A/L1-C) plus this real wheel scrollTop proof. If a classic scrollbar
+    // IS present, perform the drag.
+    const scrollbarWidth = await flyout.evaluate((el) => el.offsetWidth - el.clientWidth);
+    if (scrollbarWidth > 2) {
+      const trackX = box.x + box.width - Math.max(1, scrollbarWidth / 2);
+      await page.mouse.move(trackX, box.y + box.height - 4);
+      await page.mouse.down();
+      await page.mouse.move(trackX, box.y + 4, { steps: 5 });
+      await page.mouse.up();
+      await expect(flyout).toBeVisible();
+    } else {
+      test.info().annotations.push({
+        type: 'scrollbar-drag',
+        description: 'headless Chromium hides native scrollbars (offsetWidth === clientWidth); ' +
+          'internal-scroll contract proven by component scroll test + real wheel scrollTop',
+      });
+    }
+
+    // Still open after all scrolling; selecting a lower variant sticks and
+    // closes normally.
+    const lowerVariant = 'line-perpendicular-from-point';
+    await page.locator(`[data-cad-ribbon-flyout="line"] [data-cad-variant="${lowerVariant}"]`).click({ force: true });
+    await expect(flyout).toHaveCount(0);
+    await expect(page.locator('[data-cad-family="line"] .cad-ribbon-split__primary').first())
+      .toHaveAttribute('aria-label', 'Line: Create Line Perpendicular from Point');
+
+    // External scroll still closes on a short viewport.
+    await page.locator('[data-cad-family-caret="line"]').click({ force: true });
+    await expect(flyout).toBeVisible({ timeout: 5000 });
+    await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+    await expect(flyout).toHaveCount(0);
+
+    expect(errors).toEqual([]);
+  });
+});

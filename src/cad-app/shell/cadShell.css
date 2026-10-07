@@ -319,8 +319,8 @@
    Wave-3 browser QA proved open flyouts were invisible (DOM present, zero
    painted pixels). No transformed/filtered ancestor exists between the
    ribbon and the viewport, so fixed positioning escapes the clip.
-   max-width/max-height are mirrored in cadRibbonFlyout.constants.ts; the
-   anchor math caps the inline max-height to the viewport. */
+   max-width is mirrored in cadRibbonFlyout.constants.ts; the anchor math
+   (cadRibbonFlyout.anchor.ts) supplies the side-aware inline max-height. */
 .cad-ribbon-tool--flyout,
 .cad-ribbon-flyout {
   position: absolute;
@@ -331,13 +331,18 @@
   flex-direction: column;
   min-width: 15rem;
   max-width: 22rem;
-  max-height: 260px;
+  /* Post-L1: no product max-height. The menu prefers its natural content
+     height and CadRibbonSplitButton hands it an inline max-height equal to
+     the actual viewport room on the chosen side. */
   /* Phase 21B visual QA: a vertical menu must not grow a horizontal
      scrollbar. Long row hints shrink and ellipsize inside the box instead
      of widening it (Line flyout measured scrollWidth 458 > clientWidth 350
      before this). */
   overflow-x: hidden;
   overflow-y: auto;
+  /* Post-L1: wheel/scroll at the menu's own top/bottom must not chain to the
+     page (which would close the menu as an external scroll). */
+  overscroll-behavior: contain;
   margin: 2px 0 0;
   padding: 3px;
   list-style: none;

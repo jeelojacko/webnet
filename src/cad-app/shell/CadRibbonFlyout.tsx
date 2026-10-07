@@ -9,7 +9,7 @@ import React, { useEffect, useRef } from 'react';
 import { CAD_RIBBON_ICONS } from '../assets/icons/cadRibbonIcons';
 import { resolveShellCommandText } from './cadCommandRegistry';
 import type { CadRibbonToolFamily, CadRibbonToolVariant } from './cadRibbonToolFamilies';
-import type { CadRibbonFlyoutAnchor } from './cadRibbonFlyout.constants';
+import type { CadRibbonFlyoutAnchor } from './cadRibbonFlyout.anchor';
 
 export interface CadRibbonFlyoutProps {
   family: CadRibbonToolFamily;
@@ -58,6 +58,17 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
   anchor = null,
 }) => {
   const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  // Side-aware style: exactly one of top/bottom is set (fixed positioning).
+  const anchorStyle: React.CSSProperties | undefined =
+    anchor == null
+      ? undefined
+      : {
+          left: anchor.left,
+          maxHeight: anchor.maxHeight,
+          ...(anchor.side === 'up'
+            ? { bottom: anchor.bottom ?? undefined }
+            : { top: anchor.top ?? undefined }),
+        };
 
   // Focus the current variant on open so arrow keys continue from the face.
   useEffect(() => {
@@ -110,9 +121,7 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
       className={`cad-ribbon-flyout${anchor != null ? ' cad-ribbon-flyout--fixed' : ''}`}
       data-cad-ribbon-flyout={family.id}
       onKeyDown={onKeyDown}
-      {...(anchor != null
-        ? { style: { top: anchor.top, left: anchor.left, maxHeight: anchor.maxHeight } }
-        : {})}
+      {...(anchorStyle != null ? { style: anchorStyle } : {})}
     >
       {family.variants.map((variant, index) => {
         const runnable = canRunVariant(variant, isVariantAvailable);
