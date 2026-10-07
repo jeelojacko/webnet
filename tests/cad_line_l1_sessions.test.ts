@@ -725,34 +725,47 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
     expect(session?.resultText).toMatch(/line, arc, or circle/i);
   });
 
-  it('uses the viewport pick tolerance passed by the canvas, not the drawing extent', () => {
-    // 100 km source would give a ~1 km extent fraction; the viewport tolerance
-    // threaded at pick time is 5 m.
+  it('uses the pick-time viewport tolerance (zoom-then-click must not leak a stale value)', () => {
+    // 100 km source would give a ~1 km extent fraction; the tolerance is the
+    // viewport value supplied on each pick, computed at click time.
     const project = buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100_000, 0)] });
-    let history = createCadHistoryState(project);
-    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
-    const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
-      history = updater(history);
-    };
-    const replaceSession = (next: CadLineL1SessionState | null) => {
-      session = next;
-    };
-    const pickAt = (value: CommandPoint) => {
+    const pickOnSource = (toleranceWorld: number, pick: CommandPoint) => {
+      let history = createCadHistoryState(project);
+      let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+      const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
+        history = updater(history);
+      };
+      const replaceSession = (next: CadLineL1SessionState | null) => {
+        session = next;
+      };
       handleCadLineL1PointPick({
         applyHistoryUpdate,
         current: session!,
-        point: value,
+        point: { ...point(50_000, 0, 'body'), snapSourceEntityId: 'line:1' },
         project: history.present.project,
         replaceSession,
-        pickToleranceWorld: 5,
+        pickToleranceWorld: toleranceWorld,
       });
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: pick,
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: toleranceWorld,
+      });
+      return session;
     };
-    pickAt({ ...point(50_000, 0, 'body'), snapSourceEntityId: 'line:1' });
-    pickAt(point(50_000, 30, 'off'));
-    expect(session?.lineSourceOnPoint).toBeNull();
-    expect(session?.resultText).toMatch(/not on the source line/i);
-    pickAt(point(50_000, 3, 'near'));
-    expect(session?.lineSourceOnPoint).toMatchObject({ x: 50_000, y: 0 });
+
+    // Zoomed in (1 m snap tolerance): a 3 m off pick rejects.
+    expect(pickOnSource(1, point(50_000, 3, 'fine'))?.lineSourceOnPoint).toBeNull();
+    // Zoomed out (5 m snap tolerance): the same 3 m off pick accepts at the new scale.
+    expect(pickOnSource(5, point(50_000, 3, 'coarse'))?.lineSourceOnPoint).toMatchObject({
+      x: 50_000,
+      y: 0,
+    });
+    // A far pick still rejects against the coarse tolerance.
+    expect(pickOnSource(5, point(50_000, 30, 'far'))?.lineSourceOnPoint).toBeNull();
   });
 
   it('rejects a point-range with any invalid token atomically (no silent discard)', () => {

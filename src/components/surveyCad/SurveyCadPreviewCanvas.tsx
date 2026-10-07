@@ -154,6 +154,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       if (!screenPoint) return;
       onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY), undefined, {
         extendMode: event.shiftKey,
+        pickToleranceWorld: snapToleranceScreenUnits / scale,
       });
     }}
     onMouseLeave={() => {
@@ -344,6 +345,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         if (!screenPoint) return;
         onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY), undefined, {
           extendMode: event.shiftKey,
+          pickToleranceWorld: snapToleranceScreenUnits / scale,
         });
       }}
       onDoubleClick={(event) => {

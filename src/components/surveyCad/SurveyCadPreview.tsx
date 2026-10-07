@@ -186,6 +186,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         snapSourceEntityId: snapCandidate.sourceEntityId,
         snapKind: snapCandidate.kind,
         extendMode,
+        pickToleranceWorld: snapToleranceScreenUnits / scale,
       },
     );
   };
@@ -225,6 +226,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           snapSourceEntityId: primitive.sourceEntityId,
           snapKind: 'nearest',
           extendMode: event.shiftKey,
+          pickToleranceWorld: snapToleranceScreenUnits / scale,
         },
       );
       return;
@@ -233,6 +235,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       snapSourceSegmentId: sourceSegmentId,
       snapSourceEntityId: primitive.sourceEntityId,
       extendMode: event.shiftKey,
+      pickToleranceWorld: snapToleranceScreenUnits / scale,
     });
   };
 

@@ -92,12 +92,13 @@ describe('SurveyCadWorkspace', () => {
     expect(consumeInteractionPoint).toHaveBeenCalledWith(
       { x: 5, y: 0 },
       'P1-P2',
-      {
+      expect.objectContaining({
         extendMode: false,
         snapSourceSegmentId: 'pline:chain#0',
         snapSourceEntityId: 'pline:chain',
         snapKind: 'midpoint',
-      },
+        pickToleranceWorld: expect.any(Number),
+      }),
     );
 
     await act(async () => {
@@ -220,12 +221,13 @@ describe('SurveyCadWorkspace', () => {
     expect(consumeInteractionPoint).toHaveBeenCalledWith(
       { x: 5, y: 0 },
       'P1-P2',
-      {
+      expect.objectContaining({
         extendMode: false,
         snapSourceSegmentId: 'pline:chain#0',
         snapSourceEntityId: 'pline:chain',
         snapKind: 'midpoint',
-      },
+        pickToleranceWorld: expect.any(Number),
+      }),
     );
 
     await act(async () => {

@@ -6,7 +6,7 @@ type UpdateSession = (
 ) => void;
 type ConsumePoint = (
   _point: CommandPoint,
-  _options?: { suppressPointLabel?: boolean },
+  _options?: { suppressPointLabel?: boolean; pickToleranceWorld?: number },
 ) => void;
 type BatchCogoDraftBuilder = (
   _inputValue: string,
@@ -34,6 +34,7 @@ export interface SurveyCadCommandInputActions {
       snapSourceEntityId?: string;
       snapKind?: CadSnapKind;
       extendMode?: boolean;
+      pickToleranceWorld?: number;
     },
   ) => void;
 }
@@ -110,7 +111,7 @@ export const useSurveyCadCommandInputActions = ({
         snapKind: options?.snapKind,
         extendMode: options?.extendMode,
       },
-      { suppressPointLabel: true },
+      { suppressPointLabel: true, pickToleranceWorld: options?.pickToleranceWorld },
     );
   };
 

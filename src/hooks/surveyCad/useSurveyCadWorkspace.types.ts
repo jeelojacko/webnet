@@ -457,6 +457,7 @@ export interface UseSurveyCadWorkspaceResult {
       snapSourceEntityId?: string;
       snapKind?: CadSnapKind;
       extendMode?: boolean;
+      pickToleranceWorld?: number;
     },
   ) => void;
   handleEnterKey: () => void;

@@ -29,12 +29,6 @@ import type { ProjectTransformPanelState } from './useSurveyCadProjectTransformP
 
 export interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
-  /**
-   * Mutable ref holding the viewport's effective snap tolerance in world
-   * units (`snapToleranceScreenUnits / scale`), set on every pointer move and
-   * read at pick time so on-source membership uses the viewport-scale law.
-   */
-  pickToleranceWorldRef?: { current: number | null };
   previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;

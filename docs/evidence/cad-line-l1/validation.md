@@ -149,9 +149,32 @@ outside its geometry.
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 (P1) | Tolerance followed full-drawing extent instead of the viewport. | Derive it from the **viewport's effective snap tolerance** — the same `snapToleranceScreenUnits / scale` the canvas (`SurveyCadPreviewCanvas.tsx`) hands to snapping. The workspace captures it in `pickToleranceWorldRef` on every pointer move and threads it through `useSurveyCadCommands` → `handleSurveyCadConsumePoint` → `handleCadLineL1PointPick` → `resolveCadLineOnSourcePoint`. The engine keeps tolerance-as-parameter (screen-free) and clamps it into a documented **absolute window floor 1e-6 m / cap 10 m**, independent of extent: km-scale far picks reject (cap) and mm-scale far picks reject (small viewport tolerance, no 0.5 m floor). |
+| 1 (P1) | Tolerance followed full-drawing extent instead of the viewport. | Derive it from the **viewport's effective snap tolerance** — the same `snapToleranceScreenUnits / scale` the canvas (`SurveyCadPreviewCanvas.tsx`) hands to snapping. The tolerance is threaded through `useSurveyCadCommands` → `handleSurveyCadConsumePoint` → `handleCadLineL1PointPick` → `resolveCadLineOnSourcePoint` (initially via a pointer-move ref; replaced with pick-time computation in §13). The engine keeps tolerance-as-parameter (screen-free) and clamps it into a documented **absolute window floor 1e-6 m / cap 10 m**, independent of extent: km-scale far picks reject (cap) and mm-scale far picks reject (small viewport tolerance, no 0.5 m floor). |
 
 Pinned by `tests/cad_line_l1_on_source.test.ts` (km cap, mm floor, extent-independence, fallback) and the session-threading test in `tests/cad_line_l1_sessions.test.ts`.
+
+After this pass: focused L1 **8 files, 118/118**; combined **12 files, 167/167**;
+neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
+**7/7** zero page/console/unhandled errors.
+
+## 13. Correction pass (round-3 reviewer finding)
+
+The §12 tolerance was cached in `pickToleranceWorldRef`, updated only on
+pointer-move; a wheel zoom (`SurveyCadPreviewCanvas.tsx`) changed the viewport
+scale without refreshing it, so a click without an intervening move used the
+previous scale's tolerance.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P2) | Stale pointer-move tolerance after wheel zoom. | The cache is removed. The canvas/preview now compute `snapToleranceScreenUnits / scale` **at pick time** from the live rendered scale and pass it with the interaction (`pickToleranceWorld`) through `useSurveyCadCommandInputActions` → `useSurveyCadCommands` → `handleSurveyCadConsumePoint` → `handleCadLineL1PointPick` → `resolveCadLineOnSourcePoint`. The engine still clamps it into the absolute window and stays screen-free. Invariant: the tolerance used for an on-source pick always matches the viewport scale at click time. |
+
+Pinned by the extended `tests/cad_line_l1_sessions.test.ts` zoom-then-click test
+(fine 1 m tolerance rejects a 3 m pick; a later coarse 5 m tolerance accepts the
+same pick; a far pick still rejects) and the updated
+`tests/surveyCadWorkspace/surveyCadWorkspace.07.test.tsx` interaction-options
+assertions. Browser zoom-then-pick was not added: Playwright's `mouse.click`
+synthesises a move first, so it cannot exercise the stale path; the fix makes
+the path unreachable by construction.
 
 After this pass: focused L1 **8 files, 118/118**; combined **12 files, 167/167**;
 neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
