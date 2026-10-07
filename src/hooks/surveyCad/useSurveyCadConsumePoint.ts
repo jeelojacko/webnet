@@ -259,6 +259,7 @@ export const handleSurveyCadConsumePoint = (
       point,
       project: options.history.present.project,
       replaceSession,
+      pickToleranceWorld: options.pickToleranceWorld,
     })
   ) {
     return;

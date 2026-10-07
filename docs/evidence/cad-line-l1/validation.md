@@ -21,7 +21,7 @@ bridge seam, tests, browser spec). Engine math and icons are Worker A/C.
 |---|---|
 | `tests/cad_line_l1_parsers.test.ts` (Worker A) | 13 tests: engine parsers incl. strict whole-request point-range rejection (invalid/empty tokens, cap, safe-integer guards) + signed distances |
 | `tests/cad_line_l1_construction.test.ts` (Worker A) | directional/endpoint math + the retained perpendicular-foot helper |
-| `tests/cad_line_l1_on_source.test.ts` (Worker A) | 21 tests: corrected TANGENT/PERP on-source engine — line finite-segment membership/residual with the production pick tolerance (far-pick rejection, custom tolerance), short-line floor consistency (1e-7 far-endpoint resolves, at/below-floor rejects), arc/circle radial projection + finite sweep, source tangent/normal frames and sign law, signed ray endpoint, two-ray click tie |
+| `tests/cad_line_l1_on_source.test.ts` (Worker A) | 24 tests: corrected TANGENT/PERP on-source engine — viewport-snap-tolerance clamping into the absolute window (km cap, mm floor, extent-independent), line finite-segment membership/residual with far-pick rejection, short-line floor consistency (1e-7 far-endpoint resolves, at/below-floor rejects), arc/circle radial projection + finite sweep, source tangent/normal frames and sign law, signed ray endpoint, two-ray click tie |
 | `tests/cad_line_l1_coordinate_context.test.ts` (Worker A) | CRS fail-closed + success + no mutation |
 | `tests/cad_line_l1_survey.test.ts` (Worker A) | station/offset + side shots |
 | `tests/cad_line_l1_entity.test.ts` (Worker A) | from-end/extension edits |
@@ -32,7 +32,7 @@ bridge seam, tests, browser spec). Engine math and icons are Worker A/C.
 | `tests/cad_ribbon_controls.test.tsx` | planned-row + sticky laws |
 | `tests/cad_ribbon_icon_manifest.test.tsx` | 17 icons + activation |
 
-Combined focused run: **12 files, 164/164** (`npx vitest run --config
+Combined focused run: **12 files, 167/167** (`npx vitest run --config
 vitest.agent.config.ts tests/cad_line_l1_*.test.ts tests/cad_app_bridge.test.ts
 tests/cad_ribbon_tool_families.test.ts tests/cad_ribbon_controls.test.tsx
 tests/cad_ribbon_icon_manifest.test.tsx`).
@@ -134,8 +134,25 @@ line source (`geometry.json`).
 
 | # | Finding | Resolution |
 |---|---|---|
-| 1 (P1) | On-source residual tolerance was a source-length/radius fraction (5%), so a 30 m pick off a 1 km line was silently accepted as on-source. | Replaced the fraction with the **existing production CAD pick tolerance** (`surfaceEditPickTolerance`, the same `1% of drawing extent, floor 0.5 m` law used by snapping/body picks; not a new fraction). The engine helper now takes `residualTolerance` as a parameter (fallback `surfaceEditPickTolerance(null)`), and the session layer passes `surfaceEditPickTolerance(project.bounds)`, so engine math stays screen-free. Arc/circle use the same absolute law. Pinned by `tests/cad_line_l1_on_source.test.ts` (far-pick rejection, explicit-tolerance accept/reject). |
+| 1 (P1) | On-source residual tolerance was a source-length/radius fraction (5%), so a 30 m pick off a 1 km line was silently accepted as on-source. | Replaced the fraction with an absolute tolerance (refined in §12). |
 | 2 (P2) | A valid 1e-7 source line's far-endpoint pick was sent to the start because the shared `cadProjectPointOntoInfiniteLine` collapses at squared length ≤ 1e-12 (length ≤ 1e-6), coarser than the 1e-9 creation floor. | Scoped a floor-safe segment projection inside `cadLineOnSourceResolvers` (safe for every source above the unchanged 1e-9 creation floor, so `lengthSquared > 1e-18`), avoiding any shared-helper behavior change across its many callers. Pinned by 1e-7 far-endpoint/mid resolution and at/below-floor rejection tests. |
 
 After this pass: focused L1 **8 files, 115/115**; combined **12 files, 164/164**;
 browser A–G **7/7** zero errors.
+
+## 12. Correction pass (round-2 reviewer finding)
+
+The §11 absolute tolerance still followed the **full-drawing extent**
+(`surfaceEditPickTolerance(bounds)` = 1% of extent, floor 0.5 m): a 100 km
+drawing accepted 500 m-off picks, and an mm-scale drawing got a 0.5 m floor far
+outside its geometry.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P1) | Tolerance followed full-drawing extent instead of the viewport. | Derive it from the **viewport's effective snap tolerance** — the same `snapToleranceScreenUnits / scale` the canvas (`SurveyCadPreviewCanvas.tsx`) hands to snapping. The workspace captures it in `pickToleranceWorldRef` on every pointer move and threads it through `useSurveyCadCommands` → `handleSurveyCadConsumePoint` → `handleCadLineL1PointPick` → `resolveCadLineOnSourcePoint`. The engine keeps tolerance-as-parameter (screen-free) and clamps it into a documented **absolute window floor 1e-6 m / cap 10 m**, independent of extent: km-scale far picks reject (cap) and mm-scale far picks reject (small viewport tolerance, no 0.5 m floor). |
+
+Pinned by `tests/cad_line_l1_on_source.test.ts` (km cap, mm floor, extent-independence, fallback) and the session-threading test in `tests/cad_line_l1_sessions.test.ts`.
+
+After this pass: focused L1 **8 files, 118/118**; combined **12 files, 167/167**;
+neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
+**7/7** zero page/console/unhandled errors.

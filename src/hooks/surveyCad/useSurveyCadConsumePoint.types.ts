@@ -25,6 +25,8 @@ export interface HandleSurveyCadConsumePointOptions {
     _computation: ReturnType<typeof buildCadCogoComputation> | null,
   ) => void;
   point: CommandPoint;
+  /** Viewport's effective snap tolerance in world units (canvas-derived). */
+  pickToleranceWorld?: number;
   projectStationIds: string[];
   publishReport: SurveyCadReportPublisher;
   replaceSession: ReplaceSession;

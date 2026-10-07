@@ -92,10 +92,12 @@ grammar differs. All engine conventions come from Worker A's
   three-phase. **(A)** pick a line/arc/circle body (source captured, no
   mutation). **(B)** pick the start point **ON** the source: the pick is projected
   onto it — a line must land on the finite segment (residual tolerance = the
-  **production CAD pick tolerance** `surfaceEditPickTolerance(bounds)`: 1% of the
-  drawing extent, floored at 0.5 m — never a source-length/radius fraction, so a
-  30 m pick off a 1 km line rejects), an arc on the finite sweep, a circle
-  anywhere on the circle; off-object / off-sweep / degenerate picks fail closed
+  **viewport's effective snap tolerance** `snapToleranceScreenUnits / scale`,
+  threaded from the canvas/session layer and clamped by the engine into the
+  absolute window **floor 1e-6 m / cap 10 m** — never a source-length/radius
+  fraction and never the full drawing extent, so a 30 m pick off a 1 km line
+  rejects while mm-scale work keeps a sub-mm tolerance), an arc on the finite
+  sweep, a circle anywhere on the circle; off-object / off-sweep / degenerate picks fail closed
   with an explicit `resultText` and no mutation. Short sources project through a
   floor-safe segment projection: the 1e-9 creation floor is unchanged, and a
   valid 1e-7 line's far-endpoint pick resolves to the far endpoint rather than

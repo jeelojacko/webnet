@@ -159,6 +159,10 @@ export const useSurveyCadWorkspace = (
     [cadProject.entities],
   );
   const activeGripHandleRef = useRef<CadGripHandle | null>(null);
+  // Viewport-scale pick tolerance: the canvas sets this on every pointer move
+  // (`snapToleranceScreenUnits / scale`), and on-source membership reads it at
+  // pick time. Null until the first pointer move → engine fallback applies.
+  const pickToleranceWorldRef = useRef<number | null>(null);
 
   // View-layer filter (spec §6): OFF/frozen-layer primitives hide at the
   // viewport consumer — never inside buildCadDisplayScene (export scene
@@ -389,6 +393,7 @@ export const useSurveyCadWorkspace = (
   const commandState = useSurveyCadWorkspaceCommandController({
     activeSnap,
     activeDraft: drawing.draft,
+    pickToleranceWorldRef,
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
@@ -431,6 +436,9 @@ export const useSurveyCadWorkspace = (
       restrictedGripHandles?: readonly CadGripHandle[];
     },
   ) => {
+    if (toleranceWorldOverride != null && Number.isFinite(toleranceWorldOverride)) {
+      pickToleranceWorldRef.current = toleranceWorldOverride;
+    }
     updatePointerWorldPointInternal(worldPoint, toleranceWorldOverride, {
       ...options,
       restrictedGripHandles: options?.restrictedGripHandles ?? [],

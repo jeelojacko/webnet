@@ -23,7 +23,6 @@ import {
   resolveCadLineRayClick,
   type CadLineSourceMode,
 } from '../../engine/cad/cadLineOnSourceResolvers';
-import { surfaceEditPickTolerance } from '../../engine/cad/cadSurfaceEditPicking';
 import type { CadLineFromEndEndpoint } from '../../engine/cad/cadLineEntityResolvers';
 import { resolveCadLinePointByStationId } from '../../engine/cad/cadLineSurveyResolvers';
 import { isCadLineSegmentValid } from '../../engine/cad/cadLineBatch';
@@ -315,6 +314,13 @@ export interface CadLineL1PointPickOptions {
   point: CommandPoint;
   project: CadProject;
   replaceSession: CadLineL1ReplaceSession;
+  /**
+   * Viewport's effective snap tolerance in world units
+   * (`snapToleranceScreenUnits / scale`), threaded from the canvas/session
+   * layer. The engine clamps it into its absolute window; when absent the
+   * engine fallback applies.
+   */
+  pickToleranceWorld?: number;
 }
 
 const commitSingleSegment = (
@@ -557,11 +563,7 @@ export const handleCadLineL1PointPick = (options: CadLineL1PointPickOptions): bo
         return true;
       }
       if (!current.lineSourceOnPoint) {
-        const frame = resolveCadLineOnSourcePoint(
-          entity,
-          point,
-          surfaceEditPickTolerance(project.bounds),
-        );
+        const frame = resolveCadLineOnSourcePoint(entity, point, options.pickToleranceWorld);
         if (!frame.ok) {
           replaceSession({ ...current, inputValue: '', resultText: `${current.key}: ${frame.error.message}` });
           return true;

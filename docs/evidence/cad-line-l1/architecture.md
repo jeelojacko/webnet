@@ -16,7 +16,7 @@ session/registry/ribbon/workspace integration described here.
 | Shell | `cadCommandRegistry.ts`, `cadRibbonToolFamilies.ts`, `SurveyCadWorkspace.tsx` | Registry rows, ribbon activation, `shellStarters` dispatch. |
 | Bridge | `src/cad-app/cadSnapshotImport.ts` | Adopts the source `coordinateContext` into `CadProjectMetadata.coordinateContext` ONLY for a blank new drawing; never clobbers an existing drawing's context. |
 | Engine (Worker A) | `cadLineTypes/Parsers/Construction/CoordinateContext/SurveyResolvers/EntityResolvers/Batch.ts`, `cadTransactionsLineBatchCommand.ts` | Pure math: parsing, directional geometry, CRS, station/alignment/entity resolution, batch build, `LINE_CREATE_BATCH`. |
-| On-source engine (correction) | `src/engine/cad/cadLineOnSourceResolvers.ts` | Corrected TANGENT/PERP pure math: finite-segment / finite-sweep on-source projection parameterized by the production pick tolerance and floor-safe for short sources, source tangent/normal frames (line / arc / circle), signed ray endpoint, and two-ray click tie. |
+| On-source engine (correction) | `src/engine/cad/cadLineOnSourceResolvers.ts` | Corrected TANGENT/PERP pure math: finite-segment / finite-sweep on-source projection parameterized by the viewport snap tolerance (engine clamps it into a documented absolute window) and floor-safe for short sources, source tangent/normal frames (line / arc / circle), signed ray endpoint, and two-ray click tie. |
 
 ## 2. Session state
 

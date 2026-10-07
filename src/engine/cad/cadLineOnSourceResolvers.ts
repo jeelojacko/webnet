@@ -27,7 +27,6 @@ import {
   cadSignedSweepDeg,
   type CadWorldPoint,
 } from './cadGeometry';
-import { surfaceEditPickTolerance } from './cadSurfaceEditPicking';
 import {
   CAD_LINE_DEGENERATE_FLOOR,
   cadLineFail,
@@ -43,18 +42,32 @@ export type CadLineSourceEntity = CadLineEntity | CadArcEntity | CadCircleEntity
 export type CadLineSourceMode = 'tangent' | 'normal';
 
 /**
- * On-source residual tolerance is the **production CAD pick tolerance** — the
- * same world-unit radius the shell uses for snapping/body picks
- * (`surfaceEditPickTolerance`: 1% of the drawing extent, floored at 0.5 m) —
- * never a fraction of the source length or radius. The session layer passes the
- * live bounds-derived value; this fallback keeps the engine math screen-free and
- * well-defined when the caller has no bounds.
+ * On-source residual tolerance is the **viewport's effective snap tolerance**
+ * (`snapToleranceScreenUnits / scale`, the same world radius the canvas passes
+ * into snapping) supplied by the session layer — never a fraction of the source
+ * or of the full drawing extent. The engine clamps it into the absolute
+ * `[CAD_LINE_SOURCE_TOLERANCE_FLOOR, CAD_LINE_SOURCE_TOLERANCE_CAP]` window
+ * documented below, so the check stays screen-free and independent of extent.
+ *
+ * Absolute window (world units = metres): floor 1e-6 keeps micro/mm-scale work
+ * usable while rejecting far picks; cap 10 rejects a 500 m pick even when a
+ * km-scale drawing is zoomed fully out (where `screenUnits / scale` would
+ * otherwise grow without bound).
  */
-export const CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK = surfaceEditPickTolerance(null);
+export const CAD_LINE_SOURCE_TOLERANCE_FLOOR = 1e-6;
+export const CAD_LINE_SOURCE_TOLERANCE_CAP = 10;
+
+/**
+ * Fallback when the caller has no viewport tolerance (session-less callers and
+ * focused engine tests). Within the absolute window, so it is used as-is.
+ */
+export const CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK = 1;
 
 const resolveResidualTolerance = (tolerance: number | undefined): number => {
-  const value = tolerance ?? CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK;
-  return Number.isFinite(value) && value >= 0 ? value : CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK;
+  const value = Number.isFinite(tolerance)
+    ? (tolerance as number)
+    : CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK;
+  return Math.min(Math.max(value, CAD_LINE_SOURCE_TOLERANCE_FLOOR), CAD_LINE_SOURCE_TOLERANCE_CAP);
 };
 
 /** Narrow a `CadEntity` to the source kinds the corrected modes accept. */

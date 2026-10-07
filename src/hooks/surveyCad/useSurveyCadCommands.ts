@@ -54,6 +54,7 @@ export type { UseSurveyCadCommandsArgs, UseSurveyCadCommandsResult } from './use
 export const useSurveyCadCommands = ({
   activeSnap,
   activeDraft,
+  pickToleranceWorldRef,
   previewPoint,
   history,
   selectionCount,
@@ -256,6 +257,7 @@ export const useSurveyCadCommands = ({
       history,
       onReportComputation,
       point,
+      pickToleranceWorld: pickToleranceWorldRef?.current ?? undefined,
       projectStationIds,
       publishReport,
       replaceSession,

@@ -80,24 +80,46 @@ describe('L1 on-source: source narrowing and tolerances', () => {
     ).toBe(false);
   });
 
-  it('uses the production pick tolerance (absolute), not a source-length fraction', () => {
-    // Fallback is the shell's production pick radius (surfaceEditPickTolerance(null) = 1 m).
+  it('clamps the supplied viewport tolerance into the absolute window', () => {
     expect(CAD_LINE_SOURCE_PICK_TOLERANCE_FALLBACK).toBe(1);
-    // A 1 km source does NOT get a 50 m residual band: a 30 m off pick rejects.
-    const longLine = line(0, 0, 1000, 0);
-    expect(projectCadLinePointOntoSource(longLine, { x: 500, y: 30 })).toMatchObject({
+    const longLine = line(0, 0, 100_000, 0);
+    // A zoomed-out km-scale viewport tolerance (2000 m) is capped at 10 m:
+    // a 30 m pick still rejects, a 5 m pick accepts.
+    expect(projectCadLinePointOntoSource(longLine, { x: 50_000, y: 30 }, 2000)).toMatchObject({
       ok: false,
       error: { code: 'NO_SOLUTION' },
     });
-    // An explicit bounds-derived tolerance is honoured (accept inside / reject outside).
-    expect(projectCadLinePointOntoSource(longLine, { x: 500, y: 8 }, 10)).toEqual({
+    expect(projectCadLinePointOntoSource(longLine, { x: 50_000, y: 5 }, 2000)).toEqual({
       ok: true,
-      value: { x: 500, y: 0 },
+      value: { x: 50_000, y: 0 },
     });
-    expect(projectCadLinePointOntoSource(longLine, { x: 500, y: 12 }, 10)).toMatchObject({
+    // A microscopic viewport tolerance is floored at 1e-6 m, never zero.
+    expect(projectCadLinePointOntoSource(longLine, { x: 50_000, y: 0 }, 1e-12).ok).toBe(true);
+  });
+
+  it('derives from the viewport scale, not the full drawing extent', () => {
+    // 100 km extent would imply a ~1 km extent fraction; the viewport snap
+    // tolerance is 5 m, so a 30 m pick rejects and a 3 m pick accepts.
+    const longLine = line(0, 0, 100_000, 0);
+    expect(projectCadLinePointOntoSource(longLine, { x: 50_000, y: 30 }, 5)).toMatchObject({
       ok: false,
       error: { code: 'NO_SOLUTION' },
     });
+    expect(projectCadLinePointOntoSource(longLine, { x: 50_000, y: 3 }, 5)).toEqual({
+      ok: true,
+      value: { x: 50_000, y: 0 },
+    });
+  });
+
+  it('rejects far picks on a mm-scale circle with its mm-scale viewport tolerance', () => {
+    const small = circle(0.005);
+    expect(projectCadLinePointOntoSource(small, { x: 0, y: 0.0055 }, 2e-4)).toMatchObject({
+      ok: false,
+      error: { code: 'NO_SOLUTION' },
+    });
+    const near = okValue(projectCadLinePointOntoSource(small, { x: 0, y: 0.0051 }, 2e-4));
+    expect(near.x).toBeCloseTo(0, 12);
+    expect(near.y).toBeCloseTo(0.005, 12);
   });
 });
 
