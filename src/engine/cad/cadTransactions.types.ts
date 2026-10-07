@@ -96,6 +96,7 @@ export type CadCommandKey =
   | 'POINT'
   | 'COGO_POINT'
   | 'LINE'
+  | 'LINE_CREATE_BATCH'
   | 'RECTANGLE'
   | 'POLYGON'
   | 'CIRCLE'
@@ -363,6 +364,15 @@ export type CadCommand =
       key: 'LINE';
       start: { x: number; y: number; label: string };
       end: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'LINE_CREATE_BATCH';
+      segments: Array<{
+        start: { x: number; y: number; label: string };
+        end: { x: number; y: number; label: string };
+      }>;
+      /** User-facing creation mode recorded as metadata.createdBy. */
+      createdBy: string;
     }
   | {
       key: 'RECTANGLE';

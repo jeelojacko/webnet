@@ -172,6 +172,72 @@ describe('CAD ribbon icon manifest', () => {
     }
   });
 
+  it('pins every Line construction variant to its curated icon', () => {
+    // CAD Draw Phase L1: each Line row carries an explicit icon so a typo can
+    // never silently fall back to a text face. Row 1 keeps the existing
+    // AutoCAD 'draw-line' face (no generic Civil LINE family exists).
+    // Worker B activation: all 17 rows are live with full command keys; this
+    // test pins variant->icon mapping + file existence + the live keys.
+    const family = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === 'line');
+    expect(family).toBeTruthy();
+    if (family == null) return;
+    const expected: Record<string, keyof typeof CAD_RIBBON_ICONS> = {
+      'line-create': 'draw-line',
+      'line-by-point-range': 'draw-line-point-range',
+      'line-by-point-object': 'draw-line-point-object',
+      'line-by-point-name': 'draw-line-point-name',
+      'line-by-northing-easting': 'draw-line-northing-easting',
+      'line-by-grid-ne': 'draw-line-grid-ne',
+      'line-by-lat-long': 'draw-line-lat-long',
+      'line-by-bearing': 'draw-line-bearing',
+      'line-by-azimuth': 'draw-line-azimuth',
+      'line-by-angle': 'draw-line-angle',
+      'line-by-deflection': 'draw-line-deflection',
+      'line-by-station-offset': 'draw-line-station-offset',
+      'line-by-side-shot': 'draw-line-side-shot',
+      'line-by-extension': 'draw-line-extension',
+      'line-from-end-of-object': 'draw-line-from-end',
+      'line-tangent-from-point': 'draw-line-tangent-point',
+      'line-perpendicular-from-point': 'draw-line-perp-point',
+    };
+    const expectedCommandKeys: Record<string, string> = {
+      'line-create': 'LINE',
+      'line-by-point-range': 'LINE_POINT_RANGE',
+      'line-by-point-object': 'LINE_POINT_OBJECT',
+      'line-by-point-name': 'LINE_POINT_NAME',
+      'line-by-northing-easting': 'LINE_NE',
+      'line-by-grid-ne': 'LINE_GRID_NE',
+      'line-by-lat-long': 'LINE_LATLONG',
+      'line-by-bearing': 'LINE_BEARING',
+      'line-by-azimuth': 'LINE_AZIMUTH',
+      'line-by-angle': 'LINE_ANGLE',
+      'line-by-deflection': 'LINE_DEFLECTION',
+      'line-by-station-offset': 'LINE_STATION_OFFSET',
+      'line-by-side-shot': 'LINE_SIDE_SHOT',
+      'line-by-extension': 'LINE_EXTENSION',
+      'line-from-end-of-object': 'LINE_FROM_END',
+      'line-tangent-from-point': 'LINE_TANGENT_POINT',
+      'line-perpendicular-from-point': 'LINE_PERP_POINT',
+    };
+    expect(family.variants.map((variant) => variant.id)).toEqual(Object.keys(expected));
+    for (const variant of family.variants) {
+      expect(variant.icon, `${variant.id} must not silently fall back to a text face`).toBe(
+        expected[variant.id],
+      );
+      const sources = variant.icon != null ? CAD_RIBBON_ICONS[variant.icon] : undefined;
+      expect(sources, `${variant.id} icon manifest entry`).toBeTruthy();
+      if (sources == null) continue;
+      for (const url of [sources.src16, sources.src32]) {
+        if (url == null) continue;
+        const file = path.join(ICON_DIR, pngBasename(url));
+        expect(fs.existsSync(file), `${variant.id} file ${file}`).toBe(true);
+      }
+      // CAD Draw L1 activation (Worker B): every row is live with a full key.
+      expect(variant.planned, `${variant.id} is live (no planned flag)`).not.toBe(true);
+      expect(variant.commandKey, `${variant.id} carries a full key`).toBe(expectedCommandKeys[variant.id]);
+    }
+  });
+
   it('never references the gitignored local-assets tree from src/', () => {
     // Comments document provenance, so scan code only (strip // and /* */).
     const stripComments = (text: string): string =>

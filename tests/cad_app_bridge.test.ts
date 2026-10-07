@@ -173,6 +173,110 @@ describe('dependency scenarios A-E (17E no-false-CURRENT)', () => {
     expect(summary.status).toBe('CURRENT');
   });
 
+  it('CAD Draw L1: a blank drawing adopts the source CRS (grid-proven import)', () => {
+    const snapshot = makeSnapshot({
+      coordinateContext: {
+        units: 'm',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        crsLabel: 'UTM 20N',
+      },
+    });
+    const imported = importSnapshotIntoCadDrawing({ document: blank(), snapshot });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    expect(imported.drawing.project.metadata.coordinateContext).toEqual({
+      crsId: 'CA_NAD83_CSRS_UTM_20N',
+      crsLabel: 'UTM 20N',
+    });
+  });
+
+  it('CAD Draw L1: a compatible-units same-CRS refresh never clobbers an existing drawing context', () => {
+    const first = makeSnapshot({
+      coordinateContext: {
+        units: 'm',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        crsLabel: 'UTM 20N',
+      },
+    });
+    const imported = importSnapshotIntoCadDrawing({ document: blank(), snapshot: first });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    const second = makeSnapshot({
+      sourceId: buildCadSourceId('proj-a', 'fp-b'),
+      resultFingerprint: 'fp-b',
+      coordinateContext: { units: 'm', crsId: 'CA_NAD83_CSRS_UTM_20N', crsLabel: 'Renamed label' },
+    });
+    const refreshed = importSnapshotIntoCadDrawing({ document: imported.drawing, snapshot: second });
+    expect(refreshed.ok).toBe(true);
+    if (!refreshed.ok) return;
+    // Same CRS id: the established context is kept verbatim (no clobber, no relabel).
+    expect(refreshed.drawing.project.metadata.coordinateContext).toEqual({
+      crsId: 'CA_NAD83_CSRS_UTM_20N',
+      crsLabel: 'UTM 20N',
+    });
+  });
+
+  it('CAD Draw L1: a different-CRS refresh deprovenances instead of minting mixed geometry', () => {
+    const first = makeSnapshot({
+      coordinateContext: { units: 'm', crsId: 'CA_NAD83_CSRS_UTM_20N', crsLabel: 'UTM 20N' },
+    });
+    const imported = importSnapshotIntoCadDrawing({ document: blank(), snapshot: first });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    const differentCrs = makeSnapshot({
+      sourceId: buildCadSourceId('proj-a', 'fp-crs-b'),
+      resultFingerprint: 'fp-crs-b',
+      coordinateContext: { units: 'm', crsId: 'EPSG:26920', crsLabel: 'NAD83 UTM 20N' },
+    });
+    const refreshed = importSnapshotIntoCadDrawing({ document: imported.drawing, snapshot: differentCrs });
+    expect(refreshed.ok).toBe(true);
+    if (!refreshed.ok) return;
+    // The old CRS must never authorize geometry replaced by another grid:
+    // provenance is removed so GRID_NE/LATLONG fail closed until re-established.
+    expect(refreshed.drawing.project.metadata.coordinateContext).toBeUndefined();
+  });
+
+  it('CAD Draw L1: a null-CRS refresh deprovenances a CRS drawing', () => {
+    const first = makeSnapshot({
+      coordinateContext: { units: 'm', crsId: 'CA_NAD83_CSRS_UTM_20N', crsLabel: 'UTM 20N' },
+    });
+    const imported = importSnapshotIntoCadDrawing({ document: blank(), snapshot: first });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    // The refresh source carries no CRS: its stations are unprovenanced, so the
+    // drawing's CRS A must not stay live on the replaced coordinates.
+    const local = makeSnapshot({
+      sourceId: buildCadSourceId('proj-a', 'fp-local'),
+      resultFingerprint: 'fp-local',
+      coordinateContext: { units: 'm', crsId: null, crsLabel: null },
+    });
+    const refreshed = importSnapshotIntoCadDrawing({ document: imported.drawing, snapshot: local });
+    expect(refreshed.ok).toBe(true);
+    if (!refreshed.ok) return;
+    expect(refreshed.drawing.project.metadata.coordinateContext).toBeUndefined();
+  });
+
+  it('CAD Draw L1: an existing non-blank drawing with no context stays fail-closed', () => {
+    // First import carries no CRS: the drawing has entities but no context.
+    const local = importSnapshotIntoCadDrawing({ document: blank(), snapshot: makeSnapshot() });
+    expect(local.ok).toBe(true);
+    if (!local.ok) return;
+    expect(local.drawing.project.entities.length).toBeGreaterThan(0);
+    expect(local.drawing.project.metadata.coordinateContext).toBeUndefined();
+
+    // A later CRS-bearing import into that non-blank drawing must not relabel
+    // its existing local XY as grid XY.
+    const withCrs = makeSnapshot({
+      sourceId: buildCadSourceId('proj-a', 'fp-crs'),
+      resultFingerprint: 'fp-crs',
+      coordinateContext: { units: 'm', crsId: 'CA_NAD83_CSRS_UTM_20N', crsLabel: 'UTM 20N' },
+    });
+    const imported = importSnapshotIntoCadDrawing({ document: local.drawing, snapshot: withCrs });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    expect(imported.drawing.project.metadata.coordinateContext).toBeUndefined();
+  });
+
   it('B/C: UPDATE_AVAILABLE after a newer publish, CURRENT after refresh', () => {
     const first = makeSnapshot();
     publishAdjustmentSource(first);

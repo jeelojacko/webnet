@@ -9,6 +9,9 @@ import type {
   TraverseDraftMode,
   TraverseSideshotDraft,
 } from './useSurveyCadCommandTypes';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { cadLineL1ExpectsPointPick } from './useSurveyCadLineL1Session';
 
 const ARC_TANGENT_SEED_KINDS = new Set<CadSnapKind>([
   'nearest',
@@ -74,6 +77,7 @@ export const recalculateTraverseSideshotPoint = (
 
 export const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
   if (!session) return false;
+  if (isCadLineL1Key(session.key)) return cadLineL1ExpectsPointPick(session as CadLineL1SessionState);
   switch (session.key) {
     case 'POINT':
     case 'COGO_POINT':
@@ -181,5 +185,7 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
       return session.origin == null;
     case 'PROJECTTRANSFORM':
       return session.projectMode === 'HELMERT' ? true : session.origin == null;
+    default:
+      return false;
   }
 };

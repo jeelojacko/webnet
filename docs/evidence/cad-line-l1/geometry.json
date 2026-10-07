@@ -1,0 +1,92 @@
+{
+  "flowA": {
+    "rows": 17,
+    "distinctIcons": 17,
+    "planned": 0
+  },
+  "flowB": {
+    "id": "cad-line-241b8550-cf05-4349-a8c0-373b9e9996fb",
+    "fromX": 0,
+    "fromY": 0,
+    "toX": 50,
+    "toY": 100,
+    "createdBy": "LINE_NE"
+  },
+  "flowC": {
+    "refusalOk": true,
+    "grid": {
+      "id": "cad-line-b2d85622-8a6c-4fbd-9146-69e18ea42cf9",
+      "fromX": -445748.66307161,
+      "fromY": 5053500.026238931,
+      "toX": -445581.70718193986,
+      "toY": 5054610.662742255,
+      "createdBy": "LINE_GRID_NE"
+    },
+    "latlong": {
+      "id": "cad-line-9addeace-5466-4b6e-826d-8896dd61dfc9",
+      "fromX": -445748.66307161003,
+      "fromY": 5053500.02623893,
+      "toX": -445581.7071819396,
+      "toY": 5054610.662742256,
+      "createdBy": "LINE_LATLONG"
+    }
+  },
+  "flowD": {
+    "rangeSegments": 2,
+    "nameSegments": 1,
+    "objectSegments": 2
+  },
+  "flowE": {
+    "bearing": {
+      "id": "cad-line-a34f668f-df17-4452-9147-90633b91e5c7",
+      "fromX": 0,
+      "fromY": 0,
+      "toX": 100,
+      "toY": 6.123233995736766e-15,
+      "createdBy": "LINE_BEARING"
+    },
+    "azimuth": {
+      "id": "cad-line-1ba57819-d891-404a-aa50-56aae2828c05",
+      "fromX": 0,
+      "fromY": 0,
+      "toX": 100,
+      "toY": 6.123233995736766e-15,
+      "createdBy": "LINE_AZIMUTH"
+    },
+    "angle": {
+      "id": "cad-line-d9e2d207-52d1-4df4-a07a-cc4ac533a56e",
+      "fromX": 0,
+      "fromY": 0,
+      "toX": 1.2246467991473532e-14,
+      "toY": -100,
+      "createdBy": "LINE_ANGLE"
+    },
+    "deflection": {
+      "id": "cad-line-f1b33d7b-539c-42b2-9150-a3dc51216909",
+      "fromX": 100,
+      "fromY": 6.123233995736766e-15,
+      "toX": 100.00000000000001,
+      "toY": -100,
+      "createdBy": "LINE_DEFLECTION"
+    },
+    "sideShot": {
+      "id": "cad-line-3fd6492f-974e-4c62-88dd-0a8326a5303c",
+      "fromX": 0,
+      "fromY": 0,
+      "toX": 50,
+      "toY": 3.061616997868383e-15,
+      "createdBy": "LINE_SIDE_SHOT"
+    }
+  },
+  "flowF": {
+    "extension": {
+      "id": "cad-line-bf21bd01-138a-4b62-9c61-98cae9b3eac1",
+      "fromX": 0,
+      "fromY": 0,
+      "toX": 135.35533905932738,
+      "toY": 135.35533905932738,
+      "createdBy": "LINE"
+    },
+    "lineCount": 4
+  }
+}

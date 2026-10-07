@@ -279,6 +279,7 @@ export const useSurveyCadCommands = ({
       handleSurveyCadTypedSubmit({
         applyHistoryUpdate,
         consumePoint,
+        project: history.present.project,
         publishReport,
         replaceSession,
         session,

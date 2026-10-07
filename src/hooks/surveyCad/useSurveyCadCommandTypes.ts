@@ -1,5 +1,7 @@
 import type { CadBatchCogoDraft } from '../../engine/cad/cadBatchCogo';
+import type { CadLineSegmentInput, CadLineSide } from '../../engine/cad/cadLineTypes';
 import type { RegularPolygonMode } from '../../engine/cad/cadGeometryShapeBuilders';
+import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type { CadTangentSource } from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import type {
   CadTraverseAdjustmentMethod,
@@ -19,6 +21,13 @@ export type CommandPoint = CadNamedPoint & {
   snapSourceEntityId?: string;
   snapKind?: CadSnapKind;
   extendMode?: boolean;
+  /**
+   * CAD Draw L1 label provenance: true when `label` is an authoritative
+   * station id resolved from a survey-point entity. Resolved station ids
+   * bypass auto-label rewriting (`L<n>`) entirely; only locally-generated
+   * free points get ordinals. Never inferred from the label text.
+   */
+  labelIsStationId?: boolean;
 };
 
 export type TraverseDraftMode = 'open' | 'closed' | 'point-to-point';
@@ -149,7 +158,41 @@ export type ActiveCommandKey =
   | 'EXTEND'
   | 'TRIM'
   | 'FILLET'
-  | 'PASTE';
+  | 'PASTE'
+  | CadLineL1CommandKey;
+
+/**
+ * CAD Draw Phase L1 — shared session state for the 16 Line-creation modes.
+ *
+ * One shape covers every mode so the switch-based seams stay small: only the
+ * fields a given mode uses are populated. `lineSegments` is the ordered draft
+ * (the actual commit payload); `lineAnchor` is the live chain tip (or the
+ * explicit start point) used to derive the next segment. Nothing here mutates
+ * the drawing while drafting — Enter commits the whole draft as one batch.
+ */
+export interface CadLineL1SessionState {
+  key: CadLineL1CommandKey;
+  inputValue: string;
+  /** Ordered draft segments; committed atomically via LINE_CREATE_BATCH. */
+  lineSegments: CadLineSegmentInput[];
+  /** Chain tip / explicit start / occupied point, depending on the mode. */
+  lineAnchor: CommandPoint | null;
+  /** Reference-course start (ANGLE/DEFLECTION). */
+  lineReferenceStart: CommandPoint | null;
+  /** Reference-course end (ANGLE/DEFLECTION). */
+  lineReferenceEnd: CommandPoint | null;
+  /** Picked source entity (EXTENSION/FROM_END/TANGENT/PERP). */
+  lineSourceEntityId: string | null;
+  /** Where the operator clicked the source (proximity/endpoint choice). */
+  lineSourcePickPoint: CommandPoint | null;
+  /** Resolved source endpoint for FROM_END (start | end). */
+  lineSourceEndpoint: 'start' | 'end' | null;
+  /** Explicit side intent (TANGENT). */
+  lineSide: CadLineSide | null;
+  /** Selected alignment entity id (STATION_OFFSET). */
+  lineAlignmentId: string | null;
+  resultText?: string;
+}
 
 export type CommandSession =
   | {
@@ -555,4 +598,5 @@ export type CommandSession =
       insertion: CommandPoint | null;
       title?: string;
       resultText?: string;
-    };
+    }
+  | CadLineL1SessionState;

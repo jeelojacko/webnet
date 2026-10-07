@@ -4,6 +4,7 @@ import type {
   CadParcelEntity,
 } from '../../engine/cad/cadTypes';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
+import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type {
   SelectedLineCommandPoints,
   SelectedLinePairCommandPoints,
@@ -15,6 +16,8 @@ export type BatchCogoDraftBuilder = (
 ) => Extract<CommandSession, { key: 'BATCH_COGO' }>['draft'];
 
 export interface SurveyCadCommandStarters {
+  /** CAD Draw L1: begin one of the 16 Line-creation modes (seed from selection). */
+  startLineL1Command: (_key: CadLineL1CommandKey) => void;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;

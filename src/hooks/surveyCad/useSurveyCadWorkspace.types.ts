@@ -15,6 +15,7 @@ import type {
   MlightcadSpikeScene,
 } from '../../engine/cad/cadTypes';
 import type { CadSnapPreferences } from './useSurveyCadSnapping';
+import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type {
   GridGroundPanelState,
   HelmertPanelState,
@@ -206,6 +207,7 @@ export interface UseSurveyCadWorkspaceResult {
     | 'TRIM'
     | 'FILLET'
     | 'PASTE'
+    | CadLineL1CommandKey
     | null;
   commandInputValue: string;
   statusText: string;
@@ -253,6 +255,7 @@ export interface UseSurveyCadWorkspaceResult {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startLineL1Command: (_key: CadLineL1CommandKey) => void;
   startRectangleCommand: () => void;
   startCircleCommand: () => void;
   startCircleDiameterCommand: () => void;

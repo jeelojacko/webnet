@@ -86,6 +86,7 @@ export interface UseSurveyCadCommandsResult {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startLineL1Command: (_key: import('./useSurveyCadLineL1Keys').CadLineL1CommandKey) => void;
   startRectangleCommand: () => void;
   startCircleCommand: () => void;
   startCircleDiameterCommand: () => void;

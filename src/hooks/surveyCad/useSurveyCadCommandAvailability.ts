@@ -1,5 +1,8 @@
 import type { CadSnapCandidate } from '../../engine/cad/cadTypes';
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { cadLineL1CanFinish } from './useSurveyCadLineL1Session';
 
 export interface SurveyCadCommandAvailability {
   canUseActiveSnap: boolean;
@@ -23,7 +26,9 @@ export const buildSurveyCadCommandAvailability = ({
   canUseActiveSnap: activeSnap != null && commandExpectsPointPick && activeCommandAllowsSnap(session),
   canCycleActiveSnap: commandExpectsPointPick && activeCommandAllowsSnap(session),
   canFinishCommand:
-    session?.key === 'PLINE'
+    session && isCadLineL1Key(session.key)
+      ? cadLineL1CanFinish(session as CadLineL1SessionState)
+      : session?.key === 'PLINE'
       ? session.points.length >= 2
       : session?.key === 'TRAVERSE'
         ? session.points.length >= 2 &&

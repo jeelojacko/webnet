@@ -14,6 +14,9 @@ import {
   type CadTangentSource,
 } from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { handleCadLineL1PointPick } from './useSurveyCadLineL1Session';
 import { buildTraverseLegInputFromPoints } from './useSurveyCadCommandSession';
 import { normalizeDraftPoint } from './useSurveyCadCommandParsing';
 import { handleSurveyCadArcPointPick } from './useSurveyCadArcPointPick';
@@ -246,6 +249,20 @@ export const handleSurveyCadConsumePoint = (
   options: HandleSurveyCadConsumePointOptions,
 ): void => {
   const { applyHistoryUpdate, current, point, replaceSession } = options;
+  // CAD Draw L1: the 16 Line-creation modes own point picks (draft, source
+  // selection, tangent/perp commit); never fall through to the point parser.
+  if (
+    isCadLineL1Key(current.key) &&
+    handleCadLineL1PointPick({
+      applyHistoryUpdate,
+      current: current as CadLineL1SessionState,
+      point,
+      project: options.history.present.project,
+      replaceSession,
+    })
+  ) {
+    return;
+  }
   // Phase 18O annotation creation picks (fixed anchors; eager dimension/label commits).
   if (
     handleAnnotationPointPick({

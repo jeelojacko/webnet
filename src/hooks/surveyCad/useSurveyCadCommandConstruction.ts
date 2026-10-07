@@ -1,6 +1,8 @@
 import { cadArcEndPoint } from '../../engine/cad/cadGeometry';
 import type { CadSnapConstructionContext } from '../../engine/cad/cadTypes';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import {
   tangentSeedArcEntityIdFromPoint,
   tangentSeedPointFromPoint,
@@ -41,6 +43,12 @@ export const buildSnapConstructionContext = (
   session: CommandSession | null,
 ): CadSnapConstructionContext => {
   if (!session) return inactiveConstructionContext();
+  if (isCadLineL1Key(session.key)) {
+    const line = session as CadLineL1SessionState;
+    return line.lineAnchor
+      ? pointConstructionContext(line.lineAnchor, { includeScopeSeed: true })
+      : inactiveConstructionContext();
+  }
   switch (session.key) {
     case 'POINT':
       return inactiveConstructionContext();
@@ -214,6 +222,8 @@ export const buildSnapConstructionContext = (
     case 'DIMDIAMETER':
     case 'BDLABEL':
     case 'CURVELABEL':
+      return inactiveConstructionContext();
+    default:
       return inactiveConstructionContext();
   }
 };
