@@ -6,7 +6,12 @@ type UpdateSession = (
 ) => void;
 type ConsumePoint = (
   _point: CommandPoint,
-  _options?: { suppressPointLabel?: boolean },
+  _options?: {
+    suppressPointLabel?: boolean;
+    pickToleranceWorld?: number;
+    rawWorldPoint?: { x: number; y: number } | null;
+    pickViewportGeneration?: number;
+  },
 ) => void;
 type BatchCogoDraftBuilder = (
   _inputValue: string,
@@ -16,6 +21,8 @@ interface UseSurveyCadCommandInputActionsOptions {
   activeSnap: CadSnapCandidate | null;
   buildBatchCogoDraftForInput: BatchCogoDraftBuilder;
   consumePoint: ConsumePoint;
+  liveSnapToleranceRef?: { current: number | null };
+  viewportGenerationRef?: { current: number };
   session: CommandSession | null;
   updateSession: UpdateSession;
 }
@@ -34,6 +41,9 @@ export interface SurveyCadCommandInputActions {
       snapSourceEntityId?: string;
       snapKind?: CadSnapKind;
       extendMode?: boolean;
+      pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
+      snapComputedScale?: number;
     },
   ) => void;
 }
@@ -45,6 +55,8 @@ export const useSurveyCadCommandInputActions = ({
   activeSnap,
   buildBatchCogoDraftForInput,
   consumePoint,
+  liveSnapToleranceRef,
+  viewportGenerationRef,
   session,
   updateSession,
 }: UseSurveyCadCommandInputActionsOptions): SurveyCadCommandInputActions => {
@@ -77,8 +89,18 @@ export const useSurveyCadCommandInputActions = ({
         snapSourceSegmentId: activeSnap.sourceSegmentId,
         snapSourceEntityId: activeSnap.sourceEntityId,
         snapKind: activeSnap.kind,
+        ...(activeSnap.computedScale != null
+          ? { snapComputedScale: activeSnap.computedScale }
+          : {}),
+        ...(activeSnap.viewportGeneration != null
+          ? { snapViewportGeneration: activeSnap.viewportGeneration }
+          : {}),
       },
-      { suppressPointLabel: true },
+      {
+        suppressPointLabel: true,
+        pickToleranceWorld: liveSnapToleranceRef?.current ?? undefined,
+        pickViewportGeneration: viewportGenerationRef?.current,
+      },
     );
   };
 
@@ -108,9 +130,16 @@ export const useSurveyCadCommandInputActions = ({
         snapSourceSegmentId: options?.snapSourceSegmentId,
         snapSourceEntityId: options?.snapSourceEntityId,
         snapKind: options?.snapKind,
+        ...(options?.snapComputedScale != null
+          ? { snapComputedScale: options.snapComputedScale }
+          : {}),
         extendMode: options?.extendMode,
       },
-      { suppressPointLabel: true },
+      {
+        suppressPointLabel: true,
+        pickToleranceWorld: options?.pickToleranceWorld,
+        rawWorldPoint: options?.rawWorldPoint,
+      },
     );
   };
 

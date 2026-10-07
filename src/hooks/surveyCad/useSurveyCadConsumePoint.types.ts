@@ -25,6 +25,12 @@ export interface HandleSurveyCadConsumePointOptions {
     _computation: ReturnType<typeof buildCadCogoComputation> | null,
   ) => void;
   point: CommandPoint;
+  /** Viewport's effective snap tolerance in world units (canvas-derived). */
+  pickToleranceWorld?: number;
+  /** Raw (unsnapped) click world point; revalidates a possibly-stale snap. */
+  rawWorldPoint?: { x: number; y: number } | null;
+  /** Live viewport generation at pick time (keyboard snap freshness). */
+  pickViewportGeneration?: number;
   projectStationIds: string[];
   publishReport: SurveyCadReportPublisher;
   replaceSession: ReplaceSession;

@@ -15,6 +15,7 @@ import type {
   MlightcadSpikeScene,
 } from '../../engine/cad/cadTypes';
 import type { CadSnapPreferences } from './useSurveyCadSnapping';
+import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type {
   GridGroundPanelState,
   HelmertPanelState,
@@ -206,6 +207,7 @@ export interface UseSurveyCadWorkspaceResult {
     | 'TRIM'
     | 'FILLET'
     | 'PASTE'
+    | CadLineL1CommandKey
     | null;
   commandInputValue: string;
   statusText: string;
@@ -253,6 +255,7 @@ export interface UseSurveyCadWorkspaceResult {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startLineL1Command: (_key: CadLineL1CommandKey) => void;
   startRectangleCommand: () => void;
   startCircleCommand: () => void;
   startCircleDiameterCommand: () => void;
@@ -454,6 +457,9 @@ export interface UseSurveyCadWorkspaceResult {
       snapSourceEntityId?: string;
       snapKind?: CadSnapKind;
       extendMode?: boolean;
+      pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
+      snapComputedScale?: number;
     },
   ) => void;
   handleEnterKey: () => void;
@@ -473,6 +479,8 @@ export interface UseSurveyCadWorkspaceResult {
       restrictedGripHandles?: readonly CadGripHandle[];
     },
   ) => void;
+  /** Live viewport snap tolerance (updated on zoom/pan and pointer moves). */
+  setLiveSnapTolerance: (_toleranceWorld: number) => void;
   setCommandHoverTarget: (_hoverTarget: CommandHoverTarget | null) => void;
   setSnapPreference: (_kind: keyof CadSnapPreferences, _enabled: boolean) => void;
   cycleActiveSnap: () => void;

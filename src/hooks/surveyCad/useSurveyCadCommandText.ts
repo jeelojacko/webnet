@@ -1,4 +1,7 @@
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { cadLineL1Prompt } from './useSurveyCadLineL1Session';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 
 export const polygonModeLabel = (mode: 'inscribed' | 'circumscribed'): string =>
   mode === 'inscribed' ? 'Inscribed' : 'Circumscribed';
@@ -28,6 +31,7 @@ const plinePromptForCount = (count: number): string => {
 
 export const promptForSession = (session: CommandSession | null, fallbackStatus: string): string => {
   if (!session) return fallbackStatus;
+  if (isCadLineL1Key(session.key)) return cadLineL1Prompt(session as CadLineL1SessionState);
   switch (session.key) {
     case 'POINT':
       return session.resultText ?? 'POINT active. Click in model space or enter `x,y` / `LABEL=x,y`, then press Enter.';

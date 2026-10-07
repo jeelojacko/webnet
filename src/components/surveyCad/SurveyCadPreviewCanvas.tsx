@@ -149,11 +149,13 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         return;
       }
       if (backgroundTarget !== 'command' || didDrag || event.target !== event.currentTarget) return;
-      if (consumeLatchedOrActiveSnap(event.shiftKey)) return;
       const screenPoint = screenPointFromMouseEvent(event);
       if (!screenPoint) return;
-      onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY), undefined, {
+      const rawWorldPoint = unproject(screenPoint.viewX, screenPoint.viewY);
+      if (consumeLatchedOrActiveSnap(event.shiftKey, rawWorldPoint)) return;
+      onConsumeInteractionPoint(rawWorldPoint, undefined, {
         extendMode: event.shiftKey,
+        pickToleranceWorld: snapToleranceScreenUnits / scale,
       });
     }}
     onMouseLeave={() => {
@@ -339,11 +341,13 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
           return;
         }
         if (backgroundTarget !== 'command' || didDrag) return;
-        if (consumeLatchedOrActiveSnap(event.shiftKey)) return;
         const screenPoint = screenPointFromMouseEvent(event);
         if (!screenPoint) return;
-        onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY), undefined, {
+        const rawWorldPoint = unproject(screenPoint.viewX, screenPoint.viewY);
+        if (consumeLatchedOrActiveSnap(event.shiftKey, rawWorldPoint)) return;
+        onConsumeInteractionPoint(rawWorldPoint, undefined, {
           extendMode: event.shiftKey,
+          pickToleranceWorld: snapToleranceScreenUnits / scale,
         });
       }}
       onDoubleClick={(event) => {

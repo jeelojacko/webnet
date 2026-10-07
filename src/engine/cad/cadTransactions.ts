@@ -4,12 +4,10 @@ import {
   selectAllCadEntities,
 } from './cadSelection';
 import { checkCadEntityEditable } from './cadAppearance';
-import { resolveCurrentCadLayerId } from './cadLayers';
 import { buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   compactManualPointEntities,
   createManualPointEntities,
-  nextEntityName,
 } from './cadTransactionsEntityFactories';
 import {
   appendCogoComputation,
@@ -51,6 +49,8 @@ import {
   parcelUnlinkCommand,
 } from './cadTransactionsParcelLinkCommands';
 import { deleteParcelsWithSharedLinks, parcelSharedEditCommand } from './cadParcelSharedEdit';
+import { lineCreateBatchCommand } from './cadTransactionsLineBatchCommand';
+import { buildCadLineEntities } from './cadLineBatch';
 import {
   parcelCheckCommand,
   parcelScheduleCommand,
@@ -160,7 +160,6 @@ export type {
   CadWorkspaceSnapshot,
 } from './cadTransactions.types';
 import type {
-  CadEntity,
   CadLayer,
   CadProject,
   CadSurveyPointEntity,
@@ -386,32 +385,14 @@ const lineCommand: CadCommandDefinition<{
 }> = {
   key: 'LINE',
   execute: (snapshot, command) => {
-    if (
-      Math.abs(command.start.x - command.end.x) <= 1e-9 &&
-      Math.abs(command.start.y - command.end.y) <= 1e-9
-    ) {
-      return null;
-    }
-    const lineName = nextEntityName(snapshot.project, 'LINE');
-    const lineEntity: CadEntity = {
-      id: createStableRuntimeId('cad-line'),
-      type: 'line',
-      layerId: resolveCurrentCadLayerId(snapshot.project),
-      visible: true,
-      locked: false,
-      fromStationId: command.start.label,
-      toStationId: command.end.label,
-      fromX: command.start.x,
-      fromY: command.start.y,
-      toX: command.end.x,
-      toY: command.end.y,
-      sourceObservationIds: [],
-      metadata: {
-        createdBy: 'LINE',
-        entityName: lineName,
-        manual: true,
-      },
-    };
+    const entities = buildCadLineEntities(
+      snapshot.project,
+      [{ start: command.start, end: command.end }],
+      'LINE',
+    );
+    if (!entities) return null;
+    const lineEntity = entities[0]!;
+    const lineName = String(lineEntity.metadata?.entityName ?? 'LINE');
     const nextProject = appendCadProjectEntities(snapshot.project, [lineEntity]);
     return {
       nextSnapshot: {
@@ -556,6 +537,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   POINT: pointCommand as CadCommandDefinition<CadCommand>,
   COGO_POINT: cogoPointCommand as CadCommandDefinition<CadCommand>,
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
+  LINE_CREATE_BATCH: lineCreateBatchCommand as CadCommandDefinition<CadCommand>,
   RECTANGLE: shapeCommandDefinitions.RECTANGLE as CadCommandDefinition<CadCommand>,
   POLYGON: shapeCommandDefinitions.POLYGON as CadCommandDefinition<CadCommand>,
   CIRCLE: shapeCommandDefinitions.CIRCLE as CadCommandDefinition<CadCommand>,

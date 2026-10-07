@@ -93,7 +93,25 @@ export type CadRibbonIconId =
   | 'survey-point-group'
   | 'profile-view'
   | 'section-view'
-  | 'landxml-import';
+  | 'landxml-import'
+  // CAD Draw Phase L1 — Line family (dark Civil 3D art; exact sources in
+  // docs/evidence/cad-line-l1/icon-sources.md). Row 1 keeps 'draw-line'.
+  | 'draw-line-point-range'
+  | 'draw-line-point-object'
+  | 'draw-line-point-name'
+  | 'draw-line-northing-easting'
+  | 'draw-line-grid-ne'
+  | 'draw-line-lat-long'
+  | 'draw-line-bearing'
+  | 'draw-line-azimuth'
+  | 'draw-line-angle'
+  | 'draw-line-deflection'
+  | 'draw-line-station-offset'
+  | 'draw-line-side-shot'
+  | 'draw-line-extension'
+  | 'draw-line-from-end'
+  | 'draw-line-tangent-point'
+  | 'draw-line-perp-point';
 
 export interface CadRibbonIconSources {
   src16: string;
@@ -194,4 +212,21 @@ export const CAD_RIBBON_ICONS: Record<CadRibbonIconId, CadRibbonIconSources> = {
   'profile-view': { src16: new URL('./profile-view-16.png', import.meta.url).href, src32: new URL('./profile-view-32.png', import.meta.url).href },
   'section-view': { src16: new URL('./section-view-16.png', import.meta.url).href, src32: new URL('./section-view-32.png', import.meta.url).href },
   'landxml-import': { src16: new URL('./landxml-import-16.png', import.meta.url).href, src32: new URL('./landxml-import-32.png', import.meta.url).href },
+  // CAD Draw Phase L1 — Line family. Dark ribbon art only; no theme pair.
+  'draw-line-point-range': { src16: new URL('./draw-line-point-range-16.png', import.meta.url).href, src32: new URL('./draw-line-point-range-32.png', import.meta.url).href },
+  'draw-line-point-object': { src16: new URL('./draw-line-point-object-16.png', import.meta.url).href, src32: new URL('./draw-line-point-object-32.png', import.meta.url).href },
+  'draw-line-point-name': { src16: new URL('./draw-line-point-name-16.png', import.meta.url).href, src32: new URL('./draw-line-point-name-32.png', import.meta.url).href },
+  'draw-line-northing-easting': { src16: new URL('./draw-line-northing-easting-16.png', import.meta.url).href, src32: new URL('./draw-line-northing-easting-32.png', import.meta.url).href },
+  'draw-line-grid-ne': { src16: new URL('./draw-line-grid-ne-16.png', import.meta.url).href, src32: new URL('./draw-line-grid-ne-32.png', import.meta.url).href },
+  'draw-line-lat-long': { src16: new URL('./draw-line-lat-long-16.png', import.meta.url).href, src32: new URL('./draw-line-lat-long-32.png', import.meta.url).href },
+  'draw-line-bearing': { src16: new URL('./draw-line-bearing-16.png', import.meta.url).href, src32: new URL('./draw-line-bearing-32.png', import.meta.url).href },
+  'draw-line-azimuth': { src16: new URL('./draw-line-azimuth-16.png', import.meta.url).href, src32: new URL('./draw-line-azimuth-32.png', import.meta.url).href },
+  'draw-line-angle': { src16: new URL('./draw-line-angle-16.png', import.meta.url).href, src32: new URL('./draw-line-angle-32.png', import.meta.url).href },
+  'draw-line-deflection': { src16: new URL('./draw-line-deflection-16.png', import.meta.url).href, src32: new URL('./draw-line-deflection-32.png', import.meta.url).href },
+  'draw-line-station-offset': { src16: new URL('./draw-line-station-offset-16.png', import.meta.url).href, src32: new URL('./draw-line-station-offset-32.png', import.meta.url).href },
+  'draw-line-side-shot': { src16: new URL('./draw-line-side-shot-16.png', import.meta.url).href, src32: new URL('./draw-line-side-shot-32.png', import.meta.url).href },
+  'draw-line-extension': { src16: new URL('./draw-line-extension-16.png', import.meta.url).href, src32: new URL('./draw-line-extension-32.png', import.meta.url).href },
+  'draw-line-from-end': { src16: new URL('./draw-line-from-end-16.png', import.meta.url).href, src32: new URL('./draw-line-from-end-32.png', import.meta.url).href },
+  'draw-line-tangent-point': { src16: new URL('./draw-line-tangent-point-16.png', import.meta.url).href, src32: new URL('./draw-line-tangent-point-32.png', import.meta.url).href },
+  'draw-line-perp-point': { src16: new URL('./draw-line-perp-point-16.png', import.meta.url).href, src32: new URL('./draw-line-perp-point-32.png', import.meta.url).href },
 };

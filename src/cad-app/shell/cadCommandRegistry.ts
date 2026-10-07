@@ -1,5 +1,9 @@
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import {
+  CAD_LINE_L1_COMMAND_KEYS,
+  CAD_LINE_L1_COMMAND_META,
+} from '../../hooks/surveyCad/useSurveyCadLineL1Keys';
+import {
   FEATURE_LINE_SHELL_KEYS,
   executeFeatureLineShellCommand,
   featureLineShellAvailable,
@@ -171,6 +175,10 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   session('POINT', 'Point', 'Draw', 'Place a survey point.'),
   session('COGO_POINT', 'COGO Point', 'Draw', 'Place a point by coordinates.'),
   session('LINE', 'Line', 'Draw', 'Draw a line segment.', ['L']),
+  // CAD Draw Phase L1 — the 16 Line-creation modes (full keys, no aliases).
+  ...CAD_LINE_L1_COMMAND_KEYS.map((key) =>
+    session(key, CAD_LINE_L1_COMMAND_META[key].label, 'Draw', CAD_LINE_L1_COMMAND_META[key].hint),
+  ),
   session('PLINE', 'Polyline', 'Draw', 'Draw a connected polyline.', ['PL']),
   session('RECTANGLE', 'Rectangle', 'Draw', 'Rectangle from two corners.'),
   session('POLYGON', 'Polygon', 'Draw', 'Regular polygon from center and radius point.'),
@@ -511,7 +519,31 @@ export const resolveShellCommandText = (text: string): CadShellCommandDef | null
   return aliased != null ? (COMMAND_BY_KEY.get(aliased) ?? null) : null;
 };
 
-/** Prefix matches across names + keys + aliases for dock autocomplete. Deterministic order. */
+/**
+ * Autocomplete match class, best (0) to worst (4): 0 exact key, 1 exact alias,
+ * 2 key prefix, 3 alias prefix, 4 fuzzy substring (the label fallback).
+ */
+const autocompleteMatchClass = (def: CadShellCommandDef, token: string): number => {
+  const key = def.key.toUpperCase();
+  const aliases = def.aliases.map((alias) => alias.toUpperCase());
+  if (key === token) return 0;
+  if (aliases.includes(token)) return 1;
+  if (key.startsWith(token)) return 2;
+  if (aliases.some((alias) => alias.startsWith(token))) return 3;
+  return 4;
+};
+
+/**
+ * Prefix matches across names + keys + aliases for dock autocomplete.
+ *
+ * Deterministic ranking law (CAD Draw Phase L1): matches are grouped into
+ * specificity tiers (exact key / exact alias / key prefix / alias prefix /
+ * fuzzy substring) and each tier is ordered shortest key first. The tiers are
+ * then interleaved round-robin so a single long key family — e.g. the 17
+ * `LINE*` rows added by Phase L1 — cannot monopolize the bounded result set
+ * and crowd out short legacy matches such as `PLINE` for the query `L`. An
+ * empty token keeps plain registry order.
+ */
 export const autocompleteShellCommands = (
   prefix: string,
   availableKeys: ReadonlySet<string> | null,
@@ -528,7 +560,24 @@ export const autocompleteShellCommands = (
       def.aliases.some((alias) => alias.startsWith(token))
     );
   });
-  return matches.slice(0, limit);
+  if (token.length === 0) return matches.slice(0, limit);
+  const tiers: CadShellCommandDef[][] = [[], [], [], [], []];
+  for (const def of matches) tiers[autocompleteMatchClass(def, token)]!.push(def);
+  // Explicit `Array.prototype.sort` is stable, so equal-length keys keep
+  // registry order within a tier.
+  for (const tier of tiers) tier.sort((a, b) => a.key.length - b.key.length);
+  const ranked: CadShellCommandDef[] = [];
+  for (let pass = 0; ranked.length < limit; pass += 1) {
+    let advanced = false;
+    for (const tier of tiers) {
+      if (pass >= tier.length) continue;
+      ranked.push(tier[pass]!);
+      advanced = true;
+      if (ranked.length >= limit) break;
+    }
+    if (!advanced) break;
+  }
+  return ranked;
 };
 
 /** True when the live workspace can run this definition right now. */

@@ -749,6 +749,24 @@ export type CadEntity =
   | CadCurveLabelEntity
   | CadFeatureLineEntity;
 
+/**
+ * CAD Draw Phase L1: explicit drawing coordinate/grid context, threaded from
+ * the authoritative app/source coordinate context (never inferred, never
+ * rewritten as a side effect). Used only by survey-coordinate entry
+ * (GRID_NE / LATLONG): when absent the drawing has no authoritative CRS/grid
+ * context and those resolvers fail closed.
+ *
+ * Ownership/lifecycle: written once by the session/handoff when a drawing is
+ * created from a source with a resolved CRS; read-only inside the engine.
+ * No command mutates it. Absent (legacy drawings) is fully supported.
+ */
+export interface CadCoordinateContext {
+  /** Authoritative CRS catalog id; null/absent means no grid context. */
+  crsId: string | null;
+  /** Human-readable CRS label (provenance/prompting only; never transformed). */
+  crsLabel?: string | null;
+}
+
 export interface CadProjectMetadata {
   source: 'adjustment-result' | 'parsed-input';
   runMode: ParseOptions['runMode'] | 'unknown';
@@ -758,6 +776,8 @@ export interface CadProjectMetadata {
   adjustedStationCount: number;
   /** Phase 13E A1: optional F2F source link (absent = legacy/UNLINKED). */
   fieldToFinishLink?: FieldToFinishLink;
+  /** CAD Draw Phase L1 drawing grid context (see CadCoordinateContext). */
+  coordinateContext?: CadCoordinateContext;
 }
 
 export interface CadProject {
@@ -1013,6 +1033,21 @@ export interface CadSnapCandidate {
   y: number;
   distance: number;
   label: string;
+  /**
+   * World-unit snap tolerance in effect when this candidate was computed (a
+   * viewport-scale proxy). Optional and additive — consumers that ignore it
+   * are unaffected. The corrected L1 tangent/perp on-source pick uses it to
+   * reject a candidate computed at a different viewport scale than the pick
+   * (e.g. after a zoom without a pointer move).
+   */
+  computedScale?: number;
+  /**
+   * Monotonic viewport transform generation when this candidate was computed
+   * (bumped on zoom, pan, extents, and programmatic viewport sets). Optional
+   * and additive; the corrected L1 on-source pick rejects a stamped candidate
+   * whose generation differs from the live generation.
+   */
+  viewportGeneration?: number;
   guideSegments?: Array<[CadDisplayPoint, CadDisplayPoint]>;
   compoundKinds?: CadSnapKind[];
   lockGuidePoint?: CadDisplayPoint;

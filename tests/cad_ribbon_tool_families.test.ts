@@ -55,11 +55,29 @@ describe('phase 21A tool-family manifests (§80)', () => {
     for (const variant of line.variants) {
       expect(`${variant.id} ${variant.label}`.toLowerCase()).not.toContain('polyline');
     }
-    // The 16 Civil reference rows carry no fake key.
+    // CAD Draw L1: the 16 Civil reference rows are now live with full keys.
     const referenceRows = line.variants.filter((variant) => variant.id !== 'line-create');
     expect(referenceRows).toHaveLength(16);
-    expect(referenceRows.every((variant) => variant.planned === true)).toBe(true);
-    expect(referenceRows.every((variant) => variant.commandKey == null)).toBe(true);
+    expect(referenceRows.every((variant) => variant.planned !== true)).toBe(true);
+    expect(referenceRows.map((variant) => variant.commandKey)).toEqual([
+      'LINE_POINT_RANGE',
+      'LINE_POINT_OBJECT',
+      'LINE_POINT_NAME',
+      'LINE_NE',
+      'LINE_GRID_NE',
+      'LINE_LATLONG',
+      'LINE_BEARING',
+      'LINE_AZIMUTH',
+      'LINE_ANGLE',
+      'LINE_DEFLECTION',
+      'LINE_STATION_OFFSET',
+      'LINE_SIDE_SHOT',
+      'LINE_EXTENSION',
+      'LINE_FROM_END',
+      'LINE_TANGENT_POINT',
+      'LINE_PERP_POINT',
+    ]);
+    expect(referenceRows.every((variant) => isCadRibbonVariantSelectable(line, variant.id))).toBe(true);
   });
 
   it('curves maps only proven WebNet semantics and keeps the Civil combined row planned', () => {

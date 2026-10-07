@@ -62,7 +62,10 @@ export type SurveyCadPreviewCanvasProps = {
   onSampleLineClick?: (_groupId: string, _lineId: string) => void;
   selectedSectionViewId?: string | null;
   onSectionViewClick?: (_viewId: string) => void;
-  consumeLatchedOrActiveSnap: (_extendMode?: boolean) => boolean;
+  consumeLatchedOrActiveSnap: (
+    _extendMode?: boolean,
+    _rawWorldPoint?: { x: number; y: number } | null,
+  ) => boolean;
   didDrag: boolean;
   dragState: DragState;
   gripHandles: readonly CadGripHandle[];

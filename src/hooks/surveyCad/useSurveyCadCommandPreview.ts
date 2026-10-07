@@ -31,6 +31,9 @@ import {
 } from '../../engine/cad/cadTransform2D';
 import type { CadDisplayPrimitive } from '../../engine/cad/cadTypes';
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { buildCadLineL1Preview } from './useSurveyCadLineL1Session';
 import {
   parseAlignmentIntervalInput,
   parseAlignmentOffsetCreateInput,
@@ -98,6 +101,9 @@ export const buildCommandPreview = ({
   projectEntityIds,
 }: BuildCommandPreviewOptions): CadCommandPreviewState | null => {
   if (!session) return null;
+  if (isCadLineL1Key(session.key)) {
+    return buildCadLineL1Preview(session as CadLineL1SessionState, previewPoint);
+  }
   switch (session.key) {
     case 'POINT':
       if (!previewPoint) return null;
@@ -764,5 +770,7 @@ export const buildCommandPreview = ({
         ],
       };
     }
+    default:
+      return null;
   }
 };

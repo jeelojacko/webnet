@@ -1,9 +1,13 @@
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { cadLineL1HelpText } from './useSurveyCadLineL1Session';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 
 export const helpTextForSession = (session: CommandSession | null): string => {
   if (!session) {
       return 'Interactive commands accept `x,y`, optional `LABEL=x,y`, `@azimuth,distance`, and survey bearing-distance like `N45-00-00E,100`.';
   }
+  if (isCadLineL1Key(session.key)) return cadLineL1HelpText(session as CadLineL1SessionState);
   switch (session.key) {
     case 'POINT':
       return 'POINT input: click in the model space, or type `x,y` / `LABEL=x,y`. Enter commits. Esc cancels.';

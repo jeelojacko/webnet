@@ -57,6 +57,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onCancelGripEdit = () => undefined,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onSnapToleranceWorldChange,
   onToggleParcelLabels = () => undefined,
   onCommandHoverTargetChange = () => undefined,
   onSnapPreferenceChange,
@@ -109,6 +110,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   useEffect(() => {
     activeSnapRef.current = activeSnap;
   }, [activeSnap]);
+
+  useEffect(() => {
+    onSnapToleranceWorldChange?.(snapToleranceScreenUnits / scale);
+  }, [onSnapToleranceWorldChange, snapToleranceScreenUnits, scale]);
 
   const resolveGripCommitPoint = useCallback((rawWorldPoint: { x: number; y: number }) => {
     const currentSnap = activeSnapRef.current;
@@ -177,7 +182,11 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     return screenPointFromClientPoint(svgElement.getBoundingClientRect(), event.clientX, event.clientY);
   };
 
-  const consumeSnapCandidate = (snapCandidate: CadSnapCandidate, extendMode = false) => {
+  const consumeSnapCandidate = (
+    snapCandidate: CadSnapCandidate,
+    extendMode = false,
+    rawWorldPoint?: { x: number; y: number } | null,
+  ) => {
     onConsumeInteractionPoint(
       { x: snapCandidate.x, y: snapCandidate.y },
       snapCandidate.label,
@@ -186,15 +195,23 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         snapSourceEntityId: snapCandidate.sourceEntityId,
         snapKind: snapCandidate.kind,
         extendMode,
+        pickToleranceWorld: snapToleranceScreenUnits / scale,
+        rawWorldPoint: rawWorldPoint ?? null,
+        ...(snapCandidate.computedScale != null
+          ? { snapComputedScale: snapCandidate.computedScale }
+          : {}),
       },
     );
   };
 
-  const consumeLatchedOrActiveSnap = (extendMode = false): boolean => {
+  const consumeLatchedOrActiveSnap = (
+    extendMode = false,
+    rawWorldPoint?: { x: number; y: number } | null,
+  ): boolean => {
     const latchedSnap = armedSnap ?? activeSnap;
     setArmedSnap(null);
     if (!latchedSnap) return false;
-    consumeSnapCandidate(latchedSnap, extendMode);
+    consumeSnapCandidate(latchedSnap, extendMode, rawWorldPoint);
     return true;
   };
 
@@ -204,12 +221,12 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     sourceSegmentId?: string,
   ) => {
     if (didDrag) return;
-    if (consumeLatchedOrActiveSnap(event.shiftKey)) {
-      return;
-    }
     const screenPoint = screenPointFromMouseEvent(event);
     if (!screenPoint) return;
     const rawWorldPoint = unproject(screenPoint.viewX, screenPoint.viewY);
+    if (consumeLatchedOrActiveSnap(event.shiftKey, rawWorldPoint)) {
+      return;
+    }
     if (primitive.kind === 'arc') {
       onConsumeInteractionPoint(
         cadClosestPointOnArc(
@@ -225,6 +242,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           snapSourceEntityId: primitive.sourceEntityId,
           snapKind: 'nearest',
           extendMode: event.shiftKey,
+          pickToleranceWorld: snapToleranceScreenUnits / scale,
+          // The arc point above is PROJECTED onto the curve; carry the true
+          // raw click so on-source revalidation judges it (not zero residual).
+          rawWorldPoint,
         },
       );
       return;
@@ -233,6 +254,8 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       snapSourceSegmentId: sourceSegmentId,
       snapSourceEntityId: primitive.sourceEntityId,
       extendMode: event.shiftKey,
+      pickToleranceWorld: snapToleranceScreenUnits / scale,
+      rawWorldPoint,
     });
   };
 

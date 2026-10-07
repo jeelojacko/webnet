@@ -29,6 +29,13 @@ import type { ProjectTransformPanelState } from './useSurveyCadProjectTransformP
 
 export interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
+  /**
+   * Live viewport snap tolerance ref (updated on zoom/pan too), read by the
+   * keyboard active-snap commit so stale snaps can be expired.
+   */
+  liveSnapToleranceRef?: { current: number | null };
+  /** Monotonic viewport transform counter (see useSurveyCadSnapping). */
+  viewportGenerationRef?: { current: number };
   previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;
@@ -86,6 +93,7 @@ export interface UseSurveyCadCommandsResult {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startLineL1Command: (_key: import('./useSurveyCadLineL1Keys').CadLineL1CommandKey) => void;
   startRectangleCommand: () => void;
   startCircleCommand: () => void;
   startCircleDiameterCommand: () => void;
@@ -213,6 +221,9 @@ export interface UseSurveyCadCommandsResult {
       snapSourceEntityId?: string;
       snapKind?: CadSnapKind;
       extendMode?: boolean;
+      pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
+      snapComputedScale?: number;
     },
   ) => void;
   handleEnterKey: () => void;

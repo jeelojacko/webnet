@@ -13,6 +13,12 @@ type InteractionOptions = {
   snapSourceSegmentId?: string;
   snapSourceEntityId?: CadEntityId;
   snapKind?: CadSnapKind;
+  /** Viewport's effective snap tolerance (world units) at click time. */
+  pickToleranceWorld?: number;
+  /** Raw (unsnapped) click world point; revalidates a possibly-stale snap. */
+  rawWorldPoint?: { x: number; y: number } | null;
+  /** World tolerance the consumed snap was computed at (scale stamp). */
+  snapComputedScale?: number;
 };
 
 type SurveyCadWorkspaceActionsOptions = {
@@ -291,6 +297,9 @@ export const useSurveyCadWorkspaceActions = ({
             snapSourceEntityId: activeSnap.sourceEntityId,
             snapKind: activeSnap.kind,
             extendMode: options?.extendMode,
+            pickToleranceWorld: options?.pickToleranceWorld,
+            rawWorldPoint: options?.rawWorldPoint,
+            snapComputedScale: options?.snapComputedScale,
           },
         );
         return;

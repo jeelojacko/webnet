@@ -2,6 +2,8 @@ import type {
   CadArcEntity,
 } from '../../engine/cad/cadTypes';
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import { createCadLineL1Session } from './useSurveyCadLineL1Session';
+import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type {
   SelectedLineCommandPoints,
 } from './useSurveyCadCommandSelection';
@@ -44,6 +46,16 @@ export const useSurveyCadCommandStarters = ({
   selectedEntityIds = [],
   surveyPointEntityIdsInStationOrder = [],
 }: BuildSurveyCadCommandStartersOptions): SurveyCadCommandStarters => ({
+  startLineL1Command: (key: CadLineL1CommandKey) => {
+    const referenceStart =
+      key === 'LINE_ANGLE' || key === 'LINE_DEFLECTION' ? selectedLineCommandPoints?.start ?? null : null;
+    const referenceEnd =
+      key === 'LINE_ANGLE' || key === 'LINE_DEFLECTION' ? selectedLineCommandPoints?.end ?? null : null;
+    const alignmentId = key === 'LINE_STATION_OFFSET' ? selectedAlignmentForStationing?.id ?? null : null;
+    beginSession(
+      createCadLineL1Session(key, { referenceStart, referenceEnd, alignmentId }),
+    );
+  },
   startPointCommand: () => beginSession({ key: 'POINT', inputValue: '' }),
   startCogoPointCommand: () =>
     beginSession({

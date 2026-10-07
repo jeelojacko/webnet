@@ -54,6 +54,8 @@ export type { UseSurveyCadCommandsArgs, UseSurveyCadCommandsResult } from './use
 export const useSurveyCadCommands = ({
   activeSnap,
   activeDraft,
+  liveSnapToleranceRef,
+  viewportGenerationRef,
   previewPoint,
   history,
   selectionCount,
@@ -245,7 +247,12 @@ export const useSurveyCadCommands = ({
 
   const consumePoint = (
     point: CommandPoint,
-    options?: { suppressPointLabel?: boolean },
+    options?: {
+      suppressPointLabel?: boolean;
+      pickToleranceWorld?: number;
+      rawWorldPoint?: { x: number; y: number } | null;
+      pickViewportGeneration?: number;
+    },
   ) => {
     const current = sessionRef.current;
     if (!current) return;
@@ -256,6 +263,9 @@ export const useSurveyCadCommands = ({
       history,
       onReportComputation,
       point,
+      pickToleranceWorld: options?.pickToleranceWorld,
+      rawWorldPoint: options?.rawWorldPoint,
+      pickViewportGeneration: options?.pickViewportGeneration,
       projectStationIds,
       publishReport,
       replaceSession,
@@ -279,6 +289,7 @@ export const useSurveyCadCommands = ({
       handleSurveyCadTypedSubmit({
         applyHistoryUpdate,
         consumePoint,
+        project: history.present.project,
         publishReport,
         replaceSession,
         session,
@@ -364,6 +375,8 @@ export const useSurveyCadCommands = ({
     activeSnap,
     buildBatchCogoDraftForInput,
     consumePoint,
+    liveSnapToleranceRef,
+    viewportGenerationRef,
     session,
     updateSession,
   });

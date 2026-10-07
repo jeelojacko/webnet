@@ -194,6 +194,23 @@ describe('cad shell command registry', () => {
     expect(aliased).toContain('COPY');
   });
 
+  it('does not let a long key family crowd short legacy matches out of the limit', () => {
+    // CAD Draw L1 regression: 17 LINE* rows must not push LINE/PLINE past
+    // the limit-8 dock suggestions for the short query `L`, and the ranking
+    // must be deterministic.
+    const keys = autocompleteShellCommands('L', null, 8).map((def) => def.key);
+    expect(keys).toContain('LINE');
+    expect(keys).toContain('PLINE');
+    expect(keys).toHaveLength(8);
+    expect(autocompleteShellCommands('L', null, 8).map((def) => def.key)).toEqual(keys);
+
+    // The full canonical variant query still surfaces the L1 keys.
+    const variants = autocompleteShellCommands('LINE_', null, 32).map((def) => def.key);
+    for (const key of ['LINE_NE', 'LINE_BEARING', 'LINE_GRID_NE', 'LINE_POINT_RANGE']) {
+      expect(variants).toContain(key);
+    }
+  });
+
   it('autocomplete respects availability and the limit', () => {
     const available = new Set(['LINE']);
     const matches = autocompleteShellCommands('', available, 8);

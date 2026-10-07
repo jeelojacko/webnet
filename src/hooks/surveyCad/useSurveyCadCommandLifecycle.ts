@@ -5,6 +5,9 @@ import {
   handleAnnotationEnterKey,
 } from './useSurveyCadAnnotationSessions';
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
+import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
+import { cadLineL1CanFinish } from './useSurveyCadLineL1Session';
 import type { CadProject } from '../../engine/cad/cadTypes';
 import { recalculateTraverseSideshotPoint } from './useSurveyCadCommandSession';
 import { commitPlineSession } from './useSurveyCadPlineSession';
@@ -130,6 +133,16 @@ export const useSurveyCadCommandLifecycle = ({
     const live = sessionRef.current;
     const session = live ?? null;
     if (!session) return;
+    // CAD Draw L1: empty Enter commits a complete draft; typed values route to
+    // the L1 handler (never the generic point parser).
+    if (isCadLineL1Key(session.key)) {
+      if (session.inputValue.trim().length === 0) {
+        if (cadLineL1CanFinish(session as CadLineL1SessionState)) submitSessionInput();
+        return;
+      }
+      submitSessionInput();
+      return;
+    }
     // Phase 18O: MTEXT/LEADER lines append per Enter; empty Enter commits.
     if (live && handleAnnotationEnterKey({ session: live, project, applyHistoryUpdate, replaceSession })) return;
     if (session.key === 'TRIM' || session.key === 'EXTEND') {
