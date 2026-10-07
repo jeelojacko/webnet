@@ -34,6 +34,8 @@ export interface UseSurveyCadCommandsArgs {
    * keyboard active-snap commit so stale snaps can be expired.
    */
   liveSnapToleranceRef?: { current: number | null };
+  /** Monotonic viewport transform counter (see useSurveyCadSnapping). */
+  viewportGenerationRef?: { current: number };
   previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;

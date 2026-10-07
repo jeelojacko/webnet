@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { CadSnapCandidate } from '../src/engine/cad/cadTypes';
-import { withCadSnapComputedScale } from '../src/hooks/surveyCad/useSurveyCadSnapping';
+import { withCadSnapViewportStamp } from '../src/hooks/surveyCad/useSurveyCadSnapping';
 
-describe('CAD snap scale stamp', () => {
-  it('purely annotates a snap candidate with its computation tolerance', () => {
+describe('CAD snap viewport stamp', () => {
+  it('purely annotates a snap candidate with its computation scale and generation', () => {
     const candidate: CadSnapCandidate = {
       id: 'snap:1',
       kind: 'midpoint',
@@ -14,13 +14,14 @@ describe('CAD snap scale stamp', () => {
       distance: 0.3,
       label: 'P1',
     };
-    const stamped = withCadSnapComputedScale(candidate, 2.5);
-    expect(stamped).toEqual({ ...candidate, computedScale: 2.5 });
+    const stamped = withCadSnapViewportStamp(candidate, 2.5, 7);
+    expect(stamped).toEqual({ ...candidate, computedScale: 2.5, viewportGeneration: 7 });
     // The input is never mutated.
     expect(candidate).not.toHaveProperty('computedScale');
+    expect(candidate).not.toHaveProperty('viewportGeneration');
   });
 
-  it('preserves every existing field and accepts a zero stamp', () => {
+  it('preserves every existing field and accepts zero stamps', () => {
     const candidate: CadSnapCandidate = {
       id: 'snap:2',
       kind: 'endpoint',
@@ -32,8 +33,13 @@ describe('CAD snap scale stamp', () => {
       guideSegments: [[{ x: 0, y: 0 }, { x: 1, y: 1 }]],
       compoundKinds: ['endpoint', 'quadrant'],
     };
-    const stamped = withCadSnapComputedScale(candidate, 0);
-    expect(stamped).toMatchObject({ id: 'snap:2', kind: 'endpoint', computedScale: 0 });
+    const stamped = withCadSnapViewportStamp(candidate, 0, 0);
+    expect(stamped).toMatchObject({
+      id: 'snap:2',
+      kind: 'endpoint',
+      computedScale: 0,
+      viewportGeneration: 0,
+    });
     expect(stamped.guideSegments).toEqual(candidate.guideSegments);
     expect(stamped.compoundKinds).toEqual(['endpoint', 'quadrant']);
   });

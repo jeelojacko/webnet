@@ -10,6 +10,7 @@ type ConsumePoint = (
     suppressPointLabel?: boolean;
     pickToleranceWorld?: number;
     rawWorldPoint?: { x: number; y: number } | null;
+    pickViewportGeneration?: number;
   },
 ) => void;
 type BatchCogoDraftBuilder = (
@@ -21,6 +22,7 @@ interface UseSurveyCadCommandInputActionsOptions {
   buildBatchCogoDraftForInput: BatchCogoDraftBuilder;
   consumePoint: ConsumePoint;
   liveSnapToleranceRef?: { current: number | null };
+  viewportGenerationRef?: { current: number };
   session: CommandSession | null;
   updateSession: UpdateSession;
 }
@@ -54,6 +56,7 @@ export const useSurveyCadCommandInputActions = ({
   buildBatchCogoDraftForInput,
   consumePoint,
   liveSnapToleranceRef,
+  viewportGenerationRef,
   session,
   updateSession,
 }: UseSurveyCadCommandInputActionsOptions): SurveyCadCommandInputActions => {
@@ -89,10 +92,14 @@ export const useSurveyCadCommandInputActions = ({
         ...(activeSnap.computedScale != null
           ? { snapComputedScale: activeSnap.computedScale }
           : {}),
+        ...(activeSnap.viewportGeneration != null
+          ? { snapViewportGeneration: activeSnap.viewportGeneration }
+          : {}),
       },
       {
         suppressPointLabel: true,
         pickToleranceWorld: liveSnapToleranceRef?.current ?? undefined,
+        pickViewportGeneration: viewportGenerationRef?.current,
       },
     );
   };

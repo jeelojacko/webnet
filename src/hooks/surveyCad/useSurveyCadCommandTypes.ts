@@ -26,6 +26,8 @@ export type CommandPoint = CadNamedPoint & {
    * that is stale after a viewport change; absent for raw/typed points.
    */
   snapComputedScale?: number;
+  /** Viewport generation the consumed snap was computed at (freshness stamp). */
+  snapViewportGeneration?: number;
   extendMode?: boolean;
   /**
    * CAD Draw L1 label provenance: true when `label` is an authoritative

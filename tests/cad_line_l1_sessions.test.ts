@@ -952,9 +952,13 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
     expect(near?.lineSourceOnPoint?.y).toBeCloseTo(50, 9);
   });
 
-  it('expires a keyboard snap whose scale stamp is stale; fresh stamps proceed', () => {
+  it('expires a keyboard snap whose viewport generation is stale; fresh generation proceeds', () => {
     const project = buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100, 0)] });
-    const pickPhaseB = (snap: CommandPoint, pickToleranceWorld: number) => {
+    const pickPhaseB = (
+      snap: CommandPoint,
+      pickToleranceWorld: number,
+      pickViewportGeneration: number,
+    ) => {
       let history = createCadHistoryState(project);
       let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
       const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
@@ -977,23 +981,51 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
         project: history.present.project,
         replaceSession,
         pickToleranceWorld,
+        pickViewportGeneration,
       });
       return session;
     };
 
-    // Keyboard commit after a zoom: the snap was computed at stamp 1, the live
-    // viewport tolerance is 5 → expired, stays active, zero mutation.
-    const stale = pickPhaseB(
-      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1', snapComputedScale: 1 },
+    // Zoom: the snap was generated at gen 1, the live viewport is gen 2 →
+    // expired, stays active, zero mutation.
+    const staleZoom = pickPhaseB(
+      {
+        ...point(50, 0, 'snap'),
+        snapSourceEntityId: 'line:1',
+        snapComputedScale: 1,
+        snapViewportGeneration: 1,
+      },
       5,
+      2,
     );
-    expect(stale?.lineSourceOnPoint).toBeNull();
-    expect(stale?.resultText).toMatch(/snap expired/i);
+    expect(staleZoom?.lineSourceOnPoint).toBeNull();
+    expect(staleZoom?.resultText).toMatch(/snap expired/i);
 
-    // Fresh keyboard commit at the same scale: the stamp matches and proceeds.
-    const fresh = pickPhaseB(
-      { ...point(50, 0, 'snap'), snapSourceEntityId: 'line:1', snapComputedScale: 5 },
+    // Pan-only reset: scale is unchanged (5) but the generation advanced 1→2,
+    // so the stale candidate is still expired.
+    const stalePan = pickPhaseB(
+      {
+        ...point(50, 0, 'snap'),
+        snapSourceEntityId: 'line:1',
+        snapComputedScale: 5,
+        snapViewportGeneration: 1,
+      },
       5,
+      2,
+    );
+    expect(stalePan?.lineSourceOnPoint).toBeNull();
+    expect(stalePan?.resultText).toMatch(/snap expired/i);
+
+    // Fresh keyboard commit at the live generation: proceeds through revalidation.
+    const fresh = pickPhaseB(
+      {
+        ...point(50, 0, 'snap'),
+        snapSourceEntityId: 'line:1',
+        snapComputedScale: 5,
+        snapViewportGeneration: 2,
+      },
+      5,
+      2,
     );
     expect(fresh?.lineSourceOnPoint).toMatchObject({ x: 50, y: 0 });
   });

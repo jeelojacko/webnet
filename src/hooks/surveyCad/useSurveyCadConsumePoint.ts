@@ -261,6 +261,7 @@ export const handleSurveyCadConsumePoint = (
       replaceSession,
       pickToleranceWorld: options.pickToleranceWorld,
       rawWorldPoint: options.rawWorldPoint,
+      pickViewportGeneration: options.pickViewportGeneration,
     })
   ) {
     return;

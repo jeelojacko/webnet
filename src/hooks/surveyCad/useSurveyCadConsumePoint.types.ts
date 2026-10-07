@@ -29,6 +29,8 @@ export interface HandleSurveyCadConsumePointOptions {
   pickToleranceWorld?: number;
   /** Raw (unsnapped) click world point; revalidates a possibly-stale snap. */
   rawWorldPoint?: { x: number; y: number } | null;
+  /** Live viewport generation at pick time (keyboard snap freshness). */
+  pickViewportGeneration?: number;
   projectStationIds: string[];
   publishReport: SurveyCadReportPublisher;
   replaceSession: ReplaceSession;

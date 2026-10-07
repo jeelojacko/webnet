@@ -328,6 +328,8 @@ export interface CadLineL1PointPickOptions {
    * without a pointer move; see {@link cadLineOnSourcePickPoint}.
    */
   rawWorldPoint?: { x: number; y: number } | null;
+  /** Live viewport generation at pick time (keyboard snap freshness). */
+  pickViewportGeneration?: number;
 }
 
 /**
@@ -372,8 +374,23 @@ const cadLineOnSourcePickPoint = (
 const CAD_LINE_SNAP_SCALE_EPSILON = 1e-9;
 const isCadLineSnapExpired = (
   snapComputedScale: number | undefined,
+  snapViewportGeneration: number | undefined,
   pickToleranceWorld: number | undefined,
+  pickViewportGeneration: number | undefined,
 ): boolean => {
+  // Viewport generation governs freshness: every transform (zoom, pan,
+  // extents, programmatic reset) bumps it, so a stale snap is rejected even
+  // when the scale is unchanged (e.g. a pan-only reset).
+  if (
+    snapViewportGeneration != null &&
+    Number.isFinite(snapViewportGeneration) &&
+    pickViewportGeneration != null &&
+    Number.isFinite(pickViewportGeneration) &&
+    snapViewportGeneration !== pickViewportGeneration
+  ) {
+    return true;
+  }
+  // Scale is a secondary guard for callers that only carry the tolerance.
   if (
     snapComputedScale == null ||
     !Number.isFinite(snapComputedScale) ||
@@ -629,7 +646,14 @@ export const handleCadLineL1PointPick = (options: CadLineL1PointPickOptions): bo
         return true;
       }
       if (!current.lineSourceOnPoint) {
-        if (isCadLineSnapExpired(point.snapComputedScale, options.pickToleranceWorld)) {
+        if (
+          isCadLineSnapExpired(
+            point.snapComputedScale,
+            point.snapViewportGeneration,
+            options.pickToleranceWorld,
+            options.pickViewportGeneration,
+          )
+        ) {
           replaceSession({
             ...current,
             inputValue: '',

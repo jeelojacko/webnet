@@ -55,6 +55,7 @@ export const useSurveyCadCommands = ({
   activeSnap,
   activeDraft,
   liveSnapToleranceRef,
+  viewportGenerationRef,
   previewPoint,
   history,
   selectionCount,
@@ -250,6 +251,7 @@ export const useSurveyCadCommands = ({
       suppressPointLabel?: boolean;
       pickToleranceWorld?: number;
       rawWorldPoint?: { x: number; y: number } | null;
+      pickViewportGeneration?: number;
     },
   ) => {
     const current = sessionRef.current;
@@ -263,6 +265,7 @@ export const useSurveyCadCommands = ({
       point,
       pickToleranceWorld: options?.pickToleranceWorld,
       rawWorldPoint: options?.rawWorldPoint,
+      pickViewportGeneration: options?.pickViewportGeneration,
       projectStationIds,
       publishReport,
       replaceSession,
@@ -373,6 +376,7 @@ export const useSurveyCadCommands = ({
     buildBatchCogoDraftForInput,
     consumePoint,
     liveSnapToleranceRef,
+    viewportGenerationRef,
     session,
     updateSession,
   });

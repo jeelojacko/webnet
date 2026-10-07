@@ -92,6 +92,8 @@ export const useSurveyCadWorkspace = (
     tinCache: CadSurfaceCache;
     volumeCache: import('../../engine/cad/surfaceVolumeCache').CadSurfaceVolumeCache;
   },
+  /** Monotonic viewport transform counter (zoom/pan/extents/programmatic). */
+  viewportGenerationRef?: { current: number },
 ): UseSurveyCadWorkspaceResult => {
   const { history, historyRef, applyHistoryUpdate: applyHistoryUpdateBase } = useSurveyCadWorkspaceHistory(
     baseProject,
@@ -379,7 +381,7 @@ export const useSurveyCadWorkspace = (
     updatePointerWorldPoint: updatePointerWorldPointInternal,
     cycleActiveSnap,
     setSnapPreference,
-  } = useSurveyCadSnapping(cadProject, snapConstructionContext);
+  } = useSurveyCadSnapping(cadProject, snapConstructionContext, viewportGenerationRef);
   const previewPoint = useMemo(
     () =>
       activeSnap
@@ -397,6 +399,7 @@ export const useSurveyCadWorkspace = (
     activeSnap,
     activeDraft: drawing.draft,
     liveSnapToleranceRef,
+    viewportGenerationRef,
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,

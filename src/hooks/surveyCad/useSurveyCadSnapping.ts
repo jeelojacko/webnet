@@ -82,18 +82,22 @@ const isConstructionLockKind = (
 
 /**
  * Purely additive stamp: annotate a snap candidate with the world tolerance
- * (viewport-scale proxy) it was computed at. Existing consumers ignore the
- * extra optional field; the corrected L1 on-source pick uses it to reject a
- * candidate computed at a different viewport scale than the pick.
+ * (viewport-scale proxy) and viewport generation it was computed at. Existing
+ * consumers ignore the extra optional fields; the corrected L1 on-source pick
+ * uses the generation to reject a candidate computed before ANY viewport
+ * transform (zoom, pan, extents, programmatic reset) and the tolerance for the
+ * distance/radius revalidation.
  */
-export const withCadSnapComputedScale = (
+export const withCadSnapViewportStamp = (
   candidate: CadSnapCandidate,
   computedScale: number,
-): CadSnapCandidate => ({ ...candidate, computedScale });
+  viewportGeneration: number,
+): CadSnapCandidate => ({ ...candidate, computedScale, viewportGeneration });
 
 export const useSurveyCadSnapping = (
   project: CadProject,
   constructionContext: CadSnapConstructionContext,
+  viewportGenerationRef?: { current: number },
 ): UseSurveyCadSnappingResult => {
   const spatialIndex = useMemo(() => buildCadSpatialIndex(project), [project]);
   const [activeSnap, setActiveSnap] = useState<CadSnapCandidate | null>(null);
@@ -170,12 +174,13 @@ export const useSurveyCadSnapping = (
         const nextNearbySnaps = restrictedGripCandidates
           .filter((candidate) => allowedKinds.includes(candidate.kind))
           .map((candidate) =>
-            withCadSnapComputedScale(
+            withCadSnapViewportStamp(
               {
                 ...candidate,
                 distance: Math.hypot(candidate.x - worldPoint.x, candidate.y - worldPoint.y),
               },
               gripTolerance,
+              viewportGenerationRef?.current ?? 0,
             ),
           )
           .filter((candidate) => candidate.distance <= gripTolerance)
@@ -205,7 +210,13 @@ export const useSurveyCadSnapping = (
           },
           options?.visibleBounds ?? null,
         )
-        .map((candidate) => withCadSnapComputedScale(candidate, snapTolerance));
+        .map((candidate) =>
+          withCadSnapViewportStamp(
+            candidate,
+            snapTolerance,
+            viewportGenerationRef?.current ?? 0,
+          ),
+        );
       setNearbySnaps(nextNearbySnaps);
       const nextSnapRaw = spatialIndex.queryNearestSnap(
         worldPoint,
@@ -218,7 +229,11 @@ export const useSurveyCadSnapping = (
         options?.visibleBounds ?? null,
       );
       const nextSnap = nextSnapRaw
-        ? withCadSnapComputedScale(nextSnapRaw, snapTolerance)
+        ? withCadSnapViewportStamp(
+            nextSnapRaw,
+            snapTolerance,
+            viewportGenerationRef?.current ?? 0,
+          )
         : null;
       setActiveSnap(nextSnap);
       if (options?.lockConstruction) {

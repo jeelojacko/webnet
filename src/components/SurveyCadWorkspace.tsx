@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import type {
@@ -410,6 +410,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const importedSurfaceIdsRef = useRef<Set<string>>(new Set());
   const [fileStatusText, setFileStatusText] = useState('');
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
+  // Monotonic viewport generation: bumped on EVERY viewport transform (zoom,
+  // pan, zoom-extents, programmatic reset). Snap candidates are stamped with
+  // it so a click-less keyboard commit can reject a snap computed before any
+  // transform, including a pan-only reset that leaves zoom/scale unchanged.
+  const viewportGenerationRef = useRef(0);
+  const applyViewport = useCallback<typeof setViewport>((action) => {
+    viewportGenerationRef.current += 1;
+    setViewport(action);
+  }, []);
   const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
   const [parcelLayoutState, setParcelLayoutState] = useState<CadParcelLayoutUiState>(() =>
     cloneParcelLayoutUiState(activeDrawing.parcelLayout),
@@ -966,6 +975,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     surfaceRevisionIndex,
     surfaceContourInputs,
     surfaceVolumeInputs,
+    viewportGenerationRef,
   );
   const {
     cadProject: activeProject,
@@ -1296,9 +1306,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setParcelLayoutFrontageSegmentSelectionIds,
   });
   useEffect(() => {
-    setViewport({ zoom: 1, panX: 0, panY: 0 });
+    applyViewport({ zoom: 1, panX: 0, panY: 0 });
     setViewBounds(cloneBounds(cadProject.bounds));
-  }, [activeDrawing.drawingId, cadProject.bounds, cadProject.id]);
+  }, [activeDrawing.drawingId, cadProject.bounds, cadProject.id, applyViewport]);
 
   const replaceActiveDrawing = (nextDrawing: CadDrawingDocument, statusText: string) => {
     emitDrawingChange(nextDrawing);
@@ -2099,7 +2109,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         });
         if (!bounds) return;
         setViewBounds(bounds);
-        setViewport({ zoom: 1, panX: 0, panY: 0 });
+        applyViewport({ zoom: 1, panX: 0, panY: 0 });
       },
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
       // Phase 21A — Properties palette Shared Boundary rows route through the
@@ -2953,7 +2963,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           showParcelLabels={showParcelLabels}
           viewport={viewport}
           viewBounds={viewBounds}
-          onViewportChange={setViewport}
+          onViewportChange={applyViewport}
           onViewBoundsChange={setViewBounds}
           onParcelLayoutPreviewStateChange={setParcelLayoutPreviewState}
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}

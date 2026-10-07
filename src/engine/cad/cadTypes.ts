@@ -1041,6 +1041,13 @@ export interface CadSnapCandidate {
    * (e.g. after a zoom without a pointer move).
    */
   computedScale?: number;
+  /**
+   * Monotonic viewport transform generation when this candidate was computed
+   * (bumped on zoom, pan, extents, and programmatic viewport sets). Optional
+   * and additive; the corrected L1 on-source pick rejects a stamped candidate
+   * whose generation differs from the live generation.
+   */
+  viewportGeneration?: number;
   guideSegments?: Array<[CadDisplayPoint, CadDisplayPoint]>;
   compoundKinds?: CadSnapKind[];
   lockGuidePoint?: CadDisplayPoint;

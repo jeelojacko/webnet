@@ -259,3 +259,21 @@ is purely additive.
 After this pass: focused L1 **8 files, 122/122**; combined **12 files, 171/171**;
 neighbour circle/workspace/spatial-index **64 files, 257 passed + 1 skipped**;
 browser A–G **7/7** zero page/console/unhandled errors.
+
+## 18. Correction pass (round-8 reviewer finding)
+
+The scale stamp only covered scale. A pan-only reset (Zoom Extents resetting
+`panX`/`panY` without changing zoom/bounds) left the scale unchanged, so a
+stale candidate compared equal and the keyboard phase-B path accepted it.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P2) | Freshness keyed on scale misses pan/transform-only changes. | Add a monotonic **viewport generation** (`viewportGenerationRef` in `SurveyCadWorkspace`, bumped by the `applyViewport` wrapper on every viewport set: zoom, pan, extents, programmatic reset). Snap candidates are stamped with `viewportGeneration` (plus the existing `computedScale`) via `withCadSnapViewportStamp`. The keyboard action passes the live generation as `pickViewportGeneration`; the L1 on-source pick expires a stamped snap whose generation differs (same `/snap expired/` message, stays active, zero mutation). The scale/tolerance still governs the distance/radius revalidation. Additive optional fields only. |
+
+Pinned by the `tests/cad_line_l1_sessions.test.ts` generation test (zoom case,
+pan-only case, fresh same-generation case) and `tests/cad_snap_scale_stamp.test.ts`
+stamp unit coverage. Neighbour suites stayed green.
+
+After this pass: focused L1 **8 files, 122/122**; combined **12 files, 171/171**;
+neighbour circle/workspace/spatial-index **64 files, 257 passed + 1 skipped**;
+browser A–G **7/7** zero page/console/unhandled errors.
