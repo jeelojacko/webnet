@@ -103,11 +103,12 @@ interface FlyoutOpen {
 /**
  * Open a family flyout and resolve only once its fixed box has settled.
  *
- * Product law: focus-on-open never scrolls (preventScroll) and the open's
- * own induced scroll is ignored inside the open-scroll grace while caret +
- * flyout stay in the viewport — so one ordinary click settles. No retry
- * masking: if the menu self-closes, this helper fails loudly. A stable
- * caret rect is awaited BEFORE clicking only to avoid anchoring mid-relayout.
+ * Product law: focus-on-open never scrolls (preventScroll); the browser's
+ * own bring-into-view scroll of the ribbon strip is exempt once, same frame,
+ * with an unmoved caret. Any genuine user scroll still closes, so one
+ * ordinary click settles. No retry masking: if the menu self-closes, this
+ * helper fails loudly. A stable caret rect is awaited BEFORE clicking only to
+ * avoid anchoring mid-relayout.
  */
 async function openFamilyFlyout(page: Page, familyId: string): Promise<FlyoutOpen> {
   const caret = page.locator(`[data-cad-family-caret="${familyId}"]`);
@@ -324,14 +325,10 @@ for (const resolution of RESOLUTIONS) {
       await page.locator('[data-cad-viewport]').dispatchEvent('mousedown');
       await expect(arcFlyout).toHaveCount(0);
 
+      // Outside-click, external scroll, and resize all close with no grace.
       for (const closer of ['scroll', 'resize']) {
         await page.locator('[data-cad-family-caret="arc"]').click({ force: true });
         await expect(arcFlyout).toBeVisible({ timeout: 5000 });
-        if (closer === 'scroll') {
-          // Past the open-scroll grace: the dispatch must prove the genuine
-          // external-scroll close law, not land in the induced-scroll grace.
-          await page.waitForTimeout(150);
-        }
         await page.evaluate((eventName) => window.dispatchEvent(new Event(eventName)), closer);
         await expect(arcFlyout).toHaveCount(0);
       }
@@ -445,11 +442,10 @@ test.describe('Phase 21B short-viewport flyout fallback @ 1366x360', () => {
     await expect(page.locator('[data-cad-family="line"] .cad-ribbon-split__primary').first())
       .toHaveAttribute('aria-label', 'Line: Create Line Perpendicular from Point');
 
-    // External scroll still closes on a short viewport (past the open-scroll
-    // grace so the dispatch proves the genuine law, not the induced grace).
+    // External scroll still closes on a short viewport, with no open-scroll
+    // grace: the dispatch proves the genuine law on the first frame.
     await page.locator('[data-cad-family-caret="line"]').click({ force: true });
     await expect(flyout).toBeVisible({ timeout: 5000 });
-    await page.waitForTimeout(150);
     await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
     await expect(flyout).toHaveCount(0);
 

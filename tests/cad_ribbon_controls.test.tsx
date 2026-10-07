@@ -3,7 +3,7 @@
 import React, { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CadRibbonSplitButton, CAD_RIBBON_FLYOUT_OPEN_SCROLL_GRACE_MS } from '../src/cad-app/shell/CadRibbonSplitButton';
+import { CadRibbonSplitButton } from '../src/cad-app/shell/CadRibbonSplitButton';
 import { CadRibbonFlyout } from '../src/cad-app/shell/CadRibbonFlyout';
 import {
   resolveCadRibbonFlyoutAnchor,
@@ -360,6 +360,18 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
     return container.querySelector('[data-cad-ribbon-flyout="arc"]');
   };
 
+  const domRect = (left: number, top: number): DOMRect =>
+    ({ left, top, right: left, bottom: top, width: 0, height: 0, x: left, y: top }) as unknown as DOMRect;
+
+  // The split button must be DOM-descended from the ribbon strip's own scroll
+  // container (`.cad-shell-ribbon-groups`) for the induced-scroll law to apply.
+  const renderInStrip = async (): Promise<{ container: HTMLElement; root: Root }> =>
+    render(
+      <div className="cad-shell-ribbon-groups">
+        <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />
+      </div>,
+    );
+
   it('L1-A: keeps the flyout open when the flyout itself scrolls', async () => {
     const { container, root } = await render(
       <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
@@ -380,15 +392,14 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
     await cleanup(container, root);
   });
 
-  it('L1-B: closes on an external window scroll', async () => {
+  it('L1-B: closes on an external window scroll immediately after open', async () => {
     const { container, root } = await render(
       <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
     );
     await openArcFlyout(container);
-    // Past the open-scroll grace: the open path's own induced scroll is
-    // ignored while caret + flyout stay in the viewport, so a genuine
-    // external scroll must wait out the grace before it proves the law.
-    await new Promise((resolve) => setTimeout(resolve, CAD_RIBBON_FLYOUT_OPEN_SCROLL_GRACE_MS + 50));
+    // No window-level grace exists: a real external window scroll must close
+    // right away. (The only exemption is the one-shot, strip-target,
+    // unmoved-caret induced scroll covered by L1-B2.)
     await act(async () => {
       window.dispatchEvent(new Event('scroll'));
     });
@@ -396,19 +407,43 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
     await cleanup(container, root);
   });
 
-  it('L1-B2: ignores the open path\'s own induced scroll inside the grace', async () => {
-    const { container, root } = await render(
-      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
-    );
+  it('L1-B2: ignores the strip\'s same-frame bring-into-view scroll, but only once', async () => {
+    const { container, root } = await renderInStrip();
     await openArcFlyout(container);
-    // Immediately (inside the grace): an external-target scroll with the
-    // caret + flyout still in the viewport is the open's own induced scroll
-    // (focus/strip relayout) and must NOT self-close. jsdom rects are
-    // zero-origin, which counts as in-viewport.
+    const strip = container.querySelector('.cad-shell-ribbon-groups');
+    // jsdom rects are zero-origin, so the caret reads the same position at open
+    // and at scroll time — the browser's own bring-into-view scroll of the
+    // ribbon strip (issued while resolving the click, delivered after mount).
+    // It is not a user scroll, so the menu stays open.
     await act(async () => {
-      window.dispatchEvent(new Event('scroll'));
+      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
     });
     expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+    // One-shot: a second strip scroll is genuine and closes.
+    await act(async () => {
+      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-B3: closes when a genuine ribbon scroll pans the caret', async () => {
+    const { container, root } = await renderInStrip();
+    const caret = container.querySelector<HTMLElement>('[data-cad-family-caret="arc"]');
+    if (!caret) throw new Error('caret missing');
+    // Open reads the caret at 0; the scroll reports it panned 24px => a real
+    // user scroll, so it closes rather than leaving a stale anchor.
+    const rectSpy = vi
+      .spyOn(caret, 'getBoundingClientRect')
+      .mockReturnValueOnce(domRect(0, 0))
+      .mockReturnValue(domRect(24, 0));
+    await openArcFlyout(container);
+    const strip = container.querySelector('.cad-shell-ribbon-groups');
+    await act(async () => {
+      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    rectSpy.mockRestore();
     await cleanup(container, root);
   });
 

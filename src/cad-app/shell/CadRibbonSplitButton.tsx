@@ -27,15 +27,6 @@ import {
 } from './cadRibbonToolFamilies';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 
-/**
- * Open-race grace: a scroll landing this soon after the open is the open
- * path's own induced scroll (focus/strip relayout within ~1 frame), not a
- * user scroll — ignored while the caret + flyout are both still in the
- * viewport. Exported for unit coverage of the external-scroll close law
- * (which must wait past the grace before dispatching).
- */
-export const CAD_RIBBON_FLYOUT_OPEN_SCROLL_GRACE_MS = 100;
-
 export interface CadRibbonSplitButtonProps {
   family: CadRibbonToolFamily;
   /** Sticky variant id for this family (from useCadToolFamilyState). */
@@ -67,12 +58,16 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
   const [anchor, setAnchor] = useState<CadRibbonFlyoutAnchor | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLButtonElement>(null);
-  // Timestamp of the last open: the open path's own induced scroll (focus or
-  // strip relayout settling within the first frame-ish) must not self-close
-  // a menu whose caret + flyout are still in the viewport. Genuine external
-  // scrolls after the grace, resizes, outside presses, Escape, and selections
-  // all still close.
-  const openAtRef = useRef(0);
+  // One-shot exemption for the browser's own "bring the clicked/focused
+  // control into view" scroll. The browser issues that scroll while resolving
+  // the click, but can deliver its scroll event in the frame right after the
+  // menu mounts. The exemption is armed on open, disarmed at the next
+  // animation frame, and honored only for the ribbon strip's own scroll
+  // container with an unmoved caret — a real user scroll pans the caret and
+  // therefore closes/re-anchors instead. This replaces the old blanket 100ms
+  // grace, which swallowed genuine user scrolls.
+  const inducedScrollRef = useRef<{ left: number; top: number; generation: number } | null>(null);
+  const inducedScrollGenerationRef = useRef(0);
   const menuId = useId();
   const currentVariant = resolveCadRibbonCurrentVariant(family, currentVariantId);
 
@@ -91,12 +86,23 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
     return executeShellCommand(def, actions, snapshot);
   };
 
+  const armInducedScrollExemption = (rect: DOMRect | null): void => {
+    const generation = (inducedScrollGenerationRef.current += 1);
+    if (rect == null) {
+      inducedScrollRef.current = null;
+      return;
+    }
+    inducedScrollRef.current = { left: rect.left, top: rect.top, generation };
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => {
+        if (inducedScrollRef.current?.generation === generation) inducedScrollRef.current = null;
+      });
+    }
+  };
+
   const openMenu = (): void => {
-    // Stamp first: any scroll the open path itself induces (focus/strip
-    // relayout) lands inside the open-scroll grace and is ignored while the
-    // caret + flyout are still in the viewport.
-    openAtRef.current = Date.now();
     const rect = caretRef.current?.getBoundingClientRect();
+    armInducedScrollExemption(rect ?? null);
     if (!rect) {
       setAnchor(null);
       setOpen(true);
@@ -116,6 +122,7 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
   };
 
   const close = (restoreFocus: boolean): void => {
+    inducedScrollRef.current = null;
     setOpen(false);
     setAnchor(null);
     if (restoreFocus) caretRef.current?.focus();
@@ -146,23 +153,24 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
     // rather than paint at a dead origin. Scrolling INSIDE the open flyout is
     // not an external scroll (and CSS overscroll-behavior: contain stops wheel
     // chaining at the menu's top/bottom), so internal scroll keeps it open.
-    // Grace: a scroll landing within ~1 frame/100ms of the open is the open
-    // path's own induced scroll (focus/strip relayout), not a user scroll —
-    // ignore it while the caret + flyout are both still in the viewport.
-    // Anything scrolled genuinely off-screen, or any scroll after the grace,
-    // still closes.
+    // The single armed exemption covers only the browser's same-frame
+    // bring-into-view scroll of the ribbon strip: it is consumed by the first
+    // external scroll, applies only when that scroll's target IS the strip's
+    // scroll container, and only while the caret has not moved since open. A
+    // genuine user scroll — including dragging the ribbon sideways right after
+    // opening — pans the caret (>1px) and closes rather than leaving a stale
+    // fixed-anchored menu.
     const onScrollCapture = (event: Event): void => {
       if (isInsideFlyout(event.target)) return;
-      if (Date.now() - openAtRef.current < CAD_RIBBON_FLYOUT_OPEN_SCROLL_GRACE_MS) {
+      const exempt = inducedScrollRef.current;
+      if (exempt != null) {
+        inducedScrollRef.current = null;
+        const strip = containerRef.current?.closest('.cad-shell-ribbon-groups') ?? null;
         const caretRect = caretRef.current?.getBoundingClientRect();
-        const flyoutRect = flyoutElement()?.getBoundingClientRect();
-        const inViewport = (rect: DOMRect | undefined): boolean =>
-          rect != null
-          && rect.bottom >= 0
-          && rect.top <= window.innerHeight
-          && rect.right >= 0
-          && rect.left <= window.innerWidth;
-        if (inViewport(caretRect) && inViewport(flyoutRect)) return;
+        const caretUnmoved = caretRect != null
+          && Math.abs(caretRect.left - exempt.left) <= 1
+          && Math.abs(caretRect.top - exempt.top) <= 1;
+        if (strip != null && event.target === strip && caretUnmoved) return;
       }
       close(false);
     };
