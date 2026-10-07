@@ -5,7 +5,6 @@ import {
   resolveCadLineBearingEndpoint,
   resolveCadLineDeflectionEndpoint,
   resolveCadLinePerpendicularFoot,
-  resolveCadLineTangentFromPoint,
   resolveCadLineTurnedAngleEndpoint,
 } from '../src/engine/cad/cadLineConstruction';
 
@@ -114,7 +113,7 @@ describe('L1 reference endpoint pick', () => {
   });
 });
 
-describe('L1 perpendicular and tangent', () => {
+describe('L1 perpendicular foot (retained for unrelated intersection features)', () => {
   it('drops a perpendicular foot onto the supporting line', () => {
     expect(
       okValue(
@@ -125,31 +124,5 @@ describe('L1 perpendicular and tangent', () => {
         }),
       ),
     ).toEqual({ x: 3, y: 0 });
-  });
-
-  it('solves both tangents with exact tangency and side intent', () => {
-    const inputs = { center: { x: 0, y: 0 }, radius: 5, from: { x: 10, y: 0 } } as const;
-    const right = okValue(resolveCadLineTangentFromPoint({ ...inputs, side: 'right' }));
-    const left = okValue(resolveCadLineTangentFromPoint({ ...inputs, side: 'left' }));
-    expect(left).not.toEqual(right);
-    for (const point of [right, left]) {
-      expect(Math.hypot(point.x, point.y)).toBeCloseTo(5, 9);
-      const toPoint = { x: point.x - 10, y: point.y };
-      expect(toPoint.x * point.x + toPoint.y * point.y).toBeCloseTo(0, 6);
-    }
-  });
-
-  it('rejects a selected tangency point off the finite arc sweep', () => {
-    const base = { center: { x: 0, y: 0 }, radius: 5, from: { x: 10, y: 0 } } as const;
-    const right = resolveCadLineTangentFromPoint({ ...base, side: 'right', startAngleDeg: 0, endAngleDeg: 120 });
-    const left = resolveCadLineTangentFromPoint({ ...base, side: 'left', startAngleDeg: 0, endAngleDeg: 120 });
-    expect(right.ok).toBe(true);
-    expect(left).toMatchObject({ ok: false, error: { code: 'OFF_SWEEP' } });
-  });
-
-  it('fails closed for a point inside the circle', () => {
-    expect(
-      resolveCadLineTangentFromPoint({ center: { x: 0, y: 0 }, radius: 5, from: { x: 1, y: 0 }, side: 'left' }),
-    ).toMatchObject({ ok: false, error: { code: 'NO_SOLUTION' } });
   });
 });

@@ -5,11 +5,12 @@
  * Production build, headless Chromium, disposable drawings. Run:
  *   npx playwright test cad-draw-line-l1 --config=playwright.prod.config.ts
  *
- * Flows A–F: ribbon truth (17 live rows + icons), sticky/typed/reset laws,
+ * Flows A–G: ribbon truth (17 live rows + icons), sticky/typed/reset laws,
  * NE asymmetry, CRS fail-closed + CRS success (source-bridge import),
  * point range/name, bearing/azimuth/angle/deflection/side-shot,
- * extension-in-place / from-end / perpendicular, dock echo + idle
- * autocomplete, undo/redo, zero page/console/unhandled errors.
+ * extension-in-place / from-end, the corrected point-on-source tangent and
+ * perpendicular three-phase law, Escape-cancel at every phase, dock echo +
+ * idle autocomplete, undo/redo, zero page/console/unhandled errors.
  * Evidence: PNGs + geometry.json under docs/evidence/cad-line-l1/.
  */
 import { expect, test, type Page } from '@playwright/test';
@@ -433,27 +434,40 @@ test('F: extension in place + from-end (line) + perpendicular + tangent; idle au
   await type(page, '25');
   await expect.poll(() => ent(page), { timeout: 15000 }).toBe(2);
 
-  // Perpendicular from a typed point off the infinite supporting line.
+  // Corrected PERP: select the source, pick the start ON source, signed distance.
   await start(page, 'LINE_PERP_POINT');
   await clickLineAt(page, 0, 0.5);
-  await expect(prompt(page)).toContainText(/from point/i);
-  await type(page, '30,80');
+  await expect(prompt(page)).toContainText(/start point on the source/i);
+  await clickLineAt(page, 0, 0.5);
+  await expect(prompt(page)).toContainText(/signed distance/i);
+  await type(page, '30');
   await expect.poll(() => ent(page), { timeout: 15000 }).toBe(3);
 
-  // Tangent from a point off a circle.
+  // Corrected TANGENT (line source): same three phases along the source tangent.
+  await start(page, 'LINE_TANGENT_POINT');
+  await clickLineAt(page, 0, 0.3);
+  await expect(prompt(page)).toContainText(/tangency point on the source/i);
+  await clickLineAt(page, 0, 0.3);
+  await expect(prompt(page)).toContainText(/signed tangent distance/i);
+  await type(page, '20');
+  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(4);
+
+  // TANGENT (circle source): radial on-source projection, tangent ⊥ radius.
   await start(page, 'CIRCLE');
   await type(page, '0,0');
   await type(page, '50');
-  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(4);
-  const circleHit = page.locator('[data-survey-cad-hit-target="true"][r]').last();
+  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(5);
+  const circleHit = page.locator('[data-survey-cad-hit-target="true"][fill="none"]').last();
   const circle = await circleHit.evaluate((el) => ({
     cx: Number(el.getAttribute('cx')), cy: Number(el.getAttribute('cy')), r: Number(el.getAttribute('r')),
   }));
   await start(page, 'LINE_TANGENT_POINT');
-  await clickView(page, circle.cx + circle.r * 0.9, circle.cy);
-  await expect(prompt(page)).toContainText(/from point/i);
-  await type(page, '-80,80');
-  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(5);
+  await clickView(page, circle.cx + circle.r, circle.cy);
+  await expect(prompt(page)).toContainText(/tangency point on the source/i);
+  await clickView(page, circle.cx + circle.r, circle.cy);
+  await expect(prompt(page)).toContainText(/signed tangent distance/i);
+  await type(page, '10');
+  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(6);
 
   await shot(page, 'F-edit-from-end-tangent');
   // Idle autocomplete surfaces LINE_* keys.
@@ -466,7 +480,70 @@ test('F: extension in place + from-end (line) + perpendicular + tangent; idle au
   expect(seen.join(' ')).toMatch(/LINE_(NE|BEARING|GRID_NE|POINT_RANGE)/);
   await shot(page, 'F-idle-autocomplete');
   await esc(page);
-  evidence.flowF = { ...(evidence.flowF as object), lineCount: (await saveEntities(page)).filter((e) => e.type === 'line').length };
+  const entities = await saveEntities(page);
+  const geom = lineGeom(entities);
+  const perp = geom.find((e) => e.createdBy === 'LINE_PERP_POINT')!;
+  expect(perp).toBeTruthy();
+  // Perp proof: dot(source direction (1,1), created direction) ≈ 0.
+  expect(perp.toX - perp.fromX + (perp.toY - perp.fromY)).toBeCloseTo(0, 1);
+  const tangents = geom.filter((e) => e.createdBy === 'LINE_TANGENT_POINT');
+  const lineTan = tangents[0]!;
+  const circleTan = tangents[1]!;
+  // Tangent (line source) proof: collinear with the source diagonal and start on it.
+  expect(lineTan.toX - lineTan.fromX - (lineTan.toY - lineTan.fromY)).toBeCloseTo(0, 1);
+  expect(Math.abs(lineTan.fromX - lineTan.fromY)).toBeLessThan(1.5);
+  // Tangent (circle source) proof: start on the circle and radial · tangent ≈ 0.
+  expect(Math.hypot(circleTan.fromX, circleTan.fromY)).toBeCloseTo(50, 0);
+  expect(
+    circleTan.fromX * (circleTan.toX - circleTan.fromX) +
+      circleTan.fromY * (circleTan.toY - circleTan.fromY),
+  ).toBeCloseTo(0, 0);
+  evidence.flowF = {
+    ...(evidence.flowF as object),
+    perpendicular: perp,
+    lineTangent: lineTan,
+    circleTangent: circleTan,
+    lineCount: entities.filter((e) => e.type === 'line').length,
+  };
   writeEvidence();
+  await assertClean(page, errors);
+});
+
+test('G: corrected TANGENT/PERP Escape cancels at every phase', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  await boot(page, errors);
+  await drawLine(page, '0,0', '100,100');
+
+  // Phase A cancel: a restart must begin at source selection again.
+  await start(page, 'LINE_TANGENT_POINT');
+  await expect(prompt(page)).toContainText(/line, arc, or circle/i);
+  await esc(page);
+  await start(page, 'LINE_TANGENT_POINT');
+  await expect(prompt(page)).toContainText(/line, arc, or circle/i);
+
+  // Phase B cancel: after a source pick Escape clears the on-source start.
+  await clickLineAt(page, 0, 0.5);
+  await expect(prompt(page)).toContainText(/tangency point on the source/i);
+  await esc(page);
+  await start(page, 'LINE_TANGENT_POINT');
+  await expect(prompt(page)).toContainText(/line, arc, or circle/i);
+
+  // Phase C cancel: escape after source + start leaves no mutation.
+  await clickLineAt(page, 0, 0.5);
+  await expect(prompt(page)).toContainText(/tangency point on the source/i);
+  await clickLineAt(page, 0, 0.5);
+  await expect(prompt(page)).toContainText(/signed tangent distance/i);
+  await esc(page);
+  expect(await ent(page)).toBe(1);
+
+  // PERP shares the same three-phase law.
+  await start(page, 'LINE_PERP_POINT');
+  await clickLineAt(page, 0, 0.5);
+  await expect(prompt(page)).toContainText(/start point on the source/i);
+  await clickLineAt(page, 0, 0.5);
+  await expect(prompt(page)).toContainText(/signed distance/i);
+  await esc(page);
+  expect(await ent(page)).toBe(1);
   await assertClean(page, errors);
 });

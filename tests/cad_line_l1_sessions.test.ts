@@ -534,64 +534,207 @@ describe('L1 typed submit: extension and from-end', () => {
   });
 });
 
-describe('L1 typed submit: tangent and perpendicular picks', () => {
-  it('creates an exact perpendicular foot segment from a line', () => {
-    const harness = makeHarness(buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100, 0)] }));
+describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray', () => {
+  const lineSource = () => line('line:1', 0, 0, 100, 0);
+
+  it('perp: line source, interior on-source start, positive = LEFT normal', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
     let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
-    session = harness.pick(session!, { ...point(50, 0, 'on'), snapSourceEntityId: 'line:1' });
-    session = harness.pick(session!, point(50, 40, 'from'));
+    session = harness.pick(session!, { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' });
+    expect(session?.lineSourceEntityId).toBe('line:1');
+    expect(session?.lineSourceOnPoint).toBeNull();
+    session = harness.pick(session!, point(50, 0, 'on'));
+    expect(session?.lineSourceOnPoint).toMatchObject({ x: 50, y: 0 });
+    expect(session?.lineSourceRayDirection).toMatchObject({ x: 0, y: 1 });
+    session = harness.submit(session!, '25');
     expect(session).toBeNull();
     const created = harness.lines().find((entity) => entity.id !== 'line:1')!;
+    expect(created.fromX).toBeCloseTo(50, 6);
+    expect(created.fromY).toBeCloseTo(0, 6);
     expect(created.toX).toBeCloseTo(50, 6);
-    expect(created.toY).toBeCloseTo(0, 6);
+    expect(created.toY).toBeCloseTo(25, 6);
+    const source = harness.lines().find((entity) => entity.id === 'line:1')!;
+    expect({ fromX: source.fromX, fromY: source.fromY, toX: source.toX, toY: source.toY }).toEqual({
+      fromX: 0,
+      fromY: 0,
+      toX: 100,
+      toY: 0,
+    });
     expect(harness.lines()).toHaveLength(2);
+    expect(harness.history().undoStack).toHaveLength(1);
   });
 
-  it('refuses an ambiguous tangent pick collinear with the center and from point', () => {
-    // Pick (50,0), center (0,0), from (100,0) are exactly collinear: the body
-    // pick carries no left/right information, so no branch may be guessed.
-    const harness = makeHarness(
-      buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }),
-    );
+  it('perp: negative signed distance travels RIGHT of from→to', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+    session = harness.pick(session!, { ...point(20, 0, 'body'), snapSourceEntityId: 'line:1' });
+    session = harness.pick(session!, point(20, 0, 'on'));
+    session = harness.submit(session!, '-25');
+    expect(session).toBeNull();
+    const created = harness.lines().find((entity) => entity.id !== 'line:1')!;
+    expect(created.toX).toBeCloseTo(20, 6);
+    expect(created.toY).toBeCloseTo(-25, 6);
+  });
+
+  it('tangent: line source, interior start, positive distance is collinear forward', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
     let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
-    session = harness.pick(session!, { ...point(50, 0, 'on'), snapSourceEntityId: 'arc:1' });
-    session = harness.pick(session!, point(100, 0, 'from'));
+    session = harness.pick(session!, { ...point(40, 0, 'body'), snapSourceEntityId: 'line:1' });
+    session = harness.pick(session!, point(40, 0, 'on'));
+    session = harness.submit(session!, '30');
+    expect(session).toBeNull();
+    const created = harness.lines().find((entity) => entity.id !== 'line:1')!;
+    expect(created.fromX).toBeCloseTo(40, 6);
+    expect(created.fromY).toBeCloseTo(0, 6);
+    expect(created.toX).toBeCloseTo(70, 6);
+    expect(created.toY).toBeCloseTo(0, 6);
+    // Collinear with the source: cross product of the two directions ≈ 0.
+    expect((created.toX - created.fromX) * 0 - (created.toY - created.fromY) * 1).toBeCloseTo(0, 9);
+  });
+
+  it('tangent: arc source projects onto the sweep and is perpendicular to the radius', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
+    session = harness.pick(session!, { ...point(0, 50, 'body'), snapSourceEntityId: 'arc:1' });
+    session = harness.pick(session!, point(0, 50, 'on'));
+    session = harness.submit(session!, '20');
+    expect(session).toBeNull();
+    const created = harness.lines()[0]!;
+    // Sweep 0→180 is CCW, so forward at 90° is −x.
+    expect(Math.hypot(created.fromX, created.fromY)).toBeCloseTo(50, 6);
+    expect(created.toX).toBeCloseTo(-20, 6);
+    expect(created.toY).toBeCloseTo(50, 6);
+    const radial = { x: created.fromX, y: created.fromY };
+    const tangent = { x: created.toX - created.fromX, y: created.toY - created.fromY };
+    expect(radial.x * tangent.x + radial.y * tangent.y).toBeCloseTo(0, 6);
+  });
+
+  it('perp: arc source uses the outward radial (positive) and inward (negative)', () => {
+    const outward = makeHarness(buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }));
+    const outwardBody = outward.pick(createCadLineL1Session('LINE_PERP_POINT'), {
+      ...point(0, 50, 'body'),
+      snapSourceEntityId: 'arc:1',
+    });
+    const outwardOnPoint = outward.pick(outwardBody!, point(0, 50, 'on'));
+    expect(outward.submit(outwardOnPoint!, '20')).toBeNull();
+    const outLine = outward.lines()[0]!;
+    expect(outLine.toX).toBeCloseTo(0, 6);
+    expect(outLine.toY).toBeCloseTo(70, 6);
+
+    const inward = makeHarness(buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }));
+    const inwardBody = inward.pick(createCadLineL1Session('LINE_PERP_POINT'), {
+      ...point(0, 50, 'body'),
+      snapSourceEntityId: 'arc:1',
+    });
+    const inwardOnPoint = inward.pick(inwardBody!, point(0, 50, 'on'));
+    expect(inward.submit(inwardOnPoint!, '-20')).toBeNull();
+    const inLine = inward.lines()[0]!;
+    expect(inLine.toY).toBeCloseTo(30, 6);
+  });
+
+  it('perp: circle source uses the outward radial convention', () => {
+    const circle: CadEntity = {
+      id: 'circle:1',
+      type: 'circle',
+      layerId: 'general',
+      visible: true,
+      locked: false,
+      centerX: 0,
+      centerY: 0,
+      radius: 50,
+    };
+    const harness = makeHarness(buildCadLineL1Project({ entities: [circle] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+    session = harness.pick(session!, { ...point(50, 0, 'body'), snapSourceEntityId: 'circle:1' });
+    session = harness.pick(session!, point(50, 0, 'on'));
+    session = harness.submit(session!, '15');
+    expect(session).toBeNull();
+    const created = harness.lines()[0]!;
+    expect(created.toX).toBeCloseTo(65, 6);
+    expect(created.toY).toBeCloseTo(0, 6);
+  });
+
+  it('rejects an off-sweep arc start without mutating the drawing', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
+    session = harness.pick(session!, { ...point(0, 50, 'body'), snapSourceEntityId: 'arc:1' });
+    session = harness.pick(session!, point(0, -50, 'off'));
     expect(session).not.toBeNull();
-    expect(session?.resultText).toContain('ambiguous');
-    expect(session?.lineSegments).toEqual([]);
+    expect(session?.resultText).toMatch(/off the finite source arc sweep/i);
+    expect(session?.lineSourceOnPoint).toBeNull();
     expect(harness.lines()).toHaveLength(0);
     expect(harness.history().undoStack).toHaveLength(0);
   });
 
-  it('creates a tangent segment from a one-sided arc pick', () => {
-    const harness = makeHarness(
-      buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }),
-    );
-    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
-    session = harness.pick(session!, { ...point(0, 50, 'on'), snapSourceEntityId: 'arc:1' });
-    session = harness.pick(session!, point(100, 0, 'from'));
+  it('constrains an endpoint click to the nearest ray and commits', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+    session = harness.pick(session!, { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' });
+    session = harness.pick(session!, point(50, 0, 'on'));
+    session = harness.pick(session!, point(80, 12, 'end'));
     expect(session).toBeNull();
-    const created = harness.lines()[0]!;
-    // Tangency point x = r^2/d = 2500/100 = 25; |y| = r*sqrt(d^2-r^2)/d.
-    expect(created.toX).toBeCloseTo(25, 0);
-    expect(created.toY).toBeCloseTo(43.3, 0);
+    const created = harness.lines().find((entity) => entity.id !== 'line:1')!;
+    expect(created.toX).toBeCloseTo(50, 6);
+    expect(created.toY).toBeCloseTo(12, 6);
+  });
+
+  it('fails closed on an on-bisector endpoint click', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+    session = harness.pick(session!, { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' });
+    session = harness.pick(session!, point(50, 0, 'on'));
+    session = harness.pick(session!, point(80, 0, 'tie'));
+    expect(session).not.toBeNull();
+    expect(session?.resultText).toMatch(/equidistant/i);
+    expect(harness.lines()).toHaveLength(1);
+    expect(harness.history().undoStack).toHaveLength(0);
+  });
+
+  it('rejects tiny/zero/non-finite typed distances without mutation', () => {
+    for (const input of ['0', '1e-12', 'abc']) {
+      const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
+      let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
+      session = harness.pick(session!, { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' });
+      session = harness.pick(session!, point(50, 0, 'on'));
+      const next = harness.submit(session!, input);
+      expect(next, input).not.toBeNull();
+      expect(harness.lines()).toHaveLength(1);
+      expect(harness.history().undoStack).toHaveLength(0);
+    }
+  });
+
+  it('requires the on-source start before accepting a typed distance', () => {
+    const harness = makeHarness(buildCadLineL1Project({ entities: [lineSource()] }));
+    let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
+    session = harness.pick(session!, { ...point(50, 0, 'body'), snapSourceEntityId: 'line:1' });
+    const next = harness.submit(session!, '25');
+    expect(next?.resultText).toMatch(/click the start point on the source/i);
     expect(harness.lines()).toHaveLength(1);
   });
 
-  it('accepts the from point as typed input (perp + tangent)', () => {
-    const perp = makeHarness(buildCadLineL1Project({ entities: [line('line:1', 0, 0, 100, 0)] }));
-    let perpSession: CadLineL1SessionState | null = createCadLineL1Session('LINE_PERP_POINT');
-    perpSession = perp.pick(perpSession!, { ...point(50, 0, 'on'), snapSourceEntityId: 'line:1' });
-    perpSession = perp.submit(perpSession!, '50,40');
-    expect(perpSession).toBeNull();
-    expect(perp.lines().find((entity) => entity.id !== 'line:1')!.toY).toBeCloseTo(0, 6);
+  it('rejects an unsupported source body without mutating state', () => {
+    const harness = makeHarness(
+      buildCadLineL1Project({ entities: [surveyPoint('1', 0, 0), surveyPoint('2', 10, 0)] }),
+    );
+    const session = harness.pick(createCadLineL1Session('LINE_TANGENT_POINT'), {
+      ...point(0, 0, '1'),
+      snapSourceEntityId: 'point:1',
+      snapKind: 'point-node',
+    });
+    expect(session?.lineSourceEntityId).toBeNull();
+    expect(session?.resultText).toMatch(/line, arc, or circle/i);
+  });
 
-    const tan = makeHarness(buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] }));
-    let tanSession: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
-    tanSession = tan.pick(tanSession!, { ...point(0, 50, 'on'), snapSourceEntityId: 'arc:1' });
-    tanSession = tan.submit(tanSession!, '100,0');
-    expect(tanSession).toBeNull();
-    expect(tan.lines()[0]!.toX).toBeCloseTo(25, 0);
+  it('rejects a point-range with any invalid token atomically (no silent discard)', () => {
+    const harness = makeHarness(
+      buildCadLineL1Project({
+        entities: [surveyPoint('1', 0, 0), surveyPoint('2', 10, 0), surveyPoint('3', 20, 0)],
+      }),
+    );
+    const session = harness.submit(createCadLineL1Session('LINE_POINT_RANGE'), '1-3,foo,7');
+    expect(session?.resultText).toMatch(/neither an integer/i);
+    expect(harness.entities()).toHaveLength(3);
+    expect(harness.history().undoStack).toHaveLength(0);
   });
 });
 

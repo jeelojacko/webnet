@@ -7,7 +7,7 @@ Chromium, disposable drawings. Command:
 npx playwright test cad-draw-line-l1 --config=playwright.prod.config.ts
 ```
 
-Result: **6/6 flows green, 0 page/console/unhandled errors.** Screenshots and
+Result: **7/7 flows green, 0 page/console/unhandled errors.** Screenshots and
 `geometry.json` live in this directory.
 
 ## Flows
@@ -19,22 +19,25 @@ Result: **6/6 flows green, 0 page/console/unhandled errors.** Screenshots and
 | **C** | Blank drawing: `LINE_GRID_NE` + `LINE_LATLONG` fail closed (prompt mentions "grid", entity count unchanged). After a source-bridge import of stations whose XY are genuine `CA_NAD83_CSRS_UTM_20N` grid coordinates, both succeed and commit (GRID_NE in `Northing,Easting` order, matching the LATLONG projections). |
 | **D** | Imported numeric survey points: `LINE_POINT_RANGE` `1-3` (2 segments), `LINE_POINT_NAME` `1,3` (1 segment), missing-id refusal with zero mutation, `LINE_POINT_OBJECT` picking survey points. |
 | **E** | `LINE_BEARING`, `LINE_AZIMUTH`, `LINE_ANGLE` (selected-line reference + start pick), `LINE_DEFLECTION`, `LINE_SIDE_SHOT` (fixed-origin shot), `LINE_STATION_OFFSET` refusal without an alignment. |
-| **F** | `LINE_EXTENSION` in place (count unchanged, `GRIP_EDIT`), `LINE_FROM_END` collinear, `LINE_PERP_POINT` (source pick + typed from point), `LINE_TANGENT_POINT` (circle source + typed from point), idle `LINE_` autocomplete. |
+| **F** | `LINE_EXTENSION` in place (count unchanged, `GRIP_EDIT`), `LINE_FROM_END` collinear, corrected `LINE_PERP_POINT` (line source → start on source → signed normal), corrected `LINE_TANGENT_POINT` (line source → start on source → signed tangent; circle source → radial on-source → tangent ⊥ radius), idle `LINE_` autocomplete. `geometry.json` pins tangent collinearity, normal ⊥ source, and radial ⊥ tangent. |
+| **G** | Corrected `LINE_TANGENT_POINT` / `LINE_PERP_POINT` Escape cancels at every phase (source pick, on-source start, signed-ray phase) with zero mutation and a clean restart at source selection. |
 
 ## Row coverage
 
 Every one of the 17 flyout rows is verified for its `commandKey` + icon in flow
 A. Every `LINE_*` key is additionally exercised by at least one behavior in
-flows B–F (NE, grid-NE, latlong, range, object, name, bearing, azimuth, angle,
+flows B–G (NE, grid-NE, latlong, range, object, name, bearing, azimuth, angle,
 deflection, station-offset, side-shot, extension, from-end, perpendicular,
-tangent). Row 1 (`line-create` / `LINE`) is the live default face.
+tangent, Escape-cancel). Row 1 (`line-create` / `LINE`) is the live default face.
 
 ## Notes
 
-- `LINE_TANGENT_POINT` / `LINE_PERP_POINT` accept the from point as a typed
-  `x,y` (or a viewport click); the geometry (`resolveCadLineTangentFromPoint` /
-  `resolveCadLinePerpendicularFoot`) is unit-pinned and the browser flow commits
-  it end to end.
+- `LINE_TANGENT_POINT` / `LINE_PERP_POINT` are three-phase: select a
+  line/arc/circle body, pick the start **ON** the source, then enter a signed
+  distance or click the endpoint constrained to the two source-frame rays.
+  The engine math (`cadLineOnSourceResolvers`) and the corrected session law are
+  pinned by unit/session suites; flow F commits both end to end in the browser
+  and flow G pins Escape-cancel at every phase.
 - `GRID_NE`/`LATLONG` success uses the real source-bridge import path
   (`/cad?source=<id>` + **Import / Refresh**), so it also exercises the
   `CadProjectMetadata.coordinateContext` adopt-once seam. The fixture imports

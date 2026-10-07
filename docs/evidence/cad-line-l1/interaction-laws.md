@@ -55,8 +55,8 @@ grammar differs. All engine conventions come from Worker A's
 | `LINE_SIDE_SHOT` | occupy + reference pick + typed | `B/AZ/TL/TR/DL/DR angle,distance` from a FIXED occupy | Enter after 1+ shots; `U` drops the newest |
 | `LINE_EXTENSION` | source line pick near an end + typed | signed delta or `T<length>` / `TOTAL=<length>` | `GRIP_EDIT` in place |
 | `LINE_FROM_END` | source pick near an end + typed | distance | new collinear/tangent line |
-| `LINE_TANGENT_POINT` | arc/circle pick + from-point pick | pick side chooses the branch | commits on the second pick |
-| `LINE_PERP_POINT` | line pick + from-point pick | exact perpendicular foot | commits on the second pick |
+| `LINE_TANGENT_POINT` | line/arc/circle body + start pick ON source + typed signed distance / endpoint click | + = source forward tangent, − = reverse; one segment, one undo |
+| `LINE_PERP_POINT` | line/arc/circle body + start pick ON source + typed signed distance / endpoint click | + = LEFT normal (line) / OUTWARD radial (arc/circle), − = reverse; one segment, one undo |
 
 ## 2. Direction conventions (reused from Worker A)
 
@@ -65,6 +65,12 @@ grammar differs. All engine conventions come from Worker A's
 - Turned angle measured from the occupy→backsight ray; **right = clockwise (+)**.
 - Deflection measured at the line end from the forward course; **right = clockwise (+)**.
 - Offset is **left-positive**.
+- **Tangent/normal source frames (corrected TANGENT/PERP):** line forward tangent is
+  `from→to`; arc forward tangent is the signed-sweep travel tangent; circle
+  forward tangent is counter-clockwise (documented convention). The normal is the
+  line **LEFT** normal (rotate +90°, x east / y north) and the **outward** radial
+  for arcs/circles. A signed distance travels **+ along** the frame direction and
+  **− along its reverse** (never array order).
 - Side-shot prefixes are mandatory (`B`, `AZ`, `TL`, `TR`, `DL`, `DR`) so a bare
   `L30,100` can never be silently mis-read.
 
@@ -82,16 +88,24 @@ grammar differs. All engine conventions come from Worker A's
   the newest uncommitted shot only and leaves the occupy/reference untouched, so
   post-`U` shots still start at the same origin and a `U`-to-empty draft keeps
   the occupy.
-- **TANGENT/PERP:** `resolveCadLineTangentFromPoint` takes an explicit `side`
-  intent derived from the source-body pick location. Two tangent rays exist, so
-  a body pick that is collinear (to the degenerate floor, normalized) with the
-  from point and the circle center carries no side information: it is refused
-  as **ambiguous** with an explicit `resultText` and no geometry, and the
-  session stays active so the operator can restart with an unambiguous pick.
-  The finite arc sweep is still enforced (`OFF_SWEEP` otherwise).
-  `resolveCadLinePerpendicularFoot` returns the unique exact supporting-line
-  foot — a single ray, so it has no branch to disambiguate and needs no such
-  refusal.
+- **TANGENT/PERP (corrected, source-point-on-object → ray):** both are
+  three-phase. **(A)** pick a line/arc/circle body (source captured, no
+  mutation). **(B)** pick the start point **ON** the source: the pick is projected
+  onto it — a line must land on the finite segment (residual tolerance = 5% of
+  the segment length or the degenerate floor), an arc on the finite sweep, a
+  circle anywhere on the circle; off-object / off-sweep / degenerate picks fail
+  closed with an explicit `resultText` and no mutation. **(C)** enter a **signed
+  distance**, or click an endpoint constrained to the two source-frame rays
+  (nearest ray wins by the projection sign; a perpendicular-bisector tie fails
+  closed so the operator repicks). `TANGENT` travels the source tangent
+  (collinear for a line; exact perpendicular to the radius for arc/circle, never
+  a chord); `PERP` travels the source normal (LEFT normal for a line; outward
+  radial for arc/circle). The created `CadLineEntity` starts exactly on the
+  source, the source is never modified, and the commit is one
+  `LINE_CREATE_BATCH` undo entry. The obsolete external-point
+  `resolveCadLineTangentFromPoint` helper is retired from this path and deleted;
+  `resolveCadLinePerpendicularFoot` is retained but no longer used by
+  `LINE_PERP_POINT`.
 - **FROM_END:** line → collinear, arc → true tangent at the selected endpoint,
   open polyline → terminal segment only; closed polylines and circles reject.
 - **EXTENSION:** signed delta or explicit total; the opposite end is fixed; a

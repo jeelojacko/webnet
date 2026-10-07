@@ -22,15 +22,15 @@ import {
   parseCadLineNorthEast,
   parseCadLinePointRange,
   parseCadLineSideShot,
+  parseCadLineSignedDistance,
 } from '../../engine/cad/cadLineParsers';
 import {
   resolveCadLineAzimuthEndpoint,
   resolveCadLineBearingEndpoint,
   resolveCadLineDeflectionEndpoint,
-  resolveCadLinePerpendicularFoot,
-  resolveCadLineTangentFromPoint,
   resolveCadLineTurnedAngleEndpoint,
 } from '../../engine/cad/cadLineConstruction';
+import { resolveCadLineRayEndpoint } from '../../engine/cad/cadLineOnSourceResolvers';
 import {
   resolveCadLineExtensionFromText,
   resolveCadLineFromEnd,
@@ -52,7 +52,6 @@ import {
   cadLinePointLabel,
   commitCadLineL1Batch,
   commitCadLineL1Draft,
-  isCadLineTangentSideAmbiguous,
   type CadLineL1ApplyHistoryUpdate,
   type CadLineL1ReplaceSession,
 } from './useSurveyCadLineL1Session';
@@ -518,70 +517,42 @@ const handleBackstep = (options: CadLineL1SubmitOptions): boolean => {
  * Typed-submit entry point. Always returns true for a Line-L1 session so the
  * generic point fallback never consumes mode-specific syntax.
  */
-const handleFromPointTyped = (options: CadLineL1SubmitOptions): boolean => {
+const handleSourceRayTyped = (options: CadLineL1SubmitOptions): boolean => {
   const { session } = options;
   if (!session.lineSourceEntityId) {
     return fail(
       options,
       session.key === 'LINE_TANGENT_POINT'
-        ? 'LINE_TANGENT_POINT: click the arc or circle body first.'
-        : 'LINE_PERP_POINT: click the line body first.',
+        ? 'LINE_TANGENT_POINT: click a line, arc, or circle body first.'
+        : 'LINE_PERP_POINT: click a line, arc, or circle body first.',
     );
   }
-  const parsed = parseAbsolutePoint(session.inputValue);
-  if (!parsed) return fail(options, 'Enter the from point as `x,y` (or click it in the viewport).');
-  const entity = options.project.entities.find((candidate) => candidate.id === session.lineSourceEntityId);
-  if (!entity) return fail(options, 'The source entity is no longer available.');
-  const segment = (end: { x: number; y: number }, label: string): CadLineSegmentInput => ({
-    start: toInput({ x: parsed.x, y: parsed.y, label: parsed.label }, 1),
-    end: { x: end.x, y: end.y, label },
-  });
-  if (session.key === 'LINE_PERP_POINT') {
-    if (entity.type !== 'line') return fail(options, 'The perpendicular source is not a line.');
-    const foot = resolveCadLinePerpendicularFoot({
-      lineStart: { x: entity.fromX, y: entity.fromY },
-      lineEnd: { x: entity.toX, y: entity.toY },
-      from: parsed,
-    });
-    if (!foot.ok) return fail(options, foot.error.message);
-    return commitCadLineL1Batch(
-      options.applyHistoryUpdate,
-      options.replaceSession,
-      session,
-      [segment(foot.value, `${parsed.label}:perp`)],
-      session.key,
-    );
+  if (!session.lineSourceOnPoint || !session.lineSourceRayDirection) {
+    return fail(options, `${session.key}: click the start point on the source object first.`);
   }
-  if (entity.type !== 'arc' && entity.type !== 'circle') {
-    return fail(options, 'The tangent source is not an arc or circle.');
-  }
-  const center = { x: entity.centerX, y: entity.centerY };
-  const pick = session.lineSourcePickPoint;
-  if (!pick || isCadLineTangentSideAmbiguous(parsed, center, pick)) {
-    return fail(
-      options,
-      'LINE_TANGENT_POINT: the source-body pick is collinear with the from point and the center, so the left/right tangent branch is ambiguous. Restart and pick the arc/circle body clearly on one side.',
-    );
-  }
-  // Match the point-pick side intent: cross(from, center, sourcePick).
-  const side =
-    (center.x - parsed.x) * (pick.y - parsed.y) - (center.y - parsed.y) * (pick.x - parsed.x) > 0
-      ? 'left'
-      : 'right';
-  const tangent = resolveCadLineTangentFromPoint({
-    center,
-    radius: entity.radius,
-    from: parsed,
-    side,
-    startAngleDeg: entity.type === 'arc' ? entity.startAngleDeg : undefined,
-    endAngleDeg: entity.type === 'arc' ? entity.endAngleDeg : undefined,
-  });
-  if (!tangent.ok) return fail(options, tangent.error.message);
+  const parsed = parseCadLineSignedDistance(session.inputValue);
+  if (!parsed.ok) return fail(options, parsed.error.message);
+  const endpoint = resolveCadLineRayEndpoint(
+    session.lineSourceOnPoint,
+    session.lineSourceRayDirection,
+    parsed.value,
+  );
+  if (!endpoint.ok) return fail(options, endpoint.error.message);
+  const suffix = session.key === 'LINE_TANGENT_POINT' ? 'tan' : 'perp';
   return commitCadLineL1Batch(
     options.applyHistoryUpdate,
     options.replaceSession,
     session,
-    [segment(tangent.value, `${parsed.label}:tan`)],
+    [
+      {
+        start: toInput({ ...session.lineSourceOnPoint }, 1),
+        end: {
+          x: endpoint.value.x,
+          y: endpoint.value.y,
+          label: `${session.lineSourceEntityId}:${suffix}`,
+        },
+      },
+    ],
     session.key,
   );
 };
@@ -636,6 +607,6 @@ export const handleSurveyCadLineL1Submit = (options: CadLineL1SubmitOptions): bo
         : handleFromEndTyped(options);
     case 'LINE_TANGENT_POINT':
     case 'LINE_PERP_POINT':
-      return handleFromPointTyped(options);
+      return handleSourceRayTyped(options);
   }
 };

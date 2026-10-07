@@ -113,12 +113,12 @@ export const CAD_LINE_L1_COMMAND_META: Record<CadLineL1CommandKey, CadLineL1Comm
   },
   LINE_TANGENT_POINT: {
     label: 'Line Tangent from Point',
-    hint: 'Create a line tangent to a picked arc/circle from a picked point (side follows pick intent).',
+    hint: 'Create a line from a point ON a line/arc/circle along that source tangent (signed distance + forward / - reverse, or endpoint click).',
     createdBy: 'LINE_TANGENT_POINT',
   },
   LINE_PERP_POINT: {
     label: 'Line Perpendicular from Point',
-    hint: 'Create a line perpendicular to a picked line from a picked point.',
+    hint: 'Create a line from a point ON a line/arc/circle along that source normal (signed distance + left/outward / - right/inward, or endpoint click).',
     createdBy: 'LINE_PERP_POINT',
   },
 };

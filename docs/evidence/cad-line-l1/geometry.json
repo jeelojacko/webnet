@@ -5,7 +5,7 @@
     "planned": 0
   },
   "flowB": {
-    "id": "cad-line-241b8550-cf05-4349-a8c0-373b9e9996fb",
+    "id": "cad-line-b93a845b-0322-47ee-bfdb-5057311e438e",
     "fromX": 0,
     "fromY": 0,
     "toX": 50,
@@ -15,7 +15,7 @@
   "flowC": {
     "refusalOk": true,
     "grid": {
-      "id": "cad-line-b2d85622-8a6c-4fbd-9146-69e18ea42cf9",
+      "id": "cad-line-dee3de6c-df2a-4ee9-959c-800d02e3ff04",
       "fromX": -445748.66307161,
       "fromY": 5053500.026238931,
       "toX": -445581.70718193986,
@@ -23,7 +23,7 @@
       "createdBy": "LINE_GRID_NE"
     },
     "latlong": {
-      "id": "cad-line-9addeace-5466-4b6e-826d-8896dd61dfc9",
+      "id": "cad-line-4ca59842-12bb-4bec-96ea-b6534ded2808",
       "fromX": -445748.66307161003,
       "fromY": 5053500.02623893,
       "toX": -445581.7071819396,
@@ -38,7 +38,7 @@
   },
   "flowE": {
     "bearing": {
-      "id": "cad-line-a34f668f-df17-4452-9147-90633b91e5c7",
+      "id": "cad-line-ae100d49-deeb-4f8e-a4d3-bd0c646101b0",
       "fromX": 0,
       "fromY": 0,
       "toX": 100,
@@ -46,7 +46,7 @@
       "createdBy": "LINE_BEARING"
     },
     "azimuth": {
-      "id": "cad-line-1ba57819-d891-404a-aa50-56aae2828c05",
+      "id": "cad-line-a76038a0-f74b-4c19-ad5d-f9d5306a9622",
       "fromX": 0,
       "fromY": 0,
       "toX": 100,
@@ -54,7 +54,7 @@
       "createdBy": "LINE_AZIMUTH"
     },
     "angle": {
-      "id": "cad-line-d9e2d207-52d1-4df4-a07a-cc4ac533a56e",
+      "id": "cad-line-04a5658d-d02a-4e95-ba1d-6c527f7365dc",
       "fromX": 0,
       "fromY": 0,
       "toX": 1.2246467991473532e-14,
@@ -62,7 +62,7 @@
       "createdBy": "LINE_ANGLE"
     },
     "deflection": {
-      "id": "cad-line-f1b33d7b-539c-42b2-9150-a3dc51216909",
+      "id": "cad-line-f9543390-96ea-4d46-a2e2-7f1f23a0d555",
       "fromX": 100,
       "fromY": 6.123233995736766e-15,
       "toX": 100.00000000000001,
@@ -70,7 +70,7 @@
       "createdBy": "LINE_DEFLECTION"
     },
     "sideShot": {
-      "id": "cad-line-3fd6492f-974e-4c62-88dd-0a8326a5303c",
+      "id": "cad-line-7bfb641f-2456-4088-aa35-1980433a6bb0",
       "fromX": 0,
       "fromY": 0,
       "toX": 50,
@@ -80,13 +80,37 @@
   },
   "flowF": {
     "extension": {
-      "id": "cad-line-bf21bd01-138a-4b62-9c61-98cae9b3eac1",
+      "id": "cad-line-f0ae1a5a-e6a1-4e89-849a-981575d768de",
       "fromX": 0,
       "fromY": 0,
       "toX": 135.35533905932738,
       "toY": 135.35533905932738,
       "createdBy": "LINE"
     },
-    "lineCount": 4
+    "perpendicular": {
+      "id": "cad-line-aacc1b05-24bf-4ec2-9270-3a3cf2e53829",
+      "fromX": 67.67766952966369,
+      "fromY": 67.67766952966369,
+      "toX": 46.46446609406726,
+      "toY": 88.89087296526012,
+      "createdBy": "LINE_PERP_POINT"
+    },
+    "lineTangent": {
+      "id": "cad-line-b9db36d2-916e-433f-9b9f-5447a718b2bc",
+      "fromX": 40.58807761461047,
+      "fromY": 40.58807761461047,
+      "toX": 54.73021323834142,
+      "toY": 54.73021323834142,
+      "createdBy": "LINE_TANGENT_POINT"
+    },
+    "circleTangent": {
+      "id": "cad-line-97e131c0-5ceb-4568-ad8e-6e7d669cc6ae",
+      "fromX": 50,
+      "fromY": 0,
+      "toX": 50,
+      "toY": 10,
+      "createdBy": "LINE_TANGENT_POINT"
+    },
+    "lineCount": 5
   }
 }

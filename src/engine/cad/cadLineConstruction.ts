@@ -10,10 +10,8 @@
  *  - A point "left" of a directed ray has a positive cross product.
  */
 import {
-  cadAngleDegFromCenter,
   cadAzimuthDeg,
   cadDistance,
-  cadIsAngleOnArcSweep,
   cadNormalizeAngleDeg,
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
@@ -39,9 +37,6 @@ const validPoint = (point: CadWorldPoint): boolean =>
   Number.isFinite(point.x) && Number.isFinite(point.y);
 
 const validDistance = (distance: number): boolean => Number.isFinite(distance) && distance > 0;
-
-const crossProduct = (origin: CadWorldPoint, a: CadWorldPoint, b: CadWorldPoint): number =>
-  (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
 
 /** Bearing endpoint (quadrant or decimal/DMS via cadParseBearingDegrees). */
 export const resolveCadLineBearingEndpoint = ({
@@ -175,57 +170,4 @@ export const resolveCadLinePerpendicularFoot = ({
     return cadLineFail('DEGENERATE', 'Perpendicular line has zero length.');
   }
   return cadLineOk(cadProjectPointOntoInfiniteLine(from, lineStart, lineEnd).point);
-};
-
-/**
- * Exact tangent-from-external-point to an arc/circle. Two tangent rays exist;
- * the caller's explicit `side` intent (left/right of the from→center ray)
- * selects one — array/angle order never decides. When a finite sweep is
- * supplied the selected tangency point must lie on it, else OFF_SWEEP.
- */
-export const resolveCadLineTangentFromPoint = ({
-  center,
-  radius,
-  from,
-  side,
-  startAngleDeg,
-  endAngleDeg,
-}: {
-  center: CadWorldPoint;
-  radius: number;
-  from: CadWorldPoint;
-  side: CadLineSide;
-  startAngleDeg?: number;
-  endAngleDeg?: number;
-}): CadLineResult<CadWorldPoint> => {
-  if (!validPoint(center) || !validPoint(from)) return cadLineFail('NON_FINITE', 'Tangent inputs must be finite.');
-  if (!Number.isFinite(radius) || radius <= CAD_LINE_DEGENERATE_FLOOR) {
-    return cadLineFail('DEGENERATE', `Radius ${radius} is not usable.`);
-  }
-  const distance = cadDistance(from, center);
-  if (distance <= CAD_LINE_DEGENERATE_FLOOR) return cadLineFail('NO_SOLUTION', 'Point coincides with the center.');
-  if (distance < radius - CAD_LINE_DEGENERATE_FLOOR) {
-    return cadLineFail('NO_SOLUTION', 'Point lies inside the circle; no tangent exists.');
-  }
-
-  const candidateFor = (sign: number): CadWorldPoint => {
-    if (Math.abs(distance - radius) <= CAD_LINE_DEGENERATE_FLOOR) return { ...from };
-    const tangentLength = Math.sqrt(Math.max(0, distance * distance - radius * radius));
-    const baseAzimuth = cadAzimuthDeg(from, center);
-    const offset = (Math.asin(radius / distance) * 180) / Math.PI;
-    return cadPointFromAzimuthDistance(from, baseAzimuth + sign * offset, tangentLength);
-  };
-
-  const leftCandidate = candidateFor(-1);
-  const rightCandidate = candidateFor(1);
-  const leftIsLeft = crossProduct(from, center, leftCandidate) > 0;
-  const chosen = side === 'left' ? (leftIsLeft ? leftCandidate : rightCandidate) : leftIsLeft ? rightCandidate : leftCandidate;
-
-  if (startAngleDeg != null && endAngleDeg != null) {
-    const angleDeg = cadAngleDegFromCenter(center, chosen);
-    if (!cadIsAngleOnArcSweep(angleDeg, startAngleDeg, endAngleDeg)) {
-      return cadLineFail('OFF_SWEEP', 'Selected tangency point is off the finite arc sweep.');
-    }
-  }
-  return cadLineOk(chosen);
 };

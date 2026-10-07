@@ -185,6 +185,17 @@ export interface CadLineL1SessionState {
   lineSourceEntityId: string | null;
   /** Where the operator clicked the source (proximity/endpoint choice). */
   lineSourcePickPoint: CommandPoint | null;
+  /**
+   * Corrected TANGENT/PERP phase B: the exact point resolved ON the source
+   * object (finite-segment / finite-sweep projection).
+   */
+  lineSourceOnPoint: CommandPoint | null;
+  /**
+   * Corrected TANGENT/PERP phase C: unit ray direction (source tangent for
+   * TANGENT, source normal/outward radial for PERP). Positive signed distance
+   * travels along it, negative travels its reverse.
+   */
+  lineSourceRayDirection: { x: number; y: number } | null;
   /** Resolved source endpoint for FROM_END (start | end). */
   lineSourceEndpoint: 'start' | 'end' | null;
   /** Explicit side intent (TANGENT). */

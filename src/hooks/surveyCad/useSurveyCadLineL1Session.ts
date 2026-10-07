@@ -14,13 +14,15 @@ import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import {
   CAD_LINE_DEGENERATE_FLOOR,
   type CadLineSegmentInput,
-  type CadLineSide,
 } from '../../engine/cad/cadLineTypes';
+import { pickCadLineReferenceStartEndpoint } from '../../engine/cad/cadLineConstruction';
 import {
-  resolveCadLinePerpendicularFoot,
-  resolveCadLineTangentFromPoint,
-  pickCadLineReferenceStartEndpoint,
-} from '../../engine/cad/cadLineConstruction';
+  cadLineSourceDirection,
+  isCadLineSourceEntity,
+  resolveCadLineOnSourcePoint,
+  resolveCadLineRayClick,
+  type CadLineSourceMode,
+} from '../../engine/cad/cadLineOnSourceResolvers';
 import type { CadLineFromEndEndpoint } from '../../engine/cad/cadLineEntityResolvers';
 import { resolveCadLinePointByStationId } from '../../engine/cad/cadLineSurveyResolvers';
 import { isCadLineSegmentValid } from '../../engine/cad/cadLineBatch';
@@ -91,6 +93,8 @@ export const createCadLineL1Session = (
   lineReferenceEnd: seed.referenceEnd ?? null,
   lineSourceEntityId: null,
   lineSourcePickPoint: null,
+  lineSourceOnPoint: null,
+  lineSourceRayDirection: null,
   lineSourceEndpoint: null,
   lineSide: null,
   lineAlignmentId: seed.alignmentId ?? null,
@@ -302,32 +306,6 @@ const resolveFromEndEndpoint = (
   const toEnd = Math.hypot(pickPoint.x - end.x, pickPoint.y - end.y);
   if (Math.abs(toStart - toEnd) <= CAD_LINE_DEGENERATE_FLOOR) return null;
   return toStart < toEnd ? 'start' : 'end';
-};
-
-const crossProduct = (
-  origin: { x: number; y: number },
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-): number => (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
-
-/**
- * True when a tangent source-body pick is collinear (to the shared degenerate
- * floor) with the from point and the circle center: the pick then carries no
- * left/right information, so the tangent branch is ambiguous. The normalized
- * cross product is the sine of the pick angle, so the test is scale-invariant.
- */
-export const isCadLineTangentSideAmbiguous = (
-  from: { x: number; y: number },
-  center: { x: number; y: number },
-  sourcePick: { x: number; y: number },
-): boolean => {
-  const ax = center.x - from.x;
-  const ay = center.y - from.y;
-  const bx = sourcePick.x - from.x;
-  const by = sourcePick.y - from.y;
-  const scale = Math.hypot(ax, ay) * Math.hypot(bx, by);
-  if (!(scale > 0)) return true;
-  return Math.abs(ax * by - ay * bx) / scale <= CAD_LINE_DEGENERATE_FLOOR;
 };
 
 export interface CadLineL1PointPickOptions {
@@ -542,105 +520,81 @@ export const handleCadLineL1PointPick = (options: CadLineL1PointPickOptions): bo
       });
       return true;
     }
-    case 'LINE_TANGENT_POINT': {
+    case 'LINE_TANGENT_POINT':
+    case 'LINE_PERP_POINT': {
+      const mode: CadLineSourceMode = current.key === 'LINE_TANGENT_POINT' ? 'tangent' : 'normal';
+      const suffix = current.key === 'LINE_TANGENT_POINT' ? 'tan' : 'perp';
       if (!current.lineSourceEntityId) {
-        const entity = sourceEntity(project, point.snapSourceEntityId);
-        if (!entity || (entity.type !== 'arc' && entity.type !== 'circle')) {
+        const picked = sourceEntity(project, point.snapSourceEntityId);
+        if (!isCadLineSourceEntity(picked)) {
           replaceSession({
             ...current,
             inputValue: '',
-            resultText: 'LINE_TANGENT_POINT: first click the arc or circle body.',
+            resultText: `${current.key}: first click a line, arc, or circle body.`,
           });
           return true;
         }
         replaceSession({
           ...current,
-          lineSourceEntityId: entity.id,
+          lineSourceEntityId: picked.id,
           lineSourcePickPoint: point,
-          inputValue: '',
-          resultText: `Tangent source ${entity.id} captured. Click the from point.`,
-        });
-        return true;
-      }
-      const entity = sourceEntity(project, current.lineSourceEntityId);
-      if (!entity || (entity.type !== 'arc' && entity.type !== 'circle')) {
-        replaceSession({ ...current, inputValue: '', resultText: 'Tangent source is no longer available.' });
-        return true;
-      }
-      const center = { x: entity.centerX, y: entity.centerY };
-      const fromPoint = withStationLabelProvenance(project, point);
-      if (
-        !current.lineSourcePickPoint ||
-        isCadLineTangentSideAmbiguous(fromPoint, center, current.lineSourcePickPoint)
-      ) {
-        replaceSession({
-          ...current,
           inputValue: '',
           resultText:
-            'LINE_TANGENT_POINT: the pick is collinear with the from point and the center, so the left/right tangent branch is ambiguous. Restart and pick the arc/circle body clearly on one side.',
-        });
-        return true;
-      }
-      const side: CadLineSide =
-        crossProduct(fromPoint, center, current.lineSourcePickPoint) > 0 ? 'left' : 'right';
-      const tangency = resolveCadLineTangentFromPoint({
-        center,
-        radius: entity.radius,
-        from: fromPoint,
-        side,
-        startAngleDeg: entity.type === 'arc' ? entity.startAngleDeg : undefined,
-        endAngleDeg: entity.type === 'arc' ? entity.endAngleDeg : undefined,
-      });
-      if (!tangency.ok) {
-        replaceSession({ ...current, inputValue: '', resultText: tangency.error.message });
-        return true;
-      }
-      commitSingleSegment(
-        options,
-        fromPoint,
-        { x: tangency.value.x, y: tangency.value.y, label: `${fromPoint.label}:tan` },
-      );
-      return true;
-    }
-    case 'LINE_PERP_POINT': {
-      if (!current.lineSourceEntityId) {
-        const entity = sourceEntity(project, point.snapSourceEntityId);
-        if (!entity || entity.type !== 'line') {
-          replaceSession({
-            ...current,
-            inputValue: '',
-            resultText: 'LINE_PERP_POINT: first click the line body.',
-          });
-          return true;
-        }
-        replaceSession({
-          ...current,
-          lineSourceEntityId: entity.id,
-          lineSourcePickPoint: point,
-          inputValue: '',
-          resultText: `Perpendicular source ${entity.id} captured. Click the from point.`,
+            mode === 'tangent'
+              ? `${current.key}: source ${picked.id} selected. Click the tangency point on the source.`
+              : `${current.key}: source ${picked.id} selected. Click the start point on the source.`,
         });
         return true;
       }
       const entity = sourceEntity(project, current.lineSourceEntityId);
-      if (!entity || entity.type !== 'line') {
-        replaceSession({ ...current, inputValue: '', resultText: 'Perpendicular source is no longer a line.' });
+      if (!isCadLineSourceEntity(entity)) {
+        replaceSession({
+          ...current,
+          inputValue: '',
+          resultText: `${current.key}: the source is no longer available.`,
+        });
         return true;
       }
-      const fromPoint = withStationLabelProvenance(project, point);
-      const foot = resolveCadLinePerpendicularFoot({
-        lineStart: { x: entity.fromX, y: entity.fromY },
-        lineEnd: { x: entity.toX, y: entity.toY },
-        from: fromPoint,
-      });
-      if (!foot.ok) {
-        replaceSession({ ...current, inputValue: '', resultText: foot.error.message });
+      if (!current.lineSourceOnPoint) {
+        const frame = resolveCadLineOnSourcePoint(entity, point);
+        if (!frame.ok) {
+          replaceSession({ ...current, inputValue: '', resultText: `${current.key}: ${frame.error.message}` });
+          return true;
+        }
+        replaceSession({
+          ...current,
+          lineSourceOnPoint: {
+            x: frame.value.point.x,
+            y: frame.value.point.y,
+            label: `${entity.id}:on`,
+          },
+          lineSourceRayDirection: { ...cadLineSourceDirection(frame.value, mode) },
+          inputValue: '',
+          resultText:
+            mode === 'tangent'
+              ? 'Start captured. Enter a signed tangent distance (+ forward / - reverse) or click the endpoint.'
+              : 'Start captured. Enter a signed distance (+ left/outward / - right/inward) or click the endpoint.',
+        });
+        return true;
+      }
+      const direction = current.lineSourceRayDirection;
+      if (!direction) {
+        replaceSession({
+          ...current,
+          inputValue: '',
+          resultText: `${current.key}: ray direction is unavailable; restart the command.`,
+        });
+        return true;
+      }
+      const ray = resolveCadLineRayClick(current.lineSourceOnPoint, direction, point);
+      if (!ray.ok) {
+        replaceSession({ ...current, inputValue: '', resultText: `${current.key}: ${ray.error.message}` });
         return true;
       }
       commitSingleSegment(
         options,
-        fromPoint,
-        { x: foot.value.x, y: foot.value.y, label: `${fromPoint.label}:perp` },
+        current.lineSourceOnPoint,
+        { x: ray.value.endpoint.x, y: ray.value.endpoint.y, label: `${entity.id}:${suffix}` },
       );
       return true;
     }
@@ -702,6 +656,27 @@ export const buildCadLineL1Preview = (
     session.key === 'LINE_STATION_OFFSET';
   if (hoverable && tip && previewPoint) {
     primitives.push(linePrimitive('preview:line-l1:hover', tip, previewPoint));
+  }
+  const sourceOnPoint = session.lineSourceOnPoint;
+  if (
+    (session.key === 'LINE_TANGENT_POINT' || session.key === 'LINE_PERP_POINT') &&
+    sourceOnPoint
+  ) {
+    primitives.push(pointPrimitive(sourceOnPoint));
+    const direction = session.lineSourceRayDirection;
+    if (direction && previewPoint) {
+      const signed =
+        (previewPoint.x - sourceOnPoint.x) * direction.x +
+        (previewPoint.y - sourceOnPoint.y) * direction.y;
+      if (Math.abs(signed) > CAD_LINE_DEGENERATE_FLOOR) {
+        primitives.push(
+          linePrimitive('preview:line-l1:ray', sourceOnPoint, {
+            x: sourceOnPoint.x + direction.x * signed,
+            y: sourceOnPoint.y + direction.y * signed,
+          }),
+        );
+      }
+    }
   }
   return primitives.length > 0 ? { kind: 'primitives', primitives } : null;
 };
@@ -802,9 +777,9 @@ export const cadLineL1HelpText = (session: CadLineL1SessionState): string => {
     case 'LINE_FROM_END':
       return 'LINE_FROM_END input: click a line/arc/open polyline near an end, then enter the extension distance. Closed polylines and circles reject.';
     case 'LINE_TANGENT_POINT':
-      return 'LINE_TANGENT_POINT input: click the arc/circle body, then the from point. The pick side selects the tangent branch.';
+      return 'LINE_TANGENT_POINT input: click a line/arc/circle body, pick the tangency point ON that source, then enter a signed tangent distance (+ forward / - reverse) or click the endpoint.';
     case 'LINE_PERP_POINT':
-      return 'LINE_PERP_POINT input: click the line body, then the from point. Creates the exact perpendicular foot segment.';
+      return 'LINE_PERP_POINT input: click a line/arc/circle body, pick the start point ON that source, then enter a signed distance (+ left/outward / - right/inward) or click the endpoint.';
   }
 };
 
@@ -842,8 +817,20 @@ export const cadLineL1Prompt = (session: CadLineL1SessionState): string => {
     case 'LINE_FROM_END':
       return `${base} ${session.lineSourceEntityId ? 'Enter the extension distance.' : 'Click a line, arc, or open polyline near an end.'}`;
     case 'LINE_TANGENT_POINT':
-      return `${base} ${session.lineSourceEntityId ? 'Click the from point.' : 'Click the arc or circle body.'}`;
+      return `${base} ${
+        !session.lineSourceEntityId
+          ? 'Select a line, arc, or circle body.'
+          : !session.lineSourceOnPoint
+            ? 'Pick the tangency point on the source.'
+            : 'Enter a signed tangent distance (+ forward / - reverse) or click the endpoint.'
+      }`;
     case 'LINE_PERP_POINT':
-      return `${base} ${session.lineSourceEntityId ? 'Click the from point.' : 'Click the line body.'}`;
+      return `${base} ${
+        !session.lineSourceEntityId
+          ? 'Select a line, arc, or circle body.'
+          : !session.lineSourceOnPoint
+            ? 'Pick the start point on the source.'
+            : 'Enter a signed distance (+ left/outward / - right/inward) or click the endpoint.'
+      }`;
   }
 };

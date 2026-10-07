@@ -19,19 +19,20 @@ bridge seam, tests, browser spec). Engine math and icons are Worker A/C.
 
 | Suite | Tests |
 |---|---|
-| `tests/cad_line_l1_parsers.test.ts` (Worker A) | 12 tests: engine parsers incl. point-range cap + safe-integer guards |
-| `tests/cad_line_l1_construction.test.ts` (Worker A) | directional/endpoint math |
+| `tests/cad_line_l1_parsers.test.ts` (Worker A) | 13 tests: engine parsers incl. strict whole-request point-range rejection (invalid/empty tokens, cap, safe-integer guards) + signed distances |
+| `tests/cad_line_l1_construction.test.ts` (Worker A) | directional/endpoint math + the retained perpendicular-foot helper |
+| `tests/cad_line_l1_on_source.test.ts` (Worker A) | 18 tests: corrected TANGENT/PERP on-source engine — line finite-segment membership/residual, arc/circle radial projection + finite sweep, source tangent/normal frames and sign law, signed ray endpoint, two-ray click tie |
 | `tests/cad_line_l1_coordinate_context.test.ts` (Worker A) | CRS fail-closed + success + no mutation |
 | `tests/cad_line_l1_survey.test.ts` (Worker A) | station/offset + side shots |
 | `tests/cad_line_l1_entity.test.ts` (Worker A) | from-end/extension edits |
 | `tests/cad_line_l1_batch.test.ts` (Worker A) | batch builder + chain draft |
-| `tests/cad_line_l1_sessions.test.ts` (Worker B) | 38 tests: keys/registry/autocomplete, per-key starter/prompt/help/availability/preview, typed submit, point-object pick verification, numeric/CAD/tp id preservation + unique free labels, invalid no-mutation, backstep (incl. ANGLE/DEFLECTION reference rewind and tangent-ambiguity refusal) |
+| `tests/cad_line_l1_sessions.test.ts` (Worker B) | 48 tests: keys/registry/autocomplete, per-key starter/prompt/help/availability/preview, typed submit, point-object pick verification, numeric/CAD/tp id preservation + unique free labels, invalid no-mutation, backstep (incl. ANGLE/DEFLECTION reference rewind), and the corrected TANGENT/PERP three-phase source→on-source→signed-ray law (line/arc/circle, sign law, endpoint click, tie, off-sweep, no mutation, one undo) |
 | `tests/cad_app_bridge.test.ts` | 19 tests incl. the CRS lifecycle pins (blank-drawing adopt, same-CRS no-clobber, different-CRS deprovenance, null-CRS deprovenance, no-context fail-closed) |
 | `tests/cad_ribbon_tool_families.test.ts` | 17-live line family + keys |
 | `tests/cad_ribbon_controls.test.tsx` | planned-row + sticky laws |
 | `tests/cad_ribbon_icon_manifest.test.tsx` | 17 icons + activation |
 
-Combined focused run: **11 files, 135/135** (`npx vitest run --config
+Combined focused run: **12 files, 161/161** (`npx vitest run --config
 vitest.agent.config.ts tests/cad_line_l1_*.test.ts tests/cad_app_bridge.test.ts
 tests/cad_ribbon_tool_families.test.ts tests/cad_ribbon_controls.test.tsx
 tests/cad_ribbon_icon_manifest.test.tsx`).
@@ -108,3 +109,23 @@ post-`U` shots still originate at the same point (and a `U`-to-empty draft keeps
 the occupy). Commit stays one atomic `LINE_CREATE_BATCH` undo entry. Pinned by
 an extended `tests/cad_line_l1_sessions.test.ts` side-shot test. Docs:
 `interaction-laws.md` (chain-backstep and SIDE_SHOT bullets).
+
+## 10. Correction pass L1 semantics (source-point-on-object)
+
+The original `LINE_TANGENT_POINT` (external point → tangency-on-arc) and
+`LINE_PERP_POINT` (external point → perpendicular-foot-on-line) were wrong. Both
+are now **source-point-on-object → ray**:
+
+| # | Change | Evidence |
+|---|---|---|
+| 1 | Corrected TANGENT/PERP: phase A source body (line/arc/circle), phase B exact start projected **ON** the source (finite segment / finite sweep / residual tolerance), phase C signed distance or endpoint click over the two source-frame rays (tangent for TANGENT, normal/outward radial for PERP). Positive = forward/LEFT/outward, negative = reverse. Compares by sign, ties fail closed. One `CadLineEntity` start-on-source, source unchanged, one `LINE_CREATE_BATCH` undo. | `tests/cad_line_l1_on_source.test.ts` (18), `tests/cad_line_l1_sessions.test.ts` corrected block, browser flow F |
+| 2 | Retired the obsolete external-point `resolveCadLineTangentFromPoint` (deleted) and stopped using `resolveCadLinePerpendicularFoot` in `LINE_PERP_POINT` (helper retained for unrelated intersection features). | `src/engine/cad/cadLineConstruction.ts`, `useSurveyCadLineL1Submit.ts` |
+| 3 | `parseCadLinePointRange` now fails the WHOLE request on any non-integer or empty token (`1-3,foo,7`, `1A,2`, `1-3.5`, `--`, `1-,2`, `1,,2`) instead of silently discarding it; whitespace tolerance, asc/desc ranges, the safe-integer guard, and the 4096 cap are preserved. | `tests/cad_line_l1_parsers.test.ts`, session no-mutation test |
+| 4 | Prompts/help/hints expose the corrected phase text and sign law; preview draws the constrained source ray toward the cursor; Escape cancels at every phase. | `interaction-laws.md`, browser flow G |
+| 5 | Neighbour contracts unchanged: `LINE_FROM_END`, `LINE_EXTENSION`, the other 14 L1 variants, `PERP_INTX`/intersection features, and the Circle B2 tangent solvers. | focused L1 + bridge + ribbon suites (161/161), browser A–G (7/7) |
+
+Browser QA after the correction: `npx playwright test cad-draw-line-l1
+--config=playwright.prod.config.ts` → **7/7 passed, zero page/console/unhandled
+errors**. Geometry evidence pins a tangent start on the source, a tangent exactly
+perpendicular to the circle radius, and a perpendicular exactly normal to the
+line source (`geometry.json`).

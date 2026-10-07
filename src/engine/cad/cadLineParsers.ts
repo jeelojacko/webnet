@@ -7,6 +7,7 @@
  */
 import { cadNormalizeAngleDeg, cadParseBearingDegrees, cadParseDmsDegrees } from './cadGeometry';
 import {
+  CAD_LINE_DEGENERATE_FLOOR,
   cadLineFail,
   cadLineOk,
   type CadLineResult,
@@ -19,6 +20,30 @@ export const parseCadLineDistance = (text: string): CadLineResult<number> => {
   const value = Number(text.trim());
   if (!Number.isFinite(value) || value <= 0) {
     return cadLineFail('DISTANCE_OUT_OF_RANGE', `Expected a positive distance, received "${text}".`);
+  }
+  return cadLineOk(value);
+};
+
+/**
+ * Parse a signed distance token for the corrected tangent/perpendicular ray
+ * law: an explicit `+`/`-` sign (or none) and a finite magnitude strictly
+ * above the canonical CAD floor. The sign selects forward/reverse along the
+ * source frame (never array order).
+ */
+export const parseCadLineSignedDistance = (text: string): CadLineResult<number> => {
+  const trimmed = text.trim();
+  if (!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+    return cadLineFail('INVALID_INPUT', `Expected a signed distance, received "${text}".`);
+  }
+  const value = Number(trimmed);
+  if (!Number.isFinite(value)) {
+    return cadLineFail('NON_FINITE', `Non-finite distance "${text}".`);
+  }
+  if (Math.abs(value) <= CAD_LINE_DEGENERATE_FLOOR) {
+    return cadLineFail(
+      'DISTANCE_OUT_OF_RANGE',
+      'Distance must be non-zero and above the CAD floor.',
+    );
   }
   return cadLineOk(value);
 };
@@ -56,10 +81,12 @@ export const CAD_LINE_POINT_RANGE_MAX_POINTS = 4096;
  *
  *   `1-3,7,10-8` => `1,2,3,7,10,9,8`
  *
- * "exact integer stationIds only": only integer tokens (or integer ranges)
- * are expanded; any other non-empty token is excluded from the chain (not a
- * station). Empty tokens are ignored. Adjacent duplicates in the resulting
- * chain reject the whole request; fewer than two effective points rejects.
+ * "exact integer stationIds only": every comma-separated token must be either
+ * an explicit non-negative integer or an inclusive integer range. Any other
+ * token — including an empty one (`1,,2`, a leading/trailing comma) and any
+ * non-integer text (`1-3,foo,7`, `1A`, `1-3.5`, `1-`, `--`) — rejects the WHOLE
+ * request. Adjacent duplicates in the resulting chain also reject the whole
+ * request; fewer than two effective points rejects.
  *
  * Safety: endpoints must be safe integers and the whole request may expand to
  * at most {@link CAD_LINE_POINT_RANGE_MAX_POINTS} points. Both are checked
@@ -70,7 +97,12 @@ export const parseCadLinePointRange = (text: string): CadLineResult<string[]> =>
   const ids: number[] = [];
   for (const rawToken of text.split(',')) {
     const token = rawToken.trim();
-    if (!token) continue;
+    if (!token) {
+      return cadLineFail(
+        'POINT_RANGE_INVALID_TOKEN',
+        `Empty point token in "${text.trim()}"; every token must be an integer or integer range.`,
+      );
+    }
     const range = /^(\d+)\s*-\s*(\d+)$/.exec(token);
     if (range) {
       const first = Number(range[1]);
@@ -108,7 +140,10 @@ export const parseCadLinePointRange = (text: string): CadLineResult<string[]> =>
       ids.push(value);
       continue;
     }
-    // Non-integer token: excluded from the expansion (never a station id).
+    return cadLineFail(
+      'POINT_RANGE_INVALID_TOKEN',
+      `Point token "${token}" is neither an integer nor an integer range.`,
+    );
   }
   if (ids.length < 2) {
     return cadLineFail(

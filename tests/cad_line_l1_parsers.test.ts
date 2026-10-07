@@ -9,6 +9,7 @@ import {
   parseCadLineNorthEast,
   parseCadLinePointRange,
   parseCadLineSideShot,
+  parseCadLineSignedDistance,
 } from '../src/engine/cad/cadLineParsers';
 
 const okValue = <T>(result: { ok: true; value: T } | { ok: false; error: { code: string } }): T => {
@@ -27,10 +28,15 @@ describe('L1 point range parser', () => {
     expect(okValue(parseCadLinePointRange(' 1 - 3 , 7 , 10-8 '))).toEqual(['1', '2', '3', '7', '10', '9', '8']);
   });
 
-  it('excludes non-integer tokens and rejects a too-short chain', () => {
-    expect(okValue(parseCadLinePointRange('1,abc,2'))).toEqual(['1', '2']);
+  it('rejects the whole request on any non-integer or empty token (no silent discard)', () => {
+    for (const text of ['1-3,foo,7', '1A,2', '1-3.5', '--', '1-,2', '1,,2', ',1,2', '1,2,']) {
+      expect(parseCadLinePointRange(text), text).toMatchObject({
+        ok: false,
+        error: { code: 'POINT_RANGE_INVALID_TOKEN' },
+      });
+    }
+    // A single valid id is still a too-short chain, not an invalid token.
     expect(parseCadLinePointRange('5')).toMatchObject({ ok: false, error: { code: 'POINT_RANGE_TOO_SHORT' } });
-    expect(parseCadLinePointRange('abc,def')).toMatchObject({ ok: false, error: { code: 'POINT_RANGE_TOO_SHORT' } });
   });
 
   it('rejects adjacent duplicates atomically', () => {
@@ -113,6 +119,20 @@ describe('L1 direction parsers', () => {
     expect(okValue(parseCadLineExtensionTarget('T10'))).toEqual({ kind: 'total', total: 10 });
     expect(okValue(parseCadLineExtensionTarget('TOTAL=10'))).toEqual({ kind: 'total', total: 10 });
     expect(parseCadLineExtensionTarget('T0')).toMatchObject({ ok: false, error: { code: 'DISTANCE_OUT_OF_RANGE' } });
+  });
+
+  it('parses signed distances with an explicit or implicit sign above the floor', () => {
+    expect(okValue(parseCadLineSignedDistance('50'))).toBe(50);
+    expect(okValue(parseCadLineSignedDistance('+50'))).toBe(50);
+    expect(okValue(parseCadLineSignedDistance('-50'))).toBe(-50);
+    expect(okValue(parseCadLineSignedDistance(' .5 '))).toBe(0.5);
+    expect(okValue(parseCadLineSignedDistance('1e3'))).toBe(1000);
+    expect(parseCadLineSignedDistance('0')).toMatchObject({ ok: false, error: { code: 'DISTANCE_OUT_OF_RANGE' } });
+    expect(parseCadLineSignedDistance('1e-12')).toMatchObject({
+      ok: false,
+      error: { code: 'DISTANCE_OUT_OF_RANGE' },
+    });
+    expect(parseCadLineSignedDistance('abc')).toMatchObject({ ok: false, error: { code: 'INVALID_INPUT' } });
   });
 });
 
