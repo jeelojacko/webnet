@@ -329,7 +329,10 @@ export type CadCommandKey =
   | 'DESIGNSURFACE'
   | 'DESIGNAPPLY'
   | 'DESIGNVOLUME'
-  | 'DESIGNPATCH';
+  | 'DESIGNPATCH'
+  // Phase C3 — polyline vertex topology (insert/delete are count-changing).
+  | 'POLYLINE_INSERT_VERTEX'
+  | 'POLYLINE_DELETE_VERTEX';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1953,6 +1956,19 @@ export type CadCommand =
       layerId?: CadLayerId;
       /** Undefined = keep the group style; null = clear. */
       styleId?: string | null;
+    }
+  // Phase C3 — polyline vertex topology (count-changing, one undo entry).
+  | {
+      key: 'POLYLINE_INSERT_VERTEX';
+      entityId: CadEntityId;
+      courseIndex: number;
+      x: number;
+      y: number;
+    }
+  | {
+      key: 'POLYLINE_DELETE_VERTEX';
+      entityId: CadEntityId;
+      vertexIndex: number;
     };
 
 export interface CadTransaction {
