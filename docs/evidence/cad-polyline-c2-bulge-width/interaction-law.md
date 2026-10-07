@@ -54,8 +54,16 @@ false, and a zero default width (`useSurveyCadCommandStarters.ts:126`).
   mutates nothing (never partially applied).
 - A valid value stores `plineDefaultWidth` and applies to **future segments
   only**; it persists across mode switches and is never changed by backstep.
-- A real point typed while in the width phase exits the phase and is consumed
-  in the underlying draw mode.
+- The width subprompt is **strictly modal**: only `U`/`UNDO`/`BACKSTEP`
+  (cancel, default unchanged) and the width grammar above are consumed. Every
+  other non-empty input — typed coordinates (`A=10,20`, `@0,10`,
+  `N45-00-00E,100`, `LABEL=1,2`), option tokens (`A`/`L`/`C`/`W`), and plain
+  text (`nope`) — is an **invalid width**: the point parser is never reached,
+  no vertex or geometry is added or removed, the default width is unchanged,
+  no model/history write occurs, and `PLINE_WIDTH_INVALID_MESSAGE` stays
+  visible in the width phase. The operator must `U`/`BACKSTEP` out before
+  choosing an option. A raw comma pair (`10,20`) is always a tapered width
+  (10 → 20), never a coordinate, while in the phase.
 
 ## 4. Close law
 

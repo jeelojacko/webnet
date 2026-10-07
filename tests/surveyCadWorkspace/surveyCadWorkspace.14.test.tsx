@@ -299,4 +299,125 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('keeps the PLINE width subprompt strictly modal for point-looking input', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+    const status = () => container.querySelector('[data-survey-cad-command-status]')?.textContent ?? '';
+    const polylineCount = () =>
+      capture.read()?.project.entities.filter((entity) => entity.type === 'polyline').length ?? 0;
+
+    await act(async () => {
+      clickButton(container, 'PLINE');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'W');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(status()).toContain('PLINE width');
+
+    for (const bad of ['A=10,20', '@0,10', 'N45-00-00E,100', 'LABEL=1,2', 'nope', 'A', 'L', 'C', 'W']) {
+      await act(async () => {
+        setTextInputValue(commandInput, bad);
+        pressKey(commandInput, 'Enter');
+      });
+      expect(status()).toContain('PLINE width invalid');
+      expect(polylineCount()).toBe(0);
+    }
+
+    // U cancels the width prompt: the phase survived every point-looking
+    // input, so nothing was parsed as a coordinate and no history was written.
+    await act(async () => {
+      setTextInputValue(commandInput, 'U');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(status()).toContain('width entry cancelled');
+
+    // One more U removes the single first vertex, dropping the prompt to the
+    // empty-draft state — proof the bad inputs never added a vertex.
+    await act(async () => {
+      setTextInputValue(commandInput, 'U');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(status()).toContain('first vertex');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('treats a raw comma pair inside the PLINE width phase as a taper, not a coordinate', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+    const status = () => container.querySelector('[data-survey-cad-command-status]')?.textContent ?? '';
+
+    await act(async () => {
+      clickButton(container, 'PLINE');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'W');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '10,20');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(status()).toContain('future segments');
+    expect(status()).not.toContain('width invalid');
+
+    await act(async () => {
+      setTextInputValue(commandInput, '30,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(status()).toContain('PLINE committed');
+    const polyline = capture.read()?.project.entities.find((entity) => entity.type === 'polyline');
+    expect(polyline?.type).toBe('polyline');
+    if (polyline?.type !== 'polyline') return;
+    expect(polyline.vertices).toEqual([{ x: 0, y: 0 }, { x: 30, y: 0 }]);
+    expect(polyline.segmentWidths).toEqual([{ startWidth: 10, endWidth: 20 }]);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
 });

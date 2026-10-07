@@ -1,6 +1,11 @@
 import { cadPointOnCircle, type CadWorldPoint } from './cadGeometry';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
-import { CAD_PARCEL_BULGE_LINE_FLOOR } from './cadParcelArcGeometry';
+import {
+  CAD_PARCEL_BULGE_LINE_FLOOR,
+  describeParcelArcCourse,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
 import { cadPolylineCourseKind, resolveCadPolylineCourses } from './cadPolylineCourses';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
@@ -66,6 +71,7 @@ export const polylineCourseArcs = (entity: CadPolylineEntity): CadArcRef[] => {
       const metrics = course.metrics!;
       return {
         sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${course.index}`,
         center: { ...metrics.center },
         radius: metrics.radius,
         startAngleDeg: metrics.startAngleDeg,
@@ -157,6 +163,7 @@ export const featureLineCourseArcs = (entity: CadFeatureLineEntity): CadArcRef[]
     )
     .map((course) => ({
       sourceEntityId: entity.id,
+      segmentId: `${entity.id}#${course.index}`,
       center: { ...course.center! },
       radius: course.radius!,
       startAngleDeg: course.startAngleDeg!,
@@ -171,6 +178,39 @@ export const featureLineCourseArcs = (entity: CadFeatureLineEntity): CadArcRef[]
 export const isFeatureLineArcCourse = (
   entry: { kind: 'line' } | { kind: 'arc'; bulge: number } | undefined,
 ): boolean => entry?.kind === 'arc' && Math.abs(entry.bulge) >= CAD_PARCEL_BULGE_LINE_FLOOR;
+
+/**
+ * Phase C2 correction: true arc-course refs of a parcel (never the chord),
+ * mirroring the polyline/feature-line course-arc seam and reusing the single
+ * parcel arc resolver. Invalid / legacy / all-line geometry yields none, so
+ * the legacy all-chord index path stays byte-identical.
+ */
+export const parcelCourseArcs = (entity: CadParcelEntity): CadArcRef[] => {
+  const geometry = entity.courseGeometry;
+  if (geometry == null || geometry.length !== entity.vertices.length) return [];
+  if (!validateParcelCourseGeometry(entity.vertices, geometry).ok) return [];
+  return geometry.flatMap((entry, index) => {
+    if (entry?.kind !== 'arc' || parcelCourseCanonicalKind(entry) !== 'arc') return [];
+    const from = entity.vertices[index];
+    const to = entity.vertices[(index + 1) % entity.vertices.length];
+    if (!from || !to) return [];
+    const metrics = describeParcelArcCourse(from, to, entry.bulge);
+    if (!metrics) return [];
+    return [
+      {
+        sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${index}`,
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.endAngleDeg,
+        startPoint: { ...from },
+        endPoint: { ...to },
+        label: `${entity.parcelName}#${index}`,
+      },
+    ];
+  });
+};
 
 export const circleRefFromEntity = (_project: CadProject, entity: CadCircleEntity): CadCircleRef => ({
   sourceEntityId: entity.id,

@@ -5,6 +5,7 @@ import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import {
   tangentSeedArcEntityIdFromPoint,
+  tangentSeedArcSegmentIdFromPoint,
   tangentSeedPointFromPoint,
 } from './useSurveyCadCommandSession';
 
@@ -21,6 +22,7 @@ const pointConstructionContext = (
   basePoint: { x: point.x, y: point.y },
   scopeSeedSegmentId: options?.includeScopeSeed ? point.snapSourceSegmentId ?? null : undefined,
   tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(point),
+  tangentSeedArcSegmentId: tangentSeedArcSegmentIdFromPoint(point),
   tangentSeedPoint: tangentSeedPointFromPoint(point),
 });
 

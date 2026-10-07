@@ -238,6 +238,7 @@ const buildParcelSnapCandidates = (
     candidates.push(
       ...buildArcEntitySnapCandidates(context, pseudo, {
         sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${index}`,
         center: { ...metrics.center },
         radius: metrics.radius,
         startAngleDeg: metrics.startAngleDeg,
@@ -299,6 +300,7 @@ const buildFeatureLineSnapCandidates = (
     candidates.push(
       ...buildArcEntitySnapCandidates(context, pseudo, {
         sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${course.index}`,
         center: { ...course.center! },
         radius: course.radius!,
         startAngleDeg,
@@ -347,6 +349,7 @@ const buildPolylineSnapCandidates = (
     candidates.push(
       ...buildArcEntitySnapCandidates(context, pseudo, {
         sourceEntityId: entity.id,
+        segmentId: `${entity.id}#${course.index}`,
         center: { ...metrics.center },
         radius: metrics.radius,
         startAngleDeg: metrics.startAngleDeg,
@@ -368,6 +371,11 @@ export const buildArcEntitySnapCandidates = (
   const { allowed, basePoint, constructionContext, hasPerpendicularStartSeed, project, worldPoint } =
     context;
   const candidates: CadSnapCandidate[] = [];
+  // Phase C2: arc-course identity rides on every arc candidate so a locked
+  // tangent/perp, Circle TTR/TTT, or Line L1 source selection can resolve the
+  // exact course of a multi-arc polyline/feature-line. Standalone arc refs
+  // leave `segmentId` absent and keep the legacy entity-only attribution.
+  const sourceSegmentId = arc.segmentId;
 
   if (allowed.has('endpoint')) {
     candidates.push(
@@ -377,6 +385,8 @@ export const buildArcEntitySnapCandidates = (
         arc.startPoint,
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-start'),
+        undefined,
+        sourceSegmentId,
       ),
       buildCandidate(
         'endpoint',
@@ -384,6 +394,8 @@ export const buildArcEntitySnapCandidates = (
         arc.endPoint,
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-end'),
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -395,6 +407,8 @@ export const buildArcEntitySnapCandidates = (
         arc.center,
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'center'),
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -406,6 +420,8 @@ export const buildArcEntitySnapCandidates = (
         cadArcMidpoint(arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
         worldPoint,
         getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-midpoint'),
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -419,6 +435,8 @@ export const buildArcEntitySnapCandidates = (
           cadPointOnCircle(arc.center, arc.radius, angleDeg),
           worldPoint,
           getCadEntitySubpartDisplayLabel(project, entity.id, 'quadrant', { quadrantAngleDeg: angleDeg }),
+          undefined,
+          sourceSegmentId,
         ),
       );
     });
@@ -431,6 +449,8 @@ export const buildArcEntitySnapCandidates = (
         cadClosestPointOnArc(worldPoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
         worldPoint,
         arc.label,
+        undefined,
+        sourceSegmentId,
       ),
     );
   }
@@ -458,6 +478,7 @@ export const buildArcEntitySnapCandidates = (
           [basePoint, perpendicularPoint],
           [arc.center, perpendicularPoint],
         ],
+        sourceSegmentId,
       ),
     );
   }
@@ -484,7 +505,7 @@ export const buildArcEntitySnapCandidates = (
             [basePoint, tangentPoint],
             [arc.center, tangentPoint],
           ],
-          undefined,
+          sourceSegmentId,
           tangentLineDistance,
           tangentPoint,
         ),

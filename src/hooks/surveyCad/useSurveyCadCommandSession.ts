@@ -27,6 +27,17 @@ export const tangentSeedArcEntityIdFromPoint = (point: CommandPoint | null): str
   return point.snapSourceEntityId;
 };
 
+/**
+ * Phase C2: the exact course id of a tangent-seed arc snap, when the source
+ * is a multi-course entity. Null for standalone arcs (legacy attribution).
+ */
+export const tangentSeedArcSegmentIdFromPoint = (
+  point: CommandPoint | null,
+): string | null => {
+  if (tangentSeedArcEntityIdFromPoint(point) == null) return null;
+  return point?.snapSourceSegmentId ?? null;
+};
+
 export const tangentSeedPointFromPoint = (
   point: CommandPoint | null,
 ): { x: number; y: number } | null =>

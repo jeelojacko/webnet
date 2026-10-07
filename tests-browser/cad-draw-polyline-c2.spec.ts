@@ -448,6 +448,16 @@ test('G: invalid width and degenerate arc keep the draft alive with no entity', 
   await type(page, '-3');
   await expect(prompt(page)).toContainText(/width invalid/i, { timeout: 10000 });
   expect(await ent(page)).toBe(0);
+  // Strict-modal WIDTH: point-looking text and option tokens stay width
+  // errors (no vertex, no phase exit), then a raw pair is a valid taper.
+  for (const bad of ['A=10,20', '@0,10', 'N45-00-00E,100', 'LABEL=1,2', 'nope', 'A', 'L', 'C', 'W']) {
+    await type(page, bad);
+    await expect(prompt(page)).toContainText(/width invalid/i, { timeout: 10000 });
+    expect(await ent(page)).toBe(0);
+  }
+  await type(page, '10,20');
+  await expect(prompt(page)).toContainText(/future segments/i, { timeout: 10000 });
+  expect(await ent(page)).toBe(0);
   await esc(page);
   await start(page, 'PLINE');
   await type(page, 'A');
@@ -459,6 +469,58 @@ test('G: invalid width and degenerate arc keep the draft alive with no entity', 
   await esc(page);
   expect(await ent(page)).toBe(0);
   await shot(page, 'G-guards');
+  writeEvidence();
+  await assertClean(page, errors);
+});
+
+test('H: two arc courses keep distinct course identity in geometry, DOM, and snaps', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  await boot(page, errors);
+  // Drawn above the spike linework but inside the default view so the
+  // nearest snap at a course sample can only be this polyline.
+  await start(page, 'PLINE');
+  await type(page, '40,8');
+  await type(page, 'A');
+  await type(page, '45,2');
+  await type(page, '50,8');
+  await type(page, '55,2');
+  await type(page, '60,8');
+  await type(page, '');
+  await expect(prompt(page)).toContainText(/PLINE committed/i, { timeout: 10000 });
+  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(1);
+  const geom = polylines((await saveDrawing(page)).entities);
+  expect(geom).toHaveLength(1);
+  expect(geom[0]!.vertices).toHaveLength(3);
+  expect(geom[0]!.segmentGeometry.map((entry: { kind: string }) => entry.kind)).toEqual([
+    'arc',
+    'arc',
+  ]);
+  const id = geom[0]!.id as string;
+  // Both courses are independently hittable/identified in the DOM.
+  await expect(page.locator(`[data-survey-cad-segment-id="${id}#0"]`)).toHaveCount(1, { timeout: 10000 });
+  await expect(page.locator(`[data-survey-cad-segment-id="${id}#1"]`)).toHaveCount(1, { timeout: 10000 });
+  await page.getByRole('tab', { name: 'Home' }).click({ force: true });
+  for (const index of [0, 1]) {
+    const sample = await page
+      .locator(`path[data-survey-cad-render-entity-id="${id}"]`)
+      .nth(index)
+      .evaluate((el) => {
+        const path = el as SVGPathElement;
+        const point = path.getPointAtLength(path.getTotalLength() * 0.25);
+        const ctm = path.getScreenCTM();
+        const screen = ctm ? point.matrixTransform(ctm) : point;
+        return { x: screen.x, y: screen.y };
+      });
+    await page.mouse.click(sample.x, sample.y);
+    await expect.poll(() => selCount(page), { timeout: 10000 }).toBe(1);
+    await page.locator('[data-cad-command="SHELL_CLEAR_SELECTION"]').click({ force: true });
+    await expect.poll(() => selCount(page), { timeout: 10000 }).toBe(0);
+  }
+  evidence.flowH = {
+    segmentGeometry: geom[0]!.segmentGeometry,
+    vertices: geom[0]!.vertices,
+  };
   writeEvidence();
   await assertClean(page, errors);
 });

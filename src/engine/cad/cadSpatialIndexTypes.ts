@@ -42,6 +42,13 @@ export interface CadCircleRef {
 
 export interface CadArcRef {
   sourceEntityId: string;
+  /**
+   * Phase C2: exact polyline/feature-line course identity (`${entity.id}#i`)
+   * when this arc is one course of a multi-course entity. Standalone
+   * `CadArcEntity` refs leave it absent (legacy shape); consumers must fall
+   * back to `sourceEntityId` only when no segment id is supplied.
+   */
+  segmentId?: string;
   center: CadWorldPoint;
   radius: number;
   startAngleDeg: number;

@@ -1,13 +1,13 @@
 # Phase C2 — browser QA
 
-Spec: `tests-browser/cad-draw-polyline-c2.spec.ts` (flows A–G). Production
+Spec: `tests-browser/cad-draw-polyline-c2.spec.ts` (flows A–H). Production
 build, headless Chromium, blank disposable drawings:
 
 ```
 npx playwright test cad-draw-polyline-c2 --config=playwright.prod.config.ts
 ```
 
-Result: **7/7 green**, zero page errors, zero console errors, zero unhandled
+Result: **8/8 green**, zero page errors, zero console errors, zero unhandled
 rejections across all flows (each flow asserts `assertClean`). Screenshots and
 `geometry.json` were written by the spec.
 
@@ -52,10 +52,22 @@ rejections across all flows (each flow asserts `assertClean`). Screenshots and
   arrays verbatim; the existing DXF export model exports the polyline (id
   present in `output.polylines`, absent from `omittedEntityIds`) — the C2 shape
   survives both seams. Recorded in `geometry.json` (no PNG).
-- **G — guards.** An invalid width (`-3`) shows `PLINE width invalid…`, stays
-  in the draft, and creates no entity; Escape cancels. A second draft with a
-  collinear arc triple shows `PLINE arc rejected…`, creates no entity, and
-  Escape leaves zero entities.
+- **G — guards, strict-modal width.** An invalid width (`-3`) shows
+  `PLINE width invalid…`, stays in the draft, and creates no entity. While the
+  width phase is open, point-looking text (`A=10,20`, `@0,10`,
+  `N45-00-00E,100`, `LABEL=1,2`), plain text (`nope`), and option tokens
+  (`A`/`L`/`C`/`W`) all stay width errors with zero entities, and a raw pair
+  (`10,20`) is accepted as a taper (`future segments`) — never a coordinate or
+  an option escape. Escape cancels. A second draft with a collinear arc triple
+  shows `PLINE arc rejected…`, creates no entity, and Escape leaves zero
+  entities.
+- **H — multi-arc course identity.** A PLINE draft with two arc courses
+  commits one 3-vertex polyline whose `segmentGeometry` is `['arc','arc']`
+  with distinct bulges; both `${id}#0` and `${id}#1` render as independently
+  hittable course nodes, and clicking each rendered arc selects the polyline
+  (`geometry.json` `flowH`). This proves course identity reaches the display/
+  hit layer that feeds snaps (exact snap/lock attribution is covered by the
+  Node consumer suite).
 
 ## Screenshots (existing PNGs, referenced not moved)
 
@@ -71,6 +83,7 @@ These were written by the spec under **`docs/evidence/cad-polyline-c2/`**
 | E | `E-backstep-aligned.png` |
 | F | (none — `geometry.json` only) |
 | G | `G-guards.png` |
+| H | (none — `geometry.json` only) |
 
 **Directory-name variance (intentional):** the evidence prose lives in
 `docs/evidence/cad-polyline-c2-bulge-width/` while the PNGs/`geometry.json`
@@ -93,6 +106,6 @@ command plus off-chord midpoint) rather than a straight chord.
 
 ## Zero-errors statement
 
-All seven flows assert zero page errors, zero console errors, and zero
+All eight flows assert zero page errors, zero console errors, and zero
 unhandled promise rejections. Status: executed and green — production build,
-headless Chromium, `tests-browser/cad-draw-polyline-c2.spec.ts` 7/7 flows A–G.
+headless Chromium, `tests-browser/cad-draw-polyline-c2.spec.ts` 8/8 flows A–H.

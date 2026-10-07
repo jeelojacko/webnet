@@ -25,6 +25,7 @@ import {
   PLINE_ARC_CLOSE_NEEDS_THROUGH_MESSAGE,
   PLINE_LINE_WITH_PENDING_MESSAGE,
   PLINE_WIDTH_INVALID_MESSAGE,
+  PLINE_WIDTH_CANCELLED_MESSAGE,
   type PlineCommandSession,
 } from '../src/hooks/surveyCad/useSurveyCadPlineSession';
 
@@ -358,14 +359,58 @@ describe('C2 WIDTH: default for future segments only', () => {
     expect(api.historyWrites()).toBe(0);
   });
 
-  it('typed coordinates still work inside the width phase and exit it', () => {
+  it('is strictly modal: point text and A/L/C/W stay width errors, never a vertex or option', () => {
     const api = harness();
     let session = pline(api.submit(fresh(), 'A=0,0'));
     session = pline(api.submit(session, 'W'));
-    session = pline(api.submit(session, 'B=10,0'));
-    expect(plineWidthPhaseOf(session)).toBe(false);
-    expect(session.points.map((point) => point.label)).toEqual(['A', 'B']);
-    expect(plineDefaultWidthOf(session)).toEqual({ startWidth: 0, endWidth: 0 });
+    expect(plineWidthPhaseOf(session)).toBe(true);
+    const before = {
+      points: session.points.map((point) => point.label),
+      geometry: plineGeometryOf(session).length,
+      widths: plineWidthsOf(session).length,
+      defaultWidth: plineDefaultWidthOf(session),
+    };
+    // Every non-empty input other than U and the width grammar is an invalid
+    // width: no point parse, no option escape, no vertex/metadata/history.
+    for (const bad of ['A=10,20', '@0,10', 'N45-00-00E,100', 'LABEL=1,2', 'nope', 'A', 'L', 'C', 'W']) {
+      const rejected = pline(api.submit(session, bad));
+      expect(plineWidthPhaseOf(rejected)).toBe(true);
+      expect(rejected.points.map((point) => point.label)).toEqual(before.points);
+      expect(rejected.points).toHaveLength(1);
+      expect(plineGeometryOf(rejected)).toHaveLength(before.geometry);
+      expect(plineWidthsOf(rejected)).toHaveLength(before.widths);
+      expect(plineDefaultWidthOf(rejected)).toEqual(before.defaultWidth);
+      expect(rejected.resultText).toBe(PLINE_WIDTH_INVALID_MESSAGE);
+      expect(rejected.inputValue).toBe('');
+      session = rejected;
+    }
+    expect(api.historyWrites()).toBe(0);
+    // A raw comma pair is a TAPER (10 → 20), never a coordinate in WIDTH mode.
+    const tapered = pline(api.submit(session, '10,20'));
+    expect(plineWidthPhaseOf(tapered)).toBe(false);
+    expect(plineDefaultWidthOf(tapered)).toEqual({ startWidth: 10, endWidth: 20 });
+    expect(tapered.points.map((point) => point.label)).toEqual(before.points);
+    expect(api.historyWrites()).toBe(0);
+  });
+
+  it('keeps U as the width-cancel and re-routes options only after leaving the phase', () => {
+    const api = harness();
+    let session = pline(api.submit(fresh(), 'A=0,0'));
+    session = pline(api.submit(session, 'W'));
+    // Option tokens do not escape: they stay width errors until U.
+    for (const token of ['A', 'L', 'C', 'W']) {
+      session = pline(api.submit(session, token));
+      expect(plineWidthPhaseOf(session)).toBe(true);
+      expect(session.resultText).toBe(PLINE_WIDTH_INVALID_MESSAGE);
+    }
+    const cancelled = pline(api.submit(session, 'U'));
+    expect(plineWidthPhaseOf(cancelled)).toBe(false);
+    expect(cancelled.resultText).toBe(PLINE_WIDTH_CANCELLED_MESSAGE);
+    expect(cancelled.points.map((point) => point.label)).toEqual(['A']);
+    // Now the option token is honoured in the underlying draw mode.
+    const arcMode = pline(api.submit(cancelled, 'A'));
+    expect(plineDrawModeOf(arcMode)).toBe('arc');
+    expect(arcMode.points.map((point) => point.label)).toEqual(['A']);
     expect(api.historyWrites()).toBe(0);
   });
 });

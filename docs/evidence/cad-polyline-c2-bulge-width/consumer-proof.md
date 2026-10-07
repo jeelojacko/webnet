@@ -45,6 +45,40 @@ polylines with neither metadata field keep their byte-identical C1 path.
   `cadPolylineVerticesWrapToFirst(...)` is true, while a legacy ring that
   repeats first keeps its stored edges untouched. (`dxfAnnotationExport.ts:156`.)
 
+## Arc-course identity and exact locking (C2 correction)
+
+A polyline/feature-line arc course carries the same course id the renderer
+and line courses use (`${entity.id}#i`), so multi-arc entities never lose
+course identity across the snap/lock/tangent-source path:
+
+- `CadArcRef` gains an optional `segmentId` (`cadSpatialIndexTypes.ts:35`);
+  `polylineCourseArcs`/`featureLineCourseArcs`
+  (`cadSpatialEntityRefs.ts:60`, `:147`) and the parcel/feature-line/polyline
+  pseudo-arc refs (`cadSpatialEntityCandidates.ts:239`, `:300`, `:348`) set it.
+  Standalone `CadArcEntity` refs stay absent (legacy shape).
+- `buildArcEntitySnapCandidates`
+  (`cadSpatialEntityCandidates.ts:363`) passes `arc.segmentId` as
+  `sourceSegmentId` on every arc candidate (endpoint/center/arc-midpoint/
+  quadrant/nearest/perpendicular/tangent). `CadSnapLock` already carried the
+  field, so `useSurveyCadSnapping` preserves it.
+- `cadSpatialIndex` resolves a segment-addressed locked arc by
+  `sourceSegmentId` first (`arcBySegmentId` / exact search) and only falls
+  back to `sourceEntityId` for legacy/standalone arcs; a tangent-seed arc
+  seed (`tangentSeedArcSegmentId`) resolves the exact course too
+  (`cadSpatialIndex.ts:529`, `:665`).
+- Parcel arc courses join that same true-arc identity: `parcelCourseArcs`
+  (`cadSpatialEntityRefs.ts:188`) resolves each bulged course with its
+  `${id}#i` id, and the parcel branch of `buildCadSpatialIndex`
+  (`cadSpatialIndex.ts:326`) indexes line courses as chord segments and arc
+  courses as true arcs (never the chord). A line seeded from a parcel arc
+  snap therefore seeds an ARC, and a locked tangent/perpendicular on a parcel
+  arc resolves the true arc geometry instead of the chord. Legacy/all-line/
+  invalid parcel geometry keeps the all-chord path unchanged.
+- `resolveCadTangentSource` (`cadGeometryCircleTangentSolvers.ts:806`) keeps
+  the exact polyline course when `snapSourceSegmentId` is supplied, and the
+  arc tangent primitive carries `segmentId` so
+  `isSameCadTangentPrimitive` distinguishes two courses of one polyline.
+
 ## Explicitly not in this pass
 
 Vertex insert/delete, Z, line chaining, right-click finish, command repeat,

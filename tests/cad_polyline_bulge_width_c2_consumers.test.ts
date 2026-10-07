@@ -13,7 +13,19 @@ import { buildCadSpatialIndex } from '../src/engine/cad/cadSpatialIndex';
 import { buildCadPropertiesPanelState } from '../src/engine/cad/cadProperties';
 import { applyCadGripEdit, buildCadGripHandles } from '../src/engine/cad/cadTransactionsEntityTransforms';
 import { cadIntersectLineLikeEntities } from '../src/engine/cad/cadCogoEntityIntersections';
-import { resolveCadTangentSource } from '../src/engine/cad/cadGeometryCircleTangentSolvers';
+import {
+  isSameCadTangentPrimitive,
+  resolveCadTangentSource,
+} from '../src/engine/cad/cadGeometryCircleTangentSolvers';
+import {
+  cadClosestPointOnArc,
+  cadTangentPointsFromExternalPointToArc,
+} from '../src/engine/cad/cadGeometry';
+import {
+  featureLineCourseArcs,
+  polylineCourseArcs,
+  polylineCourseSegments,
+} from '../src/engine/cad/cadSpatialEntityRefs';
 import {
   classifyTransform,
   reflectionAboutLine,
@@ -41,8 +53,11 @@ import {
 import { buildBlockReferenceSnapCandidates } from '../src/engine/cad/cadSpatialBlockSnaps';
 import { isTrimmableEntity, buildTrimSegments } from '../src/engine/cad/cadTransactionsTrimCommon';
 import type {
+  CadArcEntity,
   CadBlockDefinition,
   CadBlockReferenceEntity,
+  CadFeatureLineEntity,
+  CadParcelEntity,
   CadPolylineEntity,
   CadPolylineSegmentGeometry,
   CadPolylineSegmentWidth,
@@ -342,6 +357,370 @@ describe('C2 spatial: true geometry refs, snaps, intersections', () => {
     expect(closedHit).not.toBeNull();
     expect(closedHit!.point.x).toBeCloseTo(5, 6);
     expect(closedHit!.point.y).toBeCloseTo(5, 6);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// D2) C2 arc-course identity (multi-arc attribution + locking)
+// ---------------------------------------------------------------------------
+
+describe('C2 arc-course identity: multi-arc attribution, locks, and legacy fallback', () => {
+  const multiArc = (): CadPolylineEntity =>
+    polyline([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }], {
+      segmentGeometry: [arc(SEMI), arc(SEMI)],
+    });
+  const metricsFor = (
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    bulge: number,
+  ) => describeParcelArcCourse(from, to, bulge)!;
+  const courseRange = (course: { startAngleDeg: number; signedSweepDeg: number }) => ({
+    start: course.startAngleDeg,
+    end: course.startAngleDeg + course.signedSweepDeg,
+  });
+  const parcelArc = (): CadParcelEntity => ({
+    id: 'c2-parcel-arc-construction',
+    type: 'parcel',
+    layerId: 'general',
+    visible: true,
+    locked: false,
+    parcelName: 'LOT 1',
+    vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+    vertexLabels: ['A', 'B', 'C'],
+    courseGeometry: [{ kind: 'arc', bulge: SEMI }, { kind: 'line' }, { kind: 'line' }],
+  });
+  const parcelArcIndex = () => {
+    const parcel = parcelArc();
+    const index = buildCadSpatialIndex(
+      appendCadProjectEntities(projectWith(polyline([{ x: 100, y: 100 }, { x: 101, y: 100 }])), [parcel]),
+    );
+    return { parcel, index, metrics: metricsFor({ x: 0, y: 0 }, { x: 10, y: 0 }, SEMI) };
+  };
+
+  it('addresses each arc course with its own `${id}#i` id (line ids unchanged)', () => {
+    const entity = multiArc();
+    expect(polylineCourseArcs(entity).map((ref) => ref.segmentId)).toEqual([
+      `${entity.id}#0`,
+      `${entity.id}#1`,
+    ]);
+    const mixed = polyline([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }], {
+      segmentGeometry: [line('a'), arc(SEMI)],
+    });
+    expect(polylineCourseSegments(mixed).map((ref) => ref.segmentId)).toEqual([`${mixed.id}#0`]);
+    expect(polylineCourseArcs(mixed).map((ref) => ref.segmentId)).toEqual([`${mixed.id}#1`]);
+  });
+
+  it('nearest / arc-midpoint / tangent / perpendicular carry the exact second-course id', () => {
+    const entity = multiArc();
+    const index = buildCadSpatialIndex(projectWith(entity));
+    const m0 = metricsFor({ x: 0, y: 0 }, { x: 10, y: 0 }, SEMI);
+    const m1 = metricsFor({ x: 10, y: 0 }, { x: 20, y: 0 }, SEMI);
+    const n0 = index.queryNearestSnap({ x: m0.midpoint.x, y: m0.midpoint.y + 0.2 }, 2, ['nearest']);
+    expect(n0?.sourceSegmentId).toBe(`${entity.id}#0`);
+    const n1 = index.queryNearestSnap({ x: m1.midpoint.x, y: m1.midpoint.y + 0.2 }, 2, ['nearest']);
+    expect(n1?.sourceSegmentId).toBe(`${entity.id}#1`);
+    const mid = index.queryNearestSnap({ x: m1.midpoint.x, y: m1.midpoint.y }, 2, ['arc-midpoint']);
+    expect(mid?.sourceSegmentId).toBe(`${entity.id}#1`);
+
+    const basePoint = { x: m1.center.x, y: m1.center.y - 12 };
+    const context = { active: true, basePoint } as unknown as Parameters<
+      typeof index.querySnapCandidates
+    >[3];
+    const range = courseRange(m1);
+    const perp = index.queryNearestSnap(
+      cadClosestPointOnArc(basePoint, m1.center, m1.radius, range.start, range.end),
+      3,
+      ['perpendicular'],
+      context,
+    );
+    expect(perp?.sourceSegmentId).toBe(`${entity.id}#1`);
+    const tangentPoint = cadTangentPointsFromExternalPointToArc(
+      basePoint,
+      m1.center,
+      m1.radius,
+      range.start,
+      range.end,
+    )[0]!;
+    const tangent = index.queryNearestSnap(tangentPoint, 3, ['tangent'], context);
+    expect(tangent?.sourceSegmentId).toBe(`${entity.id}#1`);
+  });
+
+  it('locks tangent/perp on the SECOND arc and never falls back to the first', () => {
+    const entity = multiArc();
+    const index = buildCadSpatialIndex(projectWith(entity));
+    const m0 = metricsFor({ x: 0, y: 0 }, { x: 10, y: 0 }, SEMI);
+    const m1 = metricsFor({ x: 10, y: 0 }, { x: 20, y: 0 }, SEMI);
+    const basePoint = { x: m1.center.x, y: m1.center.y - 12 };
+    const range = courseRange(m1);
+    const pointAlong = (target: { x: number; y: number }, t: number) => ({
+      x: basePoint.x + t * (target.x - basePoint.x),
+      y: basePoint.y + t * (target.y - basePoint.y),
+    });
+
+    const tangentGuide = cadTangentPointsFromExternalPointToArc(
+      basePoint,
+      m1.center,
+      m1.radius,
+      range.start,
+      range.end,
+    )[0]!;
+    const tangentQuery = pointAlong(tangentGuide, 0.5);
+    const lockedTangent = index
+      .querySnapCandidates(
+        tangentQuery,
+        3,
+        ['tangent', 'perpendicular'],
+        {
+          active: true,
+          basePoint,
+          lockedSnap: {
+            kind: 'tangent',
+            sourceEntityId: entity.id,
+            sourceSegmentId: `${entity.id}#1`,
+            guidePoint: tangentGuide,
+          },
+        },
+      )
+      .find((candidate) => candidate.kind === 'tangent' && candidate.distance <= 1e-6);
+    expect(lockedTangent).toBeDefined();
+    expect(lockedTangent!.sourceSegmentId).toBe(`${entity.id}#1`);
+    // The lock guide uses arc #1's center, never the arc #0 first-match.
+    expect(lockedTangent!.guideSegments?.[1]?.[0]).toEqual(m1.center);
+    expect(lockedTangent!.guideSegments?.[1]?.[0]).not.toEqual(m0.center);
+
+    const perpendicularGuide = cadClosestPointOnArc(
+      basePoint,
+      m1.center,
+      m1.radius,
+      range.start,
+      range.end,
+    );
+    const lockedPerp = index
+      .querySnapCandidates(
+        pointAlong(perpendicularGuide, 0.5),
+        3,
+        ['perpendicular'],
+        {
+          active: true,
+          basePoint,
+          lockedSnap: {
+            kind: 'perpendicular',
+            sourceEntityId: entity.id,
+            sourceSegmentId: `${entity.id}#1`,
+            guidePoint: perpendicularGuide,
+          },
+        },
+      )
+      .find((candidate) => candidate.kind === 'perpendicular' && candidate.distance <= 1e-6);
+    expect(lockedPerp).toBeDefined();
+    expect(lockedPerp!.guideSegments?.[1]?.[0]).toEqual(m1.center);
+  });
+
+  it('resolves Circle/L1 tangent sources to the exact course and keeps them distinct', () => {
+    const entity = multiArc();
+    const project = projectWith(entity);
+    const m1 = metricsFor({ x: 10, y: 0 }, { x: 20, y: 0 }, SEMI);
+    const range = courseRange(m1);
+    const pick = cadClosestPointOnArc(
+      { x: m1.midpoint.x, y: m1.midpoint.y + 1 },
+      m1.center,
+      m1.radius,
+      range.start,
+      range.end,
+    );
+    const second = resolveCadTangentSource(project, entity.id, pick, `${entity.id}#1`);
+    expect(second?.primitive.kind).toBe('arc');
+    if (second?.primitive.kind !== 'arc') return;
+    expect(second.primitive.segmentId).toBe(`${entity.id}#1`);
+    expect(second.primitive.center.x).toBeCloseTo(m1.center.x, 9);
+    expect(second.primitive.center.y).toBeCloseTo(m1.center.y, 9);
+    const first = resolveCadTangentSource(project, entity.id, pick, `${entity.id}#0`);
+    expect(first?.primitive.kind).toBe('arc');
+    if (first?.primitive.kind !== 'arc') return;
+    expect(first.primitive.segmentId).toBe(`${entity.id}#0`);
+    expect(isSameCadTangentPrimitive(second.primitive, first.primitive)).toBe(false);
+    expect(isSameCadTangentPrimitive(second.primitive, second.primitive)).toBe(true);
+  });
+
+  it('attaches the same course id to parcel and feature-line arc courses', () => {
+    const parcel: CadParcelEntity = {
+      id: 'c2-parcel-arc',
+      type: 'parcel',
+      layerId: 'general',
+      visible: true,
+      locked: false,
+      parcelName: 'LOT 1',
+      vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+      vertexLabels: ['A', 'B', 'C'],
+      courseGeometry: [{ kind: 'arc', bulge: SEMI }, { kind: 'line' }, { kind: 'line' }],
+    };
+    const index = buildCadSpatialIndex(
+      appendCadProjectEntities(projectWith(polyline([{ x: 100, y: 100 }, { x: 101, y: 100 }])), [parcel]),
+    );
+    const m = metricsFor({ x: 0, y: 0 }, { x: 10, y: 0 }, SEMI);
+    const snap = index.queryNearestSnap({ x: m.midpoint.x, y: m.midpoint.y + 0.2 }, 2, ['nearest']);
+    expect(snap?.sourceSegmentId).toBe(`${parcel.id}#0`);
+
+    const featureLine: CadFeatureLineEntity = {
+      id: 'c2-feature-arc',
+      type: 'feature-line',
+      layerId: 'general',
+      visible: true,
+      locked: false,
+      vertices: [
+        { id: 'f1', x: 0, y: 0, z: 0 },
+        { id: 'f2', x: 10, y: 0, z: 0 },
+      ],
+      segmentGeometry: [{ kind: 'arc', bulge: SEMI }],
+    };
+    expect(featureLineCourseArcs(featureLine).map((ref) => ref.segmentId)).toEqual([
+      `${featureLine.id}#0`,
+    ]);
+  });
+
+  it('seeds from a parcel arc snap as an ARC course, never the chord', () => {
+    const { parcel, index, metrics } = parcelArcIndex();
+    const nearest = index.queryNearestSnap(
+      { x: metrics.midpoint.x, y: metrics.midpoint.y + 0.2 },
+      2,
+      ['nearest'],
+    );
+    expect(nearest?.sourceSegmentId).toBe(`${parcel.id}#0`);
+
+    // Reproduce the LINE seed context built from that snapped point: the same
+    // `${id}#i` identity feeds both the scope seed and the tangent-arc seed.
+    const seed = nearest!;
+    const context = {
+      active: true,
+      basePoint: { x: seed.x, y: seed.y },
+      scopeSeedSegmentId: seed.sourceSegmentId,
+      tangentSeedArcEntityId: seed.sourceEntityId,
+      tangentSeedArcSegmentId: seed.sourceSegmentId,
+      tangentSeedPoint: { x: seed.x, y: seed.y },
+    };
+    const candidates = index.querySnapCandidates(
+      { x: seed.x, y: seed.y },
+      30,
+      ['perpendicular'],
+      context,
+    );
+    const startPerp = candidates.find((candidate) => candidate.kind === 'perpendicular');
+    expect(startPerp).toBeDefined();
+    // The arc seed's guide references the arc CENTER; a chord seed would have
+    // referenced the chord endpoints instead.
+    expect(startPerp!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(metrics.center.x, 9);
+    expect(startPerp!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(metrics.center.y, 9);
+  });
+
+  it('resolves a locked tangent on a parcel arc course to the arc, never null/chord', () => {
+    const { parcel, index, metrics } = parcelArcIndex();
+    const basePoint = { x: metrics.center.x, y: metrics.center.y - 12 };
+    const tangentGuide = cadTangentPointsFromExternalPointToArc(
+      basePoint,
+      metrics.center,
+      metrics.radius,
+      metrics.startAngleDeg,
+      metrics.endAngleDeg,
+    )[0]!;
+    const query = {
+      x: (basePoint.x + tangentGuide.x) / 2,
+      y: (basePoint.y + tangentGuide.y) / 2,
+    };
+    // `allowed: []` disables the ordinary entity-candidate pass, so the ONLY
+    // candidate that can survive is the locked-construction resolution.
+    const locked = index
+      .querySnapCandidates(query, 3, [], {
+        active: true,
+        basePoint,
+        lockedSnap: {
+          kind: 'tangent',
+          sourceEntityId: parcel.id,
+          sourceSegmentId: `${parcel.id}#0`,
+          guidePoint: tangentGuide,
+        },
+      })
+      .find((candidate) => candidate.kind === 'tangent' && candidate.sourceSegmentId === `${parcel.id}#0`);
+    expect(locked).toBeDefined();
+    expect(locked!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(metrics.center.x, 9);
+    expect(locked!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(metrics.center.y, 9);
+  });
+
+  it('uses parcel arc geometry for a locked perpendicular, never the chord', () => {
+    const { parcel, index, metrics } = parcelArcIndex();
+    const basePoint = { x: metrics.center.x, y: metrics.center.y - 12 };
+    const perpGuide = cadClosestPointOnArc(
+      basePoint,
+      metrics.center,
+      metrics.radius,
+      metrics.startAngleDeg,
+      metrics.endAngleDeg,
+    );
+    const query = {
+      x: (basePoint.x + perpGuide.x) / 2,
+      y: (basePoint.y + perpGuide.y) / 2,
+    };
+    // `allowed: []` isolates the locked construction path: no entity
+    // candidate can mask a chord-based lock fallback.
+    const locked = index
+      .querySnapCandidates(query, 3, [], {
+        active: true,
+        basePoint,
+        lockedSnap: {
+          kind: 'perpendicular',
+          sourceEntityId: parcel.id,
+          sourceSegmentId: `${parcel.id}#0`,
+          guidePoint: perpGuide,
+        },
+      })
+      .find((candidate) => candidate.kind === 'perpendicular');
+    expect(locked).toBeDefined();
+    // Arc resolution puts the arc center in the guide; a chord fallback would
+    // have used the chord endpoints.
+    expect(locked!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(metrics.center.x, 9);
+    expect(locked!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(metrics.center.y, 9);
+    expect(locked!.guideSegments?.[1]?.[1]).toEqual(basePoint);
+  });
+
+  it('leaves standalone CadArcEntity attribution legacy (no segment id, entity fallback lock)', () => {
+    const standalone: CadArcEntity = {
+      id: 'c2-standalone-arc',
+      type: 'arc',
+      layerId: 'general',
+      visible: true,
+      locked: false,
+      centerX: 100,
+      centerY: 0,
+      radius: 10,
+      startAngleDeg: 0,
+      endAngleDeg: 180,
+    };
+    const index = buildCadSpatialIndex(appendCadProjectEntities(projectWith(multiArc()), [standalone]));
+    const nearest = index.queryNearestSnap({ x: 90, y: 5.2 }, 2, ['nearest']);
+    expect(nearest?.sourceEntityId).toBe(standalone.id);
+    expect(nearest?.sourceSegmentId).toBeUndefined();
+    const basePoint = { x: 100, y: 14 };
+    const guidePoint = cadClosestPointOnArc(basePoint, { x: 100, y: 0 }, 10, 0, 180);
+    const locked = index.querySnapCandidates(
+      guidePoint,
+      3,
+      ['perpendicular'],
+      {
+        active: true,
+        basePoint,
+        lockedSnap: { kind: 'perpendicular', sourceEntityId: standalone.id, guidePoint },
+      },
+    );
+    expect(locked.some((candidate) => candidate.kind === 'perpendicular' && candidate.sourceEntityId === standalone.id)).toBe(true);
+  });
+
+  it('keeps coincident shared-endpoint dedupe priority (no multi-owner payloads)', () => {
+    const entity = multiArc();
+    const index = buildCadSpatialIndex(projectWith(entity));
+    const atShared = index
+      .querySnapCandidates({ x: 10, y: 0 }, 2, ['endpoint'])
+      .filter((candidate) => Math.hypot(candidate.x - 10, candidate.y) < 1e-9);
+    expect(atShared).toHaveLength(1);
+    expect(atShared[0]!.sourceSegmentId).toBe(`${entity.id}#0`);
   });
 });
 

@@ -115,5 +115,31 @@
       }
     ],
     "dxfExported": true
+  },
+  "flowH": {
+    "segmentGeometry": [
+      {
+        "kind": "arc",
+        "bulge": 1.1999999999999997
+      },
+      {
+        "kind": "arc",
+        "bulge": 1.1999999999999997
+      }
+    ],
+    "vertices": [
+      {
+        "x": 40,
+        "y": 8
+      },
+      {
+        "x": 50,
+        "y": 8
+      },
+      {
+        "x": 60,
+        "y": 8
+      }
+    ]
   }
 }

@@ -581,19 +581,14 @@ export const handleSurveyCadPlineSubmit = ({
   const stationIds = projectStationIds ?? [];
 
   if (plineWidthPhaseOf(session)) {
+    // The width subprompt is STRICTLY modal: only U/UNDO/BACKSTEP (cancel)
+    // and the width grammar are consumed. Every other non-empty input is an
+    // invalid width — the point parser is never reached, and A/L/C/W option
+    // tokens cannot escape; the operator must backstep out first.
     const option = parsePlineSessionOption(raw);
     if (option === 'undo') {
       replaceSession(backstepPlineSession(session));
       return true;
-    }
-    if (option != null) {
-      const exited: PlineCommandSession = { ...session, plineWidthPhase: false, inputValue: raw };
-      return handleSurveyCadPlineSubmit({
-        applyHistoryUpdate,
-        projectStationIds: stationIds,
-        replaceSession,
-        session: { ...exited, resultText: undefined },
-      });
     }
     const width = parsePlineWidthInput(raw);
     if (width != null) {
@@ -604,12 +599,6 @@ export const handleSurveyCadPlineSubmit = ({
         inputValue: '',
         resultText: `PLINE width ${plineWidthLabel(width)} applies to future segments.`,
       });
-      return true;
-    }
-    const parsed = parseInputPoint(raw.trim(), pointBaseForSession(session));
-    if (parsed) {
-      const draftPoint = normalizeDraftPoint(parsed, session.points, stationIds);
-      replaceSession(consumePlineDraftPoint(session, draftPoint));
       return true;
     }
     replaceSession(stayActiveWith(session, PLINE_WIDTH_INVALID_MESSAGE));

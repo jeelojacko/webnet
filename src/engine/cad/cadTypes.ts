@@ -1102,6 +1102,8 @@ export interface CadSnapConstructionContext {
   basePoint: CadDisplayPoint | null;
   scopeSeedSegmentId?: string | null;
   tangentSeedArcEntityId?: string | null;
+  /** Phase C2: exact course id of the tangent-seed arc (multi-arc entities). */
+  tangentSeedArcSegmentId?: string | null;
   tangentSeedPoint?: CadDisplayPoint | null;
   lockedSnap?: CadSnapLock | null;
 }

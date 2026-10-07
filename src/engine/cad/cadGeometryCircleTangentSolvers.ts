@@ -52,6 +52,13 @@ export interface CadTangentCirclePrimitive {
 export interface CadTangentArcPrimitive {
   kind: 'arc';
   entityId: CadEntityId;
+  /**
+   * Phase C2: exact polyline/feature-line course identity when this arc is a
+   * course of a multi-course entity; absent for standalone `CadArcEntity`s.
+   * Two picks of a shared polyline resolve to the same course only when this
+   * matches, so same-entity multi-arc picks stay distinct.
+   */
+  segmentId?: string;
   center: CadWorldPoint;
   radius: number;
   startAngleDeg: number;
@@ -198,6 +205,7 @@ const samePrimitive = (a: CadTangentPrimitive, b: CadTangentPrimitive): boolean 
   if (a.kind !== b.kind) return false;
   if (a.entityId !== b.entityId) return false;
   if (a.kind === 'line' && b.kind === 'line') return a.segmentId === b.segmentId;
+  if (a.kind === 'arc' && b.kind === 'arc') return a.segmentId === b.segmentId;
   return true;
 };
 
@@ -901,6 +909,7 @@ const resolvePolylineTangentSource = (
       primitive: {
         kind: 'arc',
         entityId,
+        segmentId: `${entityId}#${course.index}`,
         center: { ...course.metrics.center },
         radius: course.metrics.radius,
         startAngleDeg: course.metrics.startAngleDeg,
