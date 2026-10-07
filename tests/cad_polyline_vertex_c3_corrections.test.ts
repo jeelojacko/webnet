@@ -242,6 +242,44 @@ describe('C3 P2: rejected PIV/PDV commits keep the session alive', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Correction — commit applies atomically against the latest history
+// ---------------------------------------------------------------------------
+
+describe('C3 correction: vertex commit runs against the latest history', () => {
+  it('a concurrent update between render and commit is preserved', () => {
+    const entity = polyline();
+    const renderHistory = createCadHistoryState(projectWith([entity]));
+    // A concurrent workspace update lands after the session captured its
+    // render-time snapshot, before the vertex pick commits.
+    let latest = runCadCommand(renderHistory, { key: 'POINT', x: 100, y: 100 });
+    expect(latest).not.toBe(renderHistory);
+    const concurrentUndoDepth = latest.undoStack.length;
+
+    let replaced: CommandSession | null | undefined;
+    const handled = handlePlineVertexPointPick({
+      applyHistoryUpdate: (updater) => {
+        latest = updater(latest);
+      },
+      current: { key: 'PLINEDELETEVERTEX', inputValue: '', polylineId: entity.id },
+      history: renderHistory,
+      point: { x: 10, y: 0, label: '10,0' },
+      replaceSession: (next) => {
+        replaced = next;
+      },
+    });
+
+    expect(handled).toBe(true);
+    expect(replaced).toBeNull();
+    // The concurrent POINT survives and the vertex delete stacks on top.
+    expect(latest.undoStack).toHaveLength(concurrentUndoDepth + 1);
+    expect(
+      latest.present.project.entities.filter((candidate) => candidate.type === 'survey-point'),
+    ).toHaveLength(1);
+    expect(polylineOf(latest, entity.id).vertices).toEqual([P(0, 0), P(10, 10), P(0, 10)]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // P2 (Properties) — disable reasons cover locked + boundary + breakline
 // ---------------------------------------------------------------------------
 

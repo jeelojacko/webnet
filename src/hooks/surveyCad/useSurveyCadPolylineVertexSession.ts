@@ -189,42 +189,54 @@ const describeVertexEditRejection = (
  * rejection, so compare first: a refused edit keeps the session alive with
  * the typed failure reason (another pick allowed); only a committed edit
  * closes the session. Rejected edits never touch history.
+ *
+ * The command runs INSIDE the history updater against the latest state, so a
+ * concurrent workspace update landing between render and this commit is never
+ * overwritten by a stale preview/undo entry. On rejection the updater returns
+ * the untouched latest state, so the concurrent update survives.
  */
 const finishVertexCommit = (
-  history: CadHistoryState,
   command: CadCommand,
-  entity: CadPolylineEntity,
+  entityId: string,
   edit: { kind: 'delete'; vertexIndex: number } | { kind: 'insert'; courseIndex: number; x: number; y: number },
   current: PlineVertexSession,
   applyHistoryUpdate: ApplyHistoryUpdate,
   replaceSession: ReplaceSession,
 ): void => {
-  const preview = runCadCommand(history, command);
-  if (preview === history) {
+  let rejectionReason: string | null = null;
+  applyHistoryUpdate((latest) => {
+    const preview = runCadCommand(latest, command);
+    if (preview === latest) {
+      const latestEntity = findEditablePolyline(latest.present.project, entityId);
+      rejectionReason = latestEntity
+        ? describeVertexEditRejection(latest.present.project, latestEntity, edit)
+        : 'Edit rejected: the polyline is no longer editable.';
+      return latest;
+    }
+    return preview;
+  });
+  if (rejectionReason != null) {
     replaceSession({
       ...current,
-      polylineId: entity.id,
+      polylineId: entityId,
       inputValue: '',
-      resultText: describeVertexEditRejection(history.present.project, entity, edit),
+      resultText: rejectionReason,
     });
     return;
   }
-  applyHistoryUpdate(() => preview);
   replaceSession(null);
 };
 
 const commitDelete = (
   entity: CadPolylineEntity,
   vertexIndex: number,
-  history: CadHistoryState,
   current: PlineVertexSession,
   applyHistoryUpdate: ApplyHistoryUpdate,
   replaceSession: ReplaceSession,
 ): void => {
   finishVertexCommit(
-    history,
     { key: 'POLYLINE_DELETE_VERTEX', entityId: entity.id, vertexIndex },
-    entity,
+    entity.id,
     { kind: 'delete', vertexIndex },
     current,
     applyHistoryUpdate,
@@ -237,15 +249,13 @@ const commitInsert = (
   courseIndex: number,
   x: number,
   y: number,
-  history: CadHistoryState,
   current: PlineVertexSession,
   applyHistoryUpdate: ApplyHistoryUpdate,
   replaceSession: ReplaceSession,
 ): void => {
   finishVertexCommit(
-    history,
     { key: 'POLYLINE_INSERT_VERTEX', entityId: entity.id, courseIndex, x, y },
-    entity,
+    entity.id,
     { kind: 'insert', courseIndex, x, y },
     current,
     applyHistoryUpdate,
@@ -305,7 +315,7 @@ export const handlePlineVertexPointPick = ({
       });
       return true;
     }
-    commitDelete(selected, vertexIndex, history, current, applyHistoryUpdate, replaceSession);
+    commitDelete(selected, vertexIndex, current, applyHistoryUpdate, replaceSession);
     return true;
   }
 
@@ -318,7 +328,7 @@ export const handlePlineVertexPointPick = ({
     });
     return true;
   }
-  commitInsert(selected, courseIndex, point.x, point.y, history, current, applyHistoryUpdate, replaceSession);
+  commitInsert(selected, courseIndex, point.x, point.y, current, applyHistoryUpdate, replaceSession);
   return true;
 };
 
@@ -379,7 +389,7 @@ export const handlePlineVertexTypedSubmit = ({
       });
       return true;
     }
-    commitDelete(selected, vertexIndex, history, session, applyHistoryUpdate, replaceSession);
+    commitDelete(selected, vertexIndex, session, applyHistoryUpdate, replaceSession);
     return true;
   }
 
@@ -395,7 +405,7 @@ export const handlePlineVertexTypedSubmit = ({
       return true;
     }
     const midpoint = cadPolylineCourseMidpoint(course);
-    commitInsert(selected, courseIndex, midpoint.x, midpoint.y, history, session, applyHistoryUpdate, replaceSession);
+    commitInsert(selected, courseIndex, midpoint.x, midpoint.y, session, applyHistoryUpdate, replaceSession);
     return true;
   }
 
@@ -417,6 +427,6 @@ export const handlePlineVertexTypedSubmit = ({
     });
     return true;
   }
-  commitInsert(selected, pickedCourseIndex, point.x, point.y, history, session, applyHistoryUpdate, replaceSession);
+  commitInsert(selected, pickedCourseIndex, point.x, point.y, session, applyHistoryUpdate, replaceSession);
   return true;
 };
