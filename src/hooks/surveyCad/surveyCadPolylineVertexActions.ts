@@ -8,13 +8,20 @@
  * stale/disabled row fails closed with zero mutation and no history entry.
  */
 
+import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
+import { validateBoundaryEntityVertexEdit } from '../../engine/cad/cadBoundaryCandidateValidation';
 import {
   cadPolylineCourseMidpoint,
   resolveCadPolylineCourses,
 } from '../../engine/cad/cadPolylineCourses';
 import type { CadEntityPropertyRowAction } from '../../engine/cad/cadProperties';
+import {
+  deleteCadPolylineVertex,
+  insertCadPolylineVertexOnCourse,
+} from '../../engine/cad/cadPolylineTopology';
+import { validateBreaklineEntityVertexEdit } from '../../engine/cad/cadSurfaceDefinitionReferences';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
-import type { CadProject } from '../../engine/cad/cadTypes';
+import type { CadPolylineEntity, CadProject } from '../../engine/cad/cadTypes';
 
 export interface PolylineVertexActionOutcome {
   applied: boolean;
@@ -47,9 +54,17 @@ export const runPolylineVertexRowAction = (
       entityId,
       vertexIndex: action.vertexIndex,
     });
-    return applied
-      ? { applied: true }
-      : { applied: false, reason: 'Delete rejected — the vertex cannot be merged safely.' };
+    if (applied) return { applied: true };
+    // Phase C3 correction — report the ACTUAL refusal cause (read-only
+    // re-derivation in commit order), not a generic merge guess.
+    const entity = project.entities.find((candidate) => candidate.id === entityId);
+    return {
+      applied: false,
+      reason:
+        entity?.type === 'polyline'
+          ? describeDeleteRejection(project, entity, action.vertexIndex)
+          : 'Delete rejected — the polyline no longer resolves.',
+    };
   }
   const entity = project.entities.find((candidate) => candidate.id === entityId);
   const course =
@@ -67,7 +82,62 @@ export const runPolylineVertexRowAction = (
     x: midpoint.x,
     y: midpoint.y,
   });
-  return applied
-    ? { applied: true }
-    : { applied: false, reason: 'Insert rejected — the course midpoint is not insertable.' };
+  if (applied) return { applied: true };
+  // Phase C3 correction — report the ACTUAL refusal cause (read-only
+  // re-derivation in commit order), not a generic midpoint guess.
+  return {
+    applied: false,
+    reason: describeInsertRejection(project, entity, action.courseIndex, midpoint),
+  };
+};
+
+/** Read-only delete refusal cause in engine commit order (no mutation). */
+const describeDeleteRejection = (
+  project: CadProject,
+  entity: CadPolylineEntity,
+  vertexIndex: number,
+): string => {
+  const check = checkCadEntityEditable(project, entity);
+  if (!check.editable) {
+    return `Delete rejected — the entity is not editable (${check.reason ?? 'NOT_EDITABLE'}).`;
+  }
+  const topology = deleteCadPolylineVertex(entity, { vertexIndex });
+  if (!topology.ok) return `Delete rejected — ${topology.message} (${topology.code}).`;
+  const boundary = validateBoundaryEntityVertexEdit(project, entity.id, topology.entity.vertices);
+  if (boundary) {
+    return `Delete rejected — the boundary source would become invalid (${boundary}).`;
+  }
+  const breakline = validateBreaklineEntityVertexEdit(project, entity.id);
+  if (breakline) {
+    return `Delete rejected — the polyline backs a surface breakline (${breakline}).`;
+  }
+  return 'Delete rejected — the vertex cannot be merged safely.';
+};
+
+/** Read-only insert refusal cause in engine commit order (no mutation). */
+const describeInsertRejection = (
+  project: CadProject,
+  entity: CadPolylineEntity,
+  courseIndex: number,
+  midpoint: { x: number; y: number },
+): string => {
+  const check = checkCadEntityEditable(project, entity);
+  if (!check.editable) {
+    return `Insert rejected — the entity is not editable (${check.reason ?? 'NOT_EDITABLE'}).`;
+  }
+  const topology = insertCadPolylineVertexOnCourse(entity, {
+    courseIndex,
+    x: midpoint.x,
+    y: midpoint.y,
+  });
+  if (!topology.ok) return `Insert rejected — ${topology.message} (${topology.code}).`;
+  const boundary = validateBoundaryEntityVertexEdit(project, entity.id, topology.entity.vertices);
+  if (boundary) {
+    return `Insert rejected — the boundary source would become invalid (${boundary}).`;
+  }
+  const breakline = validateBreaklineEntityVertexEdit(project, entity.id);
+  if (breakline) {
+    return `Insert rejected — the polyline backs a surface breakline (${breakline}).`;
+  }
+  return 'Insert rejected — the course midpoint is not insertable.';
 };

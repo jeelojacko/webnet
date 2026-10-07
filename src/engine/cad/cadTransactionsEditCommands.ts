@@ -1,6 +1,7 @@
 import { createCadSelectionState } from './cadSelection';
 import { checkCadEntityEditable } from './cadAppearance';
 import { validateBoundaryEntityVertexEdit } from './cadBoundaryCandidateValidation';
+import { validateBreaklineEntityVertexEdit } from './cadSurfaceDefinitionReferences';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import {
   deleteCadPolylineVertex,
@@ -340,6 +341,10 @@ const commitPolylineVertexEdit = (
   // Phase 18W parity: a boundary source (and any surface breakline crossing
   // it) must stay valid. The same choke point supports count changes.
   if (validateBoundaryEntityVertexEdit(snapshot.project, entityId, updatedEntity.vertices)) return null;
+  // Phase C3 correction: an entity-backed breakline consumes the polyline's
+  // vertex labels as point refs, so any insert/delete rewrites the chain.
+  // Fail closed with zero mutation/history, like the boundary preflight.
+  if (validateBreaklineEntityVertexEdit(snapshot.project, entityId)) return null;
   const nextProject = replaceEntityInProject(snapshot.project, entityId, () => updatedEntity);
   const label = getCadEntityDisplayLabel(updatedEntity);
   return {
