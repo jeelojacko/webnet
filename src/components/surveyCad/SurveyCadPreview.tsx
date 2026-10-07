@@ -235,6 +235,9 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           snapKind: 'nearest',
           extendMode: event.shiftKey,
           pickToleranceWorld: snapToleranceScreenUnits / scale,
+          // The arc point above is PROJECTED onto the curve; carry the true
+          // raw click so on-source revalidation judges it (not zero residual).
+          rawWorldPoint,
         },
       );
       return;
@@ -244,6 +247,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       snapSourceEntityId: primitive.sourceEntityId,
       extendMode: event.shiftKey,
       pickToleranceWorld: snapToleranceScreenUnits / scale,
+      rawWorldPoint,
     });
   };
 

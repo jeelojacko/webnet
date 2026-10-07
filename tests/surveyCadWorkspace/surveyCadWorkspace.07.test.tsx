@@ -236,6 +236,130 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('threads the raw click through every body-click constructor (line/arc/circle)', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const consumeInteractionPoint = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SurveyCadPreview
+          scene={{
+            bounds: { minX: 0, minY: 0, maxX: 10, maxY: 10 },
+            primitives: [
+              {
+                kind: 'line',
+                id: 'prim:line',
+                layerId: 'general',
+                sourceEntityId: 'line:1',
+                sourceSegmentId: 'line:1#0',
+                stroke: '#111111',
+                strokeWidth: 1.5,
+                points: [{ x: 1, y: 1 }, { x: 9, y: 1 }],
+              },
+              {
+                kind: 'arc',
+                id: 'prim:arc',
+                layerId: 'general',
+                sourceEntityId: 'arc:1',
+                stroke: '#111111',
+                strokeWidth: 1.5,
+                center: { x: 5, y: 5 },
+                radius: 3,
+                startAngleDeg: 0,
+                endAngleDeg: 180,
+              },
+              {
+                kind: 'circle',
+                id: 'prim:circle',
+                layerId: 'general',
+                sourceEntityId: 'circle:1',
+                stroke: '#111111',
+                strokeWidth: 1.5,
+                center: { x: 8, y: 8 },
+                radius: 1,
+              },
+            ],
+          }}
+          viewBounds={{ minX: 0, minY: 0, maxX: 10, maxY: 10 }}
+          selectedEntityIds={[]}
+          selectedParcelReport={null}
+          activeSnap={null}
+          commandPreviewPrimitives={[]}
+          commandStatusText=""
+          commandHelpText=""
+          commandModifierHint=""
+          constructionHint=""
+          snapPreferences={{
+            'point-node': true,
+            endpoint: true,
+            midpoint: true,
+            center: true,
+            'arc-midpoint': true,
+            quadrant: true,
+            intersection: true,
+            'apparent-intersection': true,
+            extension: true,
+            perpendicular: true,
+            parallel: true,
+            direction: true,
+            tangent: true,
+            nearest: true,
+          }}
+          commandInputValue=""
+          commandInputPlaceholder=""
+          commandInputEnabled={false}
+          viewport={{ zoom: 1, panX: 0, panY: 0 }}
+          commandActive
+          commandPointInputActive
+          onViewportChange={() => null}
+          onSelectEntity={() => null}
+          onSelectEntities={() => null}
+          onConsumeInteractionPoint={consumeInteractionPoint}
+          onPointerWorldPointChange={() => null}
+          onSnapPreferenceChange={() => null}
+          onCommandInputChange={() => null}
+          onCommandInputEnter={() => null}
+          onCommandInputEscape={() => null}
+          onZoomExtents={() => null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    const cases: ReadonlyArray<readonly [string, number, number]> = [
+      ['line:1', 220, 260],
+      ['arc:1', 300, 180],
+      ['circle:1', 600, 420],
+    ];
+    for (const [entityId, clientX, clientY] of cases) {
+      const hit = container.querySelector(
+        `[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="${entityId}"]`,
+      ) as SVGElement | null;
+      expect(hit, entityId).toBeTruthy();
+      mockElementRect(hit!);
+      consumeInteractionPoint.mockClear();
+      await act(async () => {
+        hit!.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX, clientY }));
+      });
+      expect(consumeInteractionPoint, entityId).toHaveBeenCalledTimes(1);
+      const options = consumeInteractionPoint.mock.calls[0]![2] as Record<string, unknown>;
+      expect(options.rawWorldPoint, entityId).toMatchObject({
+        x: expect.any(Number),
+        y: expect.any(Number),
+      });
+    }
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('shrinks snap query tolerance and visible snap window as viewport zoom increases', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

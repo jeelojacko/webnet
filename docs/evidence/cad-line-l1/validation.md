@@ -220,3 +220,22 @@ survives).
 After this pass: focused L1 **8 files, 120/120**; combined **12 files, 169/169**;
 neighbour circle/workspace **58 files, 233 passed + 1 skipped**; browser A–G
 **7/7** zero page/console/unhandled errors.
+
+## 16. Correction pass (round-6 reviewer finding)
+
+The arc body-click constructor projected the raw click onto the arc but did not
+pass `rawWorldPoint`; the session's "retain projected point when raw absent"
+fallback made the residual zero, so a coarse-zoom arc hit outside the 10 m cap
+was accepted as a phase-B start.
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 (P2) | Arc body click dropped the raw click, bypassing revalidation. | Class-closing audit: every body-click constructor now threads `rawWorldPoint` — line/circle (`handlePrimitiveCommandClick` non-arc), arc (projected point carries the raw click), and snap/latched (`consumeSnapCandidate`). The session fallback is now reachable only by the keyboard `useActiveSnap` pick and session-less callers (documented in `useSurveyCadLineL1Session.ts`). |
+
+Pinned by the `tests/cad_line_l1_sessions.test.ts` projected-arc coarse-zoom
+test and the `tests/surveyCadWorkspace/surveyCadWorkspace.07.test.tsx`
+line/arc/circle constructor `rawWorldPoint` test.
+
+After this pass: focused L1 **8 files, 121/121**; combined **12 files, 170/170**;
+neighbour circle/workspace **58 files, 234 passed + 1 skipped**; browser A–G
+**7/7** zero page/console/unhandled errors.

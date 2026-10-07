@@ -895,6 +895,63 @@ describe('L1 corrected TANGENT/PERP: source → on-source start → signed ray',
     expect(fresh?.lineSourceOnPoint).toMatchObject({ x: 50, y: 0 });
   });
 
+  it('revalidates a projected arc body click against the raw click at coarse zoom', () => {
+    const project = buildCadLineL1Project({ entities: [arc('arc:1', 0, 0, 50)] });
+    const pickPhaseB = (
+      projected: CommandPoint,
+      rawWorldPoint: { x: number; y: number },
+      tolerance: number,
+    ) => {
+      let history = createCadHistoryState(project);
+      let session: CadLineL1SessionState | null = createCadLineL1Session('LINE_TANGENT_POINT');
+      const applyHistoryUpdate = (updater: (_h: CadHistoryState) => CadHistoryState) => {
+        history = updater(history);
+      };
+      const replaceSession = (next: CadLineL1SessionState | null) => {
+        session = next;
+      };
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: { ...point(0, 50, 'body'), snapSourceEntityId: 'arc:1' },
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: tolerance,
+        rawWorldPoint: { x: 0, y: 50 },
+      });
+      handleCadLineL1PointPick({
+        applyHistoryUpdate,
+        current: session!,
+        point: projected,
+        project: history.present.project,
+        replaceSession,
+        pickToleranceWorld: tolerance,
+        rawWorldPoint,
+      });
+      return session;
+    };
+
+    // Coarse viewport tolerance 100 m clamps to 10 m. The projected on-arc point
+    // (0, 50) is 150 m from the raw click (0, 200), so it is discarded and the
+    // raw click fails the resolver's radial residual check.
+    const far = pickPhaseB(
+      { ...point(0, 50, 'proj'), snapSourceEntityId: 'arc:1' },
+      { x: 0, y: 200 },
+      100,
+    );
+    expect(far?.lineSourceOnPoint).toBeNull();
+    expect(far?.resultText).toMatch(/not on the source arc\/circle/i);
+
+    // Within the clamped cap the projected point is kept and accepted.
+    const near = pickPhaseB(
+      { ...point(0, 50, 'proj'), snapSourceEntityId: 'arc:1' },
+      { x: 0, y: 55 },
+      100,
+    );
+    expect(near?.lineSourceOnPoint?.x).toBeCloseTo(0, 9);
+    expect(near?.lineSourceOnPoint?.y).toBeCloseTo(50, 9);
+  });
+
   it('rejects a point-range with any invalid token atomically (no silent discard)', () => {
     const harness = makeHarness(
       buildCadLineL1Project({

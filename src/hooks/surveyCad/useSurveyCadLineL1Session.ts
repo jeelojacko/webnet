@@ -339,6 +339,13 @@ export interface CadLineL1PointPickOptions {
  * radius is discarded and the raw click is used, so the on-source resolver can
  * never accept coordinates the operator did not actually pick. A fresh snap
  * (within tolerance) passes trivially.
+ *
+ * Every body-click constructor (line/arc/circle primitive and snap/latched
+ * consumption) threads the true raw click, so the `rawWorldPoint == null`
+ * fallback is only reached by paths with no cursor position — the keyboard
+ * `useActiveSnap` pick (whose snap is the live hover snap) and session-less
+ * unit callers. Retaining the snapped point there is safe because there is no
+ * raw cursor to compare against.
  */
 const cadLineOnSourcePickPoint = (
   snapped: CommandPoint,
