@@ -103,11 +103,11 @@ interface FlyoutOpen {
 /**
  * Open a family flyout and resolve only once its fixed box has settled.
  *
- * The anchor is computed from the caret rect at click time, so a ribbon
- * relayout or focus-driven strip scroll racing the click can momentarily leave
- * Playwright an attached-but-boxless node (the intermittent "flyout has no
- * box" in the full run). Wait for a stable caret rect, then retry the open
- * once if the first attempt does not settle.
+ * Product law: focus-on-open never scrolls (preventScroll) and the open's
+ * own induced scroll is ignored inside the open-scroll grace while caret +
+ * flyout stay in the viewport — so one ordinary click settles. No retry
+ * masking: if the menu self-closes, this helper fails loudly. A stable
+ * caret rect is awaited BEFORE clicking only to avoid anchoring mid-relayout.
  */
 async function openFamilyFlyout(page: Page, familyId: string): Promise<FlyoutOpen> {
   const caret = page.locator(`[data-cad-family-caret="${familyId}"]`);
@@ -124,29 +124,18 @@ async function openFamilyFlyout(page: Page, familyId: string): Promise<FlyoutOpe
     }, { timeout: 5000, intervals: [100, 100, 250] })
     .toBe(true);
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    if (attempt > 0) {
-      // A racing external scroll can close a just-opened menu; clear and retry.
-      await page.keyboard.press('Escape').catch(() => undefined);
-      await expect(flyout).toHaveCount(0, { timeout: 2000 }).catch(() => undefined);
-    }
-    await caret.click({ force: true });
-    try {
-      await expect(flyout).toBeAttached({ timeout: 5000 });
-      await expect(flyout).toBeVisible({ timeout: 5000 });
-      await expect
-        .poll(async () => {
-          const rect = await flyout.boundingBox();
-          return rect != null && rect.width > 0 && rect.height > 0;
-        }, { timeout: 5000 })
-        .toBe(true);
-      const box = await flyout.boundingBox();
-      if (box) return { flyout, box };
-    } catch {
-      // Retry once.
-    }
-  }
-  throw new Error(`flyout ${familyId} has no box after retry`);
+  await caret.click();
+  await expect(flyout).toBeAttached({ timeout: 5000 });
+  await expect(flyout).toBeVisible({ timeout: 5000 });
+  await expect
+    .poll(async () => {
+      const rect = await flyout.boundingBox();
+      return rect != null && rect.width > 0 && rect.height > 0;
+    }, { timeout: 5000 })
+    .toBe(true);
+  const box = await flyout.boundingBox();
+  if (!box) throw new Error(`flyout ${familyId} has no box after single open click`);
+  return { flyout, box };
 }
 
 // ---------------------------------------------------------------------------
@@ -338,6 +327,11 @@ for (const resolution of RESOLUTIONS) {
       for (const closer of ['scroll', 'resize']) {
         await page.locator('[data-cad-family-caret="arc"]').click({ force: true });
         await expect(arcFlyout).toBeVisible({ timeout: 5000 });
+        if (closer === 'scroll') {
+          // Past the open-scroll grace: the dispatch must prove the genuine
+          // external-scroll close law, not land in the induced-scroll grace.
+          await page.waitForTimeout(150);
+        }
         await page.evaluate((eventName) => window.dispatchEvent(new Event(eventName)), closer);
         await expect(arcFlyout).toHaveCount(0);
       }
@@ -424,17 +418,38 @@ test.describe('Phase 21B short-viewport flyout fallback @ 1366x360', () => {
       });
     }
 
-    // Still open after all scrolling; selecting a lower variant sticks and
-    // closes normally.
+    // Still open after all scrolling; a lower variant is brought into view
+    // with real wheel scrolls, proven visible + hit-testable with a stable
+    // box, then chosen with one ORDINARY click (no force): the sticky face
+    // updates and the menu closes normally.
     const lowerVariant = 'line-perpendicular-from-point';
-    await page.locator(`[data-cad-ribbon-flyout="line"] [data-cad-variant="${lowerVariant}"]`).click({ force: true });
+    const lowerRow = page.locator(`[data-cad-ribbon-flyout="line"] [data-cad-variant="${lowerVariant}"]`);
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      if (await lowerRow.isVisible().catch(() => false)) break;
+      await page.mouse.wheel(0, 200);
+      await page.waitForTimeout(100);
+    }
+    await lowerRow.scrollIntoViewIfNeeded({ timeout: 5000 });
+    await expect(lowerRow).toBeVisible({ timeout: 5000 });
+    const rowBoxFirst = await lowerRow.boundingBox();
+    expect(rowBoxFirst).not.toBeNull();
+    expect(rowBoxFirst!.width).toBeGreaterThan(0);
+    expect(rowBoxFirst!.height).toBeGreaterThan(0);
+    await page.waitForTimeout(100);
+    const rowBoxSecond = await lowerRow.boundingBox();
+    expect(rowBoxSecond).not.toBeNull();
+    expect(Math.abs(rowBoxSecond!.x - rowBoxFirst!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(rowBoxSecond!.y - rowBoxFirst!.y)).toBeLessThanOrEqual(1);
+    await lowerRow.click();
     await expect(flyout).toHaveCount(0);
     await expect(page.locator('[data-cad-family="line"] .cad-ribbon-split__primary').first())
       .toHaveAttribute('aria-label', 'Line: Create Line Perpendicular from Point');
 
-    // External scroll still closes on a short viewport.
+    // External scroll still closes on a short viewport (past the open-scroll
+    // grace so the dispatch proves the genuine law, not the induced grace).
     await page.locator('[data-cad-family-caret="line"]').click({ force: true });
     await expect(flyout).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(150);
     await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
     await expect(flyout).toHaveCount(0);
 

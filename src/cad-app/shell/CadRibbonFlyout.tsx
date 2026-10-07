@@ -74,10 +74,14 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
         };
 
   // Focus the current variant on open so arrow keys continue from the face.
+  // preventScroll: the menu paints position:fixed but stays DOM-descended from
+  // the ribbon strip's scroll container, so a scrolling focus would pan the
+  // strip and the resulting (external-target) scroll event would self-close
+  // the just-opened menu via the split button's scroll law. Never scroll on open.
   useEffect(() => {
     const currentIndex = family.variants.findIndex((variant) => variant.id === currentVariantId);
     const target = currentIndex >= 0 ? rowRefs.current[currentIndex] : rowRefs.current[0];
-    target?.focus();
+    target?.focus({ preventScroll: true });
   }, [family, currentVariantId]);
 
   const moveFocus = (from: HTMLElement, delta: number): void => {

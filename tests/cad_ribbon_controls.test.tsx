@@ -3,7 +3,7 @@
 import React, { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CadRibbonSplitButton } from '../src/cad-app/shell/CadRibbonSplitButton';
+import { CadRibbonSplitButton, CAD_RIBBON_FLYOUT_OPEN_SCROLL_GRACE_MS } from '../src/cad-app/shell/CadRibbonSplitButton';
 import { CadRibbonFlyout } from '../src/cad-app/shell/CadRibbonFlyout';
 import {
   resolveCadRibbonFlyoutAnchor,
@@ -385,10 +385,30 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
       <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
     );
     await openArcFlyout(container);
+    // Past the open-scroll grace: the open path's own induced scroll is
+    // ignored while caret + flyout stay in the viewport, so a genuine
+    // external scroll must wait out the grace before it proves the law.
+    await new Promise((resolve) => setTimeout(resolve, CAD_RIBBON_FLYOUT_OPEN_SCROLL_GRACE_MS + 50));
     await act(async () => {
       window.dispatchEvent(new Event('scroll'));
     });
     expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+    await cleanup(container, root);
+  });
+
+  it('L1-B2: ignores the open path\'s own induced scroll inside the grace', async () => {
+    const { container, root } = await render(
+      <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
+    );
+    await openArcFlyout(container);
+    // Immediately (inside the grace): an external-target scroll with the
+    // caret + flyout still in the viewport is the open's own induced scroll
+    // (focus/strip relayout) and must NOT self-close. jsdom rects are
+    // zero-origin, which counts as in-viewport.
+    await act(async () => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
     await cleanup(container, root);
   });
 
