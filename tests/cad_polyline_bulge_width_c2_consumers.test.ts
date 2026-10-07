@@ -396,6 +396,51 @@ describe('C2 arc-course identity: multi-arc attribution, locks, and legacy fallb
     );
     return { parcel, index, metrics: metricsFor({ x: 0, y: 0 }, { x: 10, y: 0 }, SEMI) };
   };
+  // Builds the two derived candidates the LINE seed path creates from a
+  // tangent arc seed: the perpendicular-at-seed (label `#1 start perp`) and
+  // the tangent-through-seed (label `#1 tangent`). The seed is always the
+  // SECOND arc course so an attribution loss can only fall back to arc #0.
+  const deriveTangentSeedCandidates = () => {
+    const entity = multiArc();
+    const index = buildCadSpatialIndex(projectWith(entity));
+    const m1 = metricsFor({ x: 10, y: 0 }, { x: 20, y: 0 }, SEMI);
+    const range = courseRange(m1);
+    const seedPoint = cadClosestPointOnArc(
+      { x: m1.midpoint.x, y: m1.midpoint.y + 0.2 },
+      m1.center,
+      m1.radius,
+      range.start,
+      range.end,
+    );
+    const seedSegmentId = `${entity.id}#1`;
+    const seedContext = {
+      active: true,
+      scopeSeedSegmentId: seedSegmentId,
+      tangentSeedArcEntityId: entity.id,
+      tangentSeedArcSegmentId: seedSegmentId,
+      tangentSeedPoint: { x: seedPoint.x, y: seedPoint.y },
+    };
+    const derivedPerp = index
+      .querySnapCandidates(
+        { x: seedPoint.x, y: seedPoint.y },
+        30,
+        ['perpendicular'],
+        { ...seedContext, basePoint: { x: seedPoint.x, y: seedPoint.y } },
+      )
+      .find((candidate) => candidate.sourceEntityId === entity.id && candidate.label.endsWith('start perp'));
+    // The base point sits INSIDE arc #1, so no true external tangent point
+    // exists: the only `#1 tangent` candidate is the derived one.
+    const basePoint = { x: m1.center.x, y: m1.center.y + 2 };
+    const derivedTangent = index
+      .querySnapCandidates(
+        { x: m1.center.x - 2, y: m1.center.y + 2 },
+        30,
+        ['tangent'],
+        { ...seedContext, basePoint },
+      )
+      .find((candidate) => candidate.sourceEntityId === entity.id && candidate.label.endsWith('#1 tangent'));
+    return { entity, index, m1, basePoint, seedSegmentId, derivedPerp, derivedTangent };
+  };
 
   it('addresses each arc course with its own `${id}#i` id (line ids unchanged)', () => {
     const entity = multiArc();
@@ -610,6 +655,175 @@ describe('C2 arc-course identity: multi-arc attribution, locks, and legacy fallb
     // referenced the chord endpoints instead.
     expect(startPerp!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(metrics.center.x, 9);
     expect(startPerp!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(metrics.center.y, 9);
+  });
+
+  it('carries the seeded SECOND-course id on the derived tangent-seed perpendicular', () => {
+    const { entity, m1, seedSegmentId, derivedPerp } = deriveTangentSeedCandidates();
+    expect(derivedPerp).toBeDefined();
+    expect(derivedPerp!.sourceEntityId).toBe(entity.id);
+    expect(derivedPerp!.sourceSegmentId).toBe(seedSegmentId);
+    // The guide references arc #1's center, never arc #0's first-match.
+    expect(derivedPerp!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(m1.center.x, 9);
+    expect(derivedPerp!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(m1.center.y, 9);
+  });
+
+  it('carries the seeded SECOND-course id on the derived tangent-through-seed candidate', () => {
+    const { entity, basePoint, seedSegmentId, derivedTangent } = deriveTangentSeedCandidates();
+    expect(derivedTangent).toBeDefined();
+    expect(derivedTangent!.sourceEntityId).toBe(entity.id);
+    expect(derivedTangent!.sourceSegmentId).toBe(seedSegmentId);
+    // The derived tangent guide's second segment starts at the live base
+    // point; the entity tangent candidate would start it at the tangent point.
+    expect(derivedTangent!.guideSegments?.[1]?.[1]).toEqual(basePoint);
+  });
+
+  it('re-locks each derived candidate on the SECOND course, never falling to arc #0', () => {
+    const { index, m1, seedSegmentId, derivedPerp, derivedTangent } = deriveTangentSeedCandidates();
+    expect(derivedPerp).toBeDefined();
+    expect(derivedTangent).toBeDefined();
+    // Reproduce the transientConstructionLock the snapping hook builds from a
+    // live construction snap when the pointer moves off it.
+    const lockFrom = (candidate: {
+      kind: string;
+      sourceEntityId: string;
+      sourceSegmentId?: string;
+      lockGuidePoint?: { x: number; y: number };
+      x: number;
+      y: number;
+    }) => ({
+      kind: candidate.kind as 'perpendicular' | 'tangent',
+      sourceEntityId: candidate.sourceEntityId.split('|')[0] ?? candidate.sourceEntityId,
+      sourceSegmentId: candidate.sourceSegmentId,
+      guidePoint: candidate.lockGuidePoint ?? { x: candidate.x, y: candidate.y },
+    });
+
+    const perpLock = lockFrom(derivedPerp!);
+    expect(perpLock.sourceSegmentId).toBe(seedSegmentId);
+    const lockedPerp = index
+      .querySnapCandidates({ x: derivedPerp!.x, y: derivedPerp!.y }, 3, [], {
+        active: true,
+        basePoint: { x: m1.center.x, y: m1.center.y - 12 },
+        lockedSnap: perpLock,
+      })
+      .find((candidate) => candidate.kind === 'perpendicular');
+    expect(lockedPerp).toBeDefined();
+    expect(lockedPerp!.sourceSegmentId).toBe(seedSegmentId);
+    expect(lockedPerp!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(m1.center.x, 9);
+    expect(lockedPerp!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(m1.center.y, 9);
+
+    const tangentLock = lockFrom(derivedTangent!);
+    expect(tangentLock.sourceSegmentId).toBe(seedSegmentId);
+    const lockedTangent = index
+      .querySnapCandidates({ x: derivedTangent!.x, y: derivedTangent!.y }, 3, [], {
+        active: true,
+        basePoint: { x: m1.center.x, y: m1.center.y + 2 },
+        lockedSnap: tangentLock,
+      })
+      .find((candidate) => candidate.kind === 'tangent');
+    expect(lockedTangent).toBeDefined();
+    expect(lockedTangent!.sourceSegmentId).toBe(seedSegmentId);
+    expect(lockedTangent!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(m1.center.x, 9);
+    expect(lockedTangent!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(m1.center.y, 9);
+  });
+
+  it('propagates the seeded SECOND-course id through a parcel arc course', () => {
+    const parcel: CadParcelEntity = {
+      id: 'c2-parcel-two-arcs',
+      type: 'parcel',
+      layerId: 'general',
+      visible: true,
+      locked: false,
+      parcelName: 'LOT 2',
+      vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }, { x: 0, y: 10 }],
+      vertexLabels: ['A', 'B', 'C', 'D'],
+      courseGeometry: [
+        { kind: 'arc', bulge: SEMI },
+        { kind: 'arc', bulge: SEMI },
+        { kind: 'line' },
+        { kind: 'line' },
+      ],
+    };
+    const index = buildCadSpatialIndex(
+      appendCadProjectEntities(projectWith(polyline([{ x: 100, y: 100 }, { x: 101, y: 100 }])), [parcel]),
+    );
+    const m1 = metricsFor({ x: 10, y: 0 }, { x: 20, y: 0 }, SEMI);
+    const range = courseRange(m1);
+    const seedPoint = cadClosestPointOnArc(
+      { x: m1.midpoint.x, y: m1.midpoint.y + 0.2 },
+      m1.center,
+      m1.radius,
+      range.start,
+      range.end,
+    );
+    const seedSegmentId = `${parcel.id}#1`;
+    const derivedPerp = index
+      .querySnapCandidates(
+        { x: seedPoint.x, y: seedPoint.y },
+        30,
+        ['perpendicular'],
+        {
+          active: true,
+          basePoint: { x: seedPoint.x, y: seedPoint.y },
+          tangentSeedArcEntityId: parcel.id,
+          tangentSeedArcSegmentId: seedSegmentId,
+          tangentSeedPoint: { x: seedPoint.x, y: seedPoint.y },
+        },
+      )
+      .find((candidate) => candidate.sourceEntityId === parcel.id && candidate.label.endsWith('start perp'));
+    expect(derivedPerp).toBeDefined();
+    expect(derivedPerp!.sourceSegmentId).toBe(seedSegmentId);
+    expect(derivedPerp!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(m1.center.x, 9);
+    expect(derivedPerp!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(m1.center.y, 9);
+  });
+
+  it('leaves a standalone CadArcEntity tangent-seed candidate legacy (no id, entity-fallback lock)', () => {
+    const standalone: CadArcEntity = {
+      id: 'c2-standalone-seed-arc',
+      type: 'arc',
+      layerId: 'general',
+      visible: true,
+      locked: false,
+      centerX: 100,
+      centerY: 0,
+      radius: 10,
+      startAngleDeg: 0,
+      endAngleDeg: 180,
+    };
+    const index = buildCadSpatialIndex(
+      appendCadProjectEntities(projectWith(polyline([{ x: 0, y: 0 }, { x: 1, y: 0 }])), [standalone]),
+    );
+    const seedPoint = cadClosestPointOnArc({ x: 100, y: 3 }, { x: 100, y: 0 }, 10, 0, 180);
+    const derivedPerp = index
+      .querySnapCandidates(
+        { x: seedPoint.x, y: seedPoint.y },
+        30,
+        ['perpendicular'],
+        {
+          active: true,
+          basePoint: { x: seedPoint.x, y: seedPoint.y },
+          tangentSeedArcEntityId: standalone.id,
+          tangentSeedArcSegmentId: null,
+          tangentSeedPoint: { x: seedPoint.x, y: seedPoint.y },
+        },
+      )
+      .find((candidate) => candidate.sourceEntityId === standalone.id && candidate.label.endsWith('start perp'));
+    expect(derivedPerp).toBeDefined();
+    expect(derivedPerp!.sourceSegmentId).toBeUndefined();
+    const locked = index
+      .querySnapCandidates({ x: derivedPerp!.x, y: derivedPerp!.y }, 3, [], {
+        active: true,
+        basePoint: { x: 100, y: 14 },
+        lockedSnap: {
+          kind: 'perpendicular',
+          sourceEntityId: standalone.id,
+          guidePoint: derivedPerp!.lockGuidePoint ?? { x: derivedPerp!.x, y: derivedPerp!.y },
+        },
+      })
+      .find((candidate) => candidate.kind === 'perpendicular');
+    expect(locked).toBeDefined();
+    // Entity fallback still resolves the legacy standalone arc's center.
+    expect(locked!.guideSegments?.[1]?.[0]?.x).toBeCloseTo(100, 9);
+    expect(locked!.guideSegments?.[1]?.[0]?.y).toBeCloseTo(0, 9);
   });
 
   it('resolves a locked tangent on a parcel arc course to the arc, never null/chord', () => {
