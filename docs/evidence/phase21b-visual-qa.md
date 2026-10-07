@@ -74,6 +74,19 @@ Flyout boxes (fixed-position anchor, shared constants 352×260 / margin 8):
 > contract is asserted by `tests-browser/cad-shell-ribbon-hardening-21b.spec.ts`
 > (desktop natural-height/no-overflow law + 1366×360 internal-scroll fallback)
 > and `tests/cad_ribbon_controls.test.tsx`.
+>
+> **Focus reveal law (same branch).** On open, and during Arrow/Home/End
+> navigation, the focused row is revealed by writing only the flyout's own
+> `scrollTop` (`ensureCadRibbonFlyoutRowVisible` in
+> `cadRibbonFlyout.scroll.ts`). Focus always passes `preventScroll: true` and
+> `element.scrollIntoView()` is never called, so the reveal can never pan the
+> ribbon strip — a strip scroll is an external scroll that would self-close
+> the menu. Regression fixed: reopening the height-capped Line menu after
+> picking `line-perpendicular-from-point` had left focus on an off-screen row
+> while the menu sat at `scrollTop 0`; keyboard nav had used a scrolling
+> `focus()` that could pan the strip. Covered by
+> `tests/cad_ribbon_controls.test.tsx` (L1-K helper + L1-L reopen/nav) and the
+> 1366×360 fallback case in `cad-shell-ribbon-hardening-21b.spec.ts`.
 
 ## Findings
 

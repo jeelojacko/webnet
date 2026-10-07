@@ -442,6 +442,72 @@ test.describe('Phase 21B short-viewport flyout fallback @ 1366x360', () => {
     await expect(page.locator('[data-cad-family="line"] .cad-ribbon-split__primary').first())
       .toHaveAttribute('aria-label', 'Line: Create Line Perpendicular from Point');
 
+    // Reopen the height-capped menu with that lower variant now current. Focus
+    // must land on the current row and the flyout must scroll ITSELF to reveal
+    // it: the finding's regression was focus left off-screen while the capped
+    // menu sat at scrollTop 0. One ordinary caret click, no force.
+    const { flyout: reopened } = await openFamilyFlyout(page, 'line');
+    const activeVariant = (): Promise<string | null> =>
+      page.evaluate(
+        () =>
+          (document.activeElement as HTMLElement | null)?.getAttribute('data-cad-variant') ?? null,
+      );
+    const activeRowInsideFlyout = (): Promise<boolean> =>
+      reopened.evaluate((el) => {
+        const active = document.activeElement as HTMLElement | null;
+        if (active == null) return false;
+        const rowRect = active.getBoundingClientRect();
+        const flyoutRect = el.getBoundingClientRect();
+        // The flyout's client rect is its scroll viewport (border excluded);
+        // the focused row must sit fully inside it, not merely inside the box.
+        const innerTop = flyoutRect.top + el.clientTop;
+        const innerBottom = innerTop + el.clientHeight;
+        return rowRect.top >= innerTop - 0.5 && rowRect.bottom <= innerBottom + 0.5;
+      });
+    const reopenedScrollTop = (): Promise<number> =>
+      reopened.evaluate((el) => el.scrollTop);
+
+    expect(await activeVariant()).toBe(lowerVariant);
+    expect(await activeRowInsideFlyout()).toBe(true);
+    expect(await reopenedScrollTop()).toBeGreaterThan(0);
+    await expect(reopened).toBeVisible();
+
+    // Arrow / Home / End: focus moves, the menu stays open, and the focused row
+    // is always revealed inside the flyout (no ancestor pan, no self-close).
+    await page.keyboard.press('ArrowUp');
+    await expect.poll(activeVariant).toBe('line-tangent-from-point');
+    expect(await activeRowInsideFlyout()).toBe(true);
+    await expect(reopened).toBeVisible();
+
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(activeVariant).toBe(lowerVariant);
+    expect(await activeRowInsideFlyout()).toBe(true);
+    await expect(reopened).toBeVisible();
+
+    await page.keyboard.press('Home');
+    await expect.poll(activeVariant).toBe('line-create');
+    expect(await activeRowInsideFlyout()).toBe(true);
+    // Home returns to the top of the menu (the first row carries the 3px box
+    // padding in its offsetTop, so the settled scrollTop is ~0-3, not 0).
+    await expect.poll(reopenedScrollTop).toBeLessThan(8);
+    await expect(reopened).toBeVisible();
+
+    await page.keyboard.press('End');
+    await expect.poll(activeVariant).toBe(lowerVariant);
+    expect(await activeRowInsideFlyout()).toBe(true);
+    await expect.poll(reopenedScrollTop).toBeGreaterThan(0);
+    await expect(reopened).toBeVisible();
+
+    test.info().annotations.push({
+      type: 'flyout-keyboard-reveal',
+      description: `@ ${vp.width}x${vp.height} reopen focused ${lowerVariant} inside capped menu ` +
+        `(scrollTop=${Math.round(await reopenedScrollTop())}); ArrowUp/Down+Home/End stayed open`,
+    });
+
+    // Leave via Escape so the external-scroll close law below re-proves cold.
+    await page.keyboard.press('Escape');
+    await expect(reopened).toHaveCount(0);
+
     // External scroll still closes on a short viewport, with no open-scroll
     // grace: the dispatch proves the genuine law on the first frame.
     await page.locator('[data-cad-family-caret="line"]').click({ force: true });

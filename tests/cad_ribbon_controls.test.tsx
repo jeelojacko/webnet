@@ -14,6 +14,7 @@ import {
   CAD_RIBBON_FLYOUT_MAX_WIDTH_PX,
   CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
 } from '../src/cad-app/shell/cadRibbonFlyout.constants';
+import { ensureCadRibbonFlyoutRowVisible } from '../src/cad-app/shell/cadRibbonFlyout.scroll';
 import {
   findCadRibbonToolFamily,
   type CadRibbonToolFamily,
@@ -477,6 +478,123 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
       (document.activeElement as HTMLElement).getAttribute('data-cad-family-caret'),
     ).toBe('arc');
     await cleanup(container, root);
+  });
+
+  it('L1-K: reveal helper scrolls only the flyout box by the minimum offset', () => {
+    const scrollBox = document.createElement('div');
+    const row = document.createElement('button');
+    scrollBox.appendChild(row);
+    Object.defineProperty(scrollBox, 'clientHeight', { configurable: true, value: 100 });
+    let scrollTop = 0;
+    Object.defineProperty(scrollBox, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (next: number) => {
+        scrollTop = next;
+      },
+    });
+    const setRow = (offsetTop: number, offsetHeight: number): void => {
+      Object.defineProperty(row, 'offsetTop', { configurable: true, value: offsetTop });
+      Object.defineProperty(row, 'offsetHeight', { configurable: true, value: offsetHeight });
+    };
+
+    // Below the viewport: scroll down just enough to reveal the row bottom.
+    scrollTop = 0;
+    setRow(250, 30);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, row);
+    expect(scrollTop).toBe(180);
+
+    // Above the viewport: scroll up to the row top.
+    scrollTop = 200;
+    setRow(120, 30);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, row);
+    expect(scrollTop).toBe(120);
+
+    // Already visible: never scroll.
+    scrollTop = 120;
+    setRow(150, 30);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, row);
+    expect(scrollTop).toBe(120);
+
+    // Missing arguments are a no-op, never a throw.
+    ensureCadRibbonFlyoutRowVisible(null, row);
+    ensureCadRibbonFlyoutRowVisible(scrollBox, null);
+    expect(scrollTop).toBe(120);
+  });
+
+  it('L1-L: reopen after a lower Line pick focuses+reveals it and nav never pans an ancestor', async () => {
+    const scrollIntoView = vi.fn();
+    const proto = HTMLElement.prototype as unknown as { scrollIntoView?: () => void };
+    const hadScrollIntoView = 'scrollIntoView' in proto;
+    proto.scrollIntoView = scrollIntoView;
+    const focusSpy = vi.spyOn(HTMLButtonElement.prototype, 'focus');
+    try {
+      const lineKeys = family('line').variants
+        .map((variant) => variant.commandKey)
+        .filter((key): key is string => key != null);
+      const { container, root } = await render(
+        <div className="cad-shell-ribbon-groups">
+          <SplitHarness
+            toolFamily={family('line')}
+            snapshot={stubSnapshot(lineKeys)}
+            actions={stubActions()}
+            initialVariantId="line-create"
+          />
+        </div>,
+      );
+
+      // First open: choose the bottom (17th) variant so it becomes the face.
+      await click(container.querySelector('[data-cad-family-caret="line"]'));
+      await click(container.querySelector('[data-cad-variant="line-perpendicular-from-point"]'));
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).toBeNull();
+
+      // Reopen: focus lands on the current (lower) row with preventScroll, and
+      // the menu is revealed without scrollIntoView() panning an ancestor.
+      await click(container.querySelector('[data-cad-family-caret="line"]'));
+      const flyout = container.querySelector<HTMLElement>('[data-cad-ribbon-flyout="line"]');
+      if (flyout == null) throw new Error('flyout missing');
+      expect((document.activeElement as HTMLElement).getAttribute('data-cad-variant')).toBe(
+        'line-perpendicular-from-point',
+      );
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      expect(focusSpy.mock.calls.at(-1)?.[0]).toEqual({ preventScroll: true });
+
+      // Keyboard nav consumes the same container-only reveal: mock metrics so a
+      // lower row can be revealed ONLY through the flyout's own scrollTop.
+      Object.defineProperty(flyout, 'clientHeight', { configurable: true, value: 100 });
+      let scrollTop = 0;
+      Object.defineProperty(flyout, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTop,
+        set: (next: number) => {
+          scrollTop = next;
+        },
+      });
+      const lastRow = container.querySelector<HTMLElement>(
+        '[data-cad-variant="line-perpendicular-from-point"]',
+      );
+      if (lastRow == null) throw new Error('last row missing');
+      Object.defineProperty(lastRow, 'offsetTop', { configurable: true, value: 250 });
+      Object.defineProperty(lastRow, 'offsetHeight', { configurable: true, value: 30 });
+
+      await keyDown(document.activeElement, 'End');
+      expect(scrollTop).toBe(180);
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).not.toBeNull();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+
+      await keyDown(document.activeElement, 'Home');
+      expect(scrollTop).toBe(0);
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).not.toBeNull();
+
+      await keyDown(document.activeElement, 'ArrowDown');
+      expect(container.querySelector('[data-cad-ribbon-flyout="line"]')).not.toBeNull();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+
+      await cleanup(container, root);
+    } finally {
+      focusSpy.mockRestore();
+      if (!hadScrollIntoView) delete proto.scrollIntoView;
+    }
   });
 
   it('L1-J: an upward anchor resets top:auto so bottom owns the fixed paint', async () => {
