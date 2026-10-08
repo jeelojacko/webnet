@@ -87,7 +87,7 @@ import {
   buildSampleLineDisplayLayers,
   buildSectionViewDisplayLayers,
 } from '../engine/cad/cadSectionView';
-import { filterCadDisplaySceneForViewport } from '../engine/cad/cadViewportAppearance';
+import { filterCadDerivedLayersForViewport } from '../engine/cad/cadViewportAppearance';
 import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
 import { cadAlignmentRawStationToDisplayStation, formatCadStation } from '../engine/cad/cadAlignmentStationing';
 import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceEditSessions';
@@ -1259,8 +1259,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   }, [activeProject, profileCache, surfaceProfileInputs]);
   const displaySceneWithProfiles = useMemo(
     () =>
-      filterCadDisplaySceneForViewport(activeProject, {
-        ...displaySceneWithParcelLabelToggle,
+      // PERF-186.1: displaySceneWithParcelLabelToggle is already viewport
+      // filtered; only the newly attached profile-view layers need the
+      // OFF/FROZEN contract applied here.
+      filterCadDerivedLayersForViewport(activeProject, displaySceneWithParcelLabelToggle, {
         profileViewLayers,
       }),
     [activeProject, displaySceneWithParcelLabelToggle, profileViewLayers],
@@ -1279,8 +1281,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     return buildSectionViewDisplayLayers(activeProject, sectionCache);
   }, [activeProject, sectionCache, surfaceSectionInputs]);
   const displaySceneWithSections = useMemo(() =>
-    filterCadDisplaySceneForViewport(activeProject, {
-      ...displaySceneWithProfiles,
+    // PERF-186.1: base is already filtered; only the newly attached sample /
+    // section / analysis layers are filtered. withBlockHoverTitles maps the
+    // existing primitives in place (hover metadata only) — it adds/removes no
+    // primitive, so the already-filtered list is reused without a rescan.
+    filterCadDerivedLayersForViewport(activeProject, displaySceneWithProfiles, {
       // Phase 18N — refs render natively (persist slice); tag the
       // expansion primitives with hover titles only.
       primitives: withBlockHoverTitles(activeProject, displaySceneWithProfiles.primitives),
@@ -1955,8 +1960,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     return buildGroupGradingSceneLayers(shellSnapshot?.gradingGroups, { failedErrors });
   }, [shellSnapshot, gradingService]);
   const displaySceneWithGrading = useMemo(
-    () => filterCadDisplaySceneForViewport(activeProject, {
-      ...displaySceneWithSections,
+    // PERF-186.1: base is already filtered; only the newly attached grading
+    // layers need the OFF/FROZEN contract applied.
+    () => filterCadDerivedLayersForViewport(activeProject, displaySceneWithSections, {
       gradingLayers: gradingDisplayLayers,
       groupGradingLayers: groupGradingDisplayLayers,
     }),

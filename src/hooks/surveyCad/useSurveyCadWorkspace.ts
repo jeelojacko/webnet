@@ -199,11 +199,17 @@ export const useSurveyCadWorkspace = (
     [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex, surfaceContourInputs, surfaceVolumeInputs],
   );
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
+  // PERF-186.1 (#189): the indexed hidden set is computed once per render; the
+  // history updater reuses it only while the committed project is the same
+  // object, and recomputes from `current.present.project` otherwise.
   useEffect(() => {
     const hidden = viewportHiddenEntityIds(cadProject);
     if (!selection.selectedEntityIds.some((entityId) => hidden.has(entityId))) return;
     applyHistoryUpdate((current) => {
-      const retired = viewportHiddenEntityIds(current.present.project);
+      const retired =
+        current.present.project === cadProject
+          ? hidden
+          : viewportHiddenEntityIds(current.present.project);
       const visibleIds = current.present.selection.selectedEntityIds.filter(
         (entityId) => !retired.has(entityId),
       );

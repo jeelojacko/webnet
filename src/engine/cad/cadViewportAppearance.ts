@@ -5,7 +5,7 @@
 // to screen space at render time so the scene itself stays zoom-independent
 // and export-scene output (which ignores these viewport-only fields) is
 // untouched.
-import { resolveCadEntityAppearance } from './cadAppearance';
+import { getCadViewportVisibilityIndex, cadViewportVisibilityCounters, type CadViewportVisibilityIndex } from './cadViewportVisibilityIndex';
 import type {
   CadDisplayScene,
   CadEntityId,
@@ -79,12 +79,18 @@ export const toScreenDash = (
 export const opacityFromTransparency = (transparency: number): number | undefined =>
   transparency > 0 ? Math.round((1 - transparency) * 1000) / 1000 : undefined;
 
-const isLayerHidden = (project: CadProject, layerId: string): boolean => {
-  const layer = project.layers.find((candidate) => candidate.id === layerId);
-  // Unknown/missing layers (preview, planning, F2F-generated) default VISIBLE.
-  if (!layer) return false;
-  return layer.visible === false || layer.frozen === true;
-};
+const filterVisibleLayers = <T extends { layerId: string }>(
+  index: CadViewportVisibilityIndex,
+  layers: readonly T[] | undefined,
+): T[] => (layers ?? []).filter((layer) => !index.isLayerHidden(layer.layerId));
+
+const filterVisibleLegends = (
+  index: CadViewportVisibilityIndex,
+  legends: CadDisplayScene['analysisLegendLayers'],
+): NonNullable<CadDisplayScene['analysisLegendLayers']> =>
+  (legends ?? []).filter(
+    (legend) => !index.isLayerHidden(index.analysisLegendLayerId(legend.legendId)),
+  );
 
 /**
  * View-layer visibility filter for scene CONSUMERS (viewport canvas, sheet
@@ -96,78 +102,125 @@ const isLayerHidden = (project: CadProject, layerId: string): boolean => {
  * Synthesized labels carry `layerId: 'labels'` while belonging to a source
  * entity: hidden when EITHER the labels layer or the source entity's layer
  * hides. Label stroke itself keeps the source-style color (see cadRenderer).
+ *
+ * PERF-186.1: entity + layer lookups go through the per-project index
+ * (O(1) each) instead of a rebuilt entity Map plus per-primitive layer scan.
  */
 export const filterCadDisplaySceneForViewport = (
   project: CadProject,
   scene: CadDisplayScene,
 ): CadDisplayScene => {
-  const entities = new Map(project.entities.map((entity) => [entity.id, entity]));
+  cadViewportVisibilityCounters.fullFilterInvocations += 1;
+  const index = getCadViewportVisibilityIndex(project);
   return {
     bounds: scene.bounds,
-    surfaceLayers: (scene.surfaceLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
-    volumeLayers: (scene.volumeLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
-    // Phase 18U: analysis fills + legends ride the same OFF/frozen contract —
-    // layer OFF hides with no recalculation, ON restores from cache.
-    analysisLayers: (scene.analysisLayers ?? []).filter(
-      (layer) => !isLayerHidden(project, layer.layerId),
-    ),
-    analysisLegendLayers: (scene.analysisLegendLayers ?? []).filter((legend) => {
-      const def = (project.analysisLegends ?? []).find((entry) => entry.id === legend.legendId);
-      const map = def
-        ? (project.analysisMaps ?? []).find((entry) => entry.id === def.analysisId)
-        : undefined;
-      return !isLayerHidden(project, map?.layerId ?? 'general');
-    }),
-    // Phase 18J: profile views ride the same OFF/frozen contract — layer
-    // OFF hides the view with no rebuild, ON restores it from cache.
-    profileViewLayers: (scene.profileViewLayers ?? []).filter(
-      (layer) => !isLayerHidden(project, layer.layerId),
-    ),
-    // Phase 18K: sample lines + section views ride the same OFF/frozen
-    // contract — layer OFF hides with no rebuild, ON restores from cache.
-    // Phase 20B: grading fills + daylight ride the same OFF/frozen
-    // contract — layer OFF hides with no recalculation, ON restores.
-    gradingLayers: (scene.gradingLayers ?? []).filter(
-      (layer) => !isLayerHidden(project, layer.layerId),
-    ),
-    // Phase 20C: grading-group fills + daylight + seam + ghosts ride the
-    // same OFF/frozen contract — layer OFF hides with no recalculation.
-    groupGradingLayers: (scene.groupGradingLayers ?? []).filter(
-      (layer) => !isLayerHidden(project, layer.layerId),
-    ),
-    sampleLineLayers: (scene.sampleLineLayers ?? []).filter(
-      (layer) => !isLayerHidden(project, layer.layerId),
-    ),
-    sectionViewLayers: (scene.sectionViewLayers ?? []).filter(
-      (layer) => !isLayerHidden(project, layer.layerId),
-    ),
     primitives: scene.primitives.filter((primitive) => {
-      const entity = entities.get(primitive.sourceEntityId);
-      if (!entity) return true;
-      const { visible } = resolveCadEntityAppearance({
-        entity,
-        layer: project.layers.find((candidate) => candidate.id === entity.layerId),
-        styleLibrary: project.styleLibrary,
-      });
-      if (!visible) return false;
-      if (primitive.layerId !== entity.layerId && isLayerHidden(project, primitive.layerId)) {
+      cadViewportVisibilityCounters.primitiveVisibilityEvaluations += 1;
+      const backing = index.entityVisibility(primitive.sourceEntityId);
+      // No backing entity (transient preview): always visible.
+      if (backing === undefined) return true;
+      if (!backing.visible) return false;
+      if (primitive.layerId !== backing.layerId && index.isLayerHidden(primitive.layerId)) {
         return false;
       }
       return true;
     }),
+    surfaceLayers: filterVisibleLayers(index, scene.surfaceLayers),
+    volumeLayers: filterVisibleLayers(index, scene.volumeLayers),
+    // Phase 18U: analysis fills + legends ride the same OFF/frozen contract —
+    // layer OFF hides with no recalculation, ON restores from cache.
+    analysisLayers: filterVisibleLayers(index, scene.analysisLayers),
+    analysisLegendLayers: filterVisibleLegends(index, scene.analysisLegendLayers),
+    // Phase 18J: profile views ride the same OFF/frozen contract — layer
+    // OFF hides the view with no rebuild, ON restores it from cache.
+    profileViewLayers: filterVisibleLayers(index, scene.profileViewLayers),
+    // Phase 18K: sample lines + section views ride the same OFF/frozen
+    // contract — layer OFF hides with no rebuild, ON restores from cache.
+    // Phase 20B: grading fills + daylight ride the same OFF/frozen
+    // contract — layer OFF hides with no recalculation, ON restores.
+    gradingLayers: filterVisibleLayers(index, scene.gradingLayers),
+    // Phase 20C: grading-group fills + daylight + seam + ghosts ride the
+    // same OFF/frozen contract — layer OFF hides with no recalculation.
+    groupGradingLayers: filterVisibleLayers(index, scene.groupGradingLayers),
+    sampleLineLayers: filterVisibleLayers(index, scene.sampleLineLayers),
+    sectionViewLayers: filterVisibleLayers(index, scene.sectionViewLayers),
+  };
+};
+
+export interface CadViewportDerivedLayerPatch {
+  /** Already viewport-filtered primitives (metadata-only post-process). */
+  primitives?: CadDisplayScene['primitives'];
+  surfaceLayers?: CadDisplayScene['surfaceLayers'];
+  volumeLayers?: CadDisplayScene['volumeLayers'];
+  analysisLayers?: CadDisplayScene['analysisLayers'];
+  analysisLegendLayers?: CadDisplayScene['analysisLegendLayers'];
+  profileViewLayers?: CadDisplayScene['profileViewLayers'];
+  gradingLayers?: CadDisplayScene['gradingLayers'];
+  groupGradingLayers?: CadDisplayScene['groupGradingLayers'];
+  sampleLineLayers?: CadDisplayScene['sampleLineLayers'];
+  sectionViewLayers?: CadDisplayScene['sectionViewLayers'];
+}
+
+/**
+ * PERF-186.1 — derived-layer-only viewport filter for the staged display
+ * pipeline. Filters ONLY the newly attached derived layer arrays and reuses
+ * every other field (including the already-filtered `base.primitives`) by
+ * reference. The base scene must already be viewport-filtered; the caller
+ * must only attach derived layers (and metadata-only primitive rewrites such
+ * as block hover titles, which add/remove no primitives). No hidden full
+ * scan: the primitive list is never re-evaluated here.
+ */
+export const filterCadDerivedLayersForViewport = (
+  project: CadProject,
+  base: CadDisplayScene,
+  patch: CadViewportDerivedLayerPatch,
+): CadDisplayScene => {
+  cadViewportVisibilityCounters.derivedFilterInvocations += 1;
+  const index = getCadViewportVisibilityIndex(project);
+  return {
+    bounds: base.bounds,
+    primitives: patch.primitives ?? base.primitives,
+    surfaceLayers:
+      patch.surfaceLayers !== undefined
+        ? filterVisibleLayers(index, patch.surfaceLayers)
+        : base.surfaceLayers,
+    volumeLayers:
+      patch.volumeLayers !== undefined
+        ? filterVisibleLayers(index, patch.volumeLayers)
+        : base.volumeLayers,
+    analysisLayers:
+      patch.analysisLayers !== undefined
+        ? filterVisibleLayers(index, patch.analysisLayers)
+        : base.analysisLayers,
+    analysisLegendLayers:
+      patch.analysisLegendLayers !== undefined
+        ? filterVisibleLegends(index, patch.analysisLegendLayers)
+        : base.analysisLegendLayers,
+    profileViewLayers:
+      patch.profileViewLayers !== undefined
+        ? filterVisibleLayers(index, patch.profileViewLayers)
+        : base.profileViewLayers,
+    gradingLayers:
+      patch.gradingLayers !== undefined
+        ? filterVisibleLayers(index, patch.gradingLayers)
+        : base.gradingLayers,
+    groupGradingLayers:
+      patch.groupGradingLayers !== undefined
+        ? filterVisibleLayers(index, patch.groupGradingLayers)
+        : base.groupGradingLayers,
+    sampleLineLayers:
+      patch.sampleLineLayers !== undefined
+        ? filterVisibleLayers(index, patch.sampleLineLayers)
+        : base.sampleLineLayers,
+    sectionViewLayers:
+      patch.sectionViewLayers !== undefined
+        ? filterVisibleLayers(index, patch.sectionViewLayers)
+        : base.sectionViewLayers,
   };
 };
 
 /** Entity ids currently hidden from the viewport (for selection retirement). */
-export const viewportHiddenEntityIds = (project: CadProject): Set<CadEntityId> => {
-  const hidden = new Set<CadEntityId>();
-  for (const entity of project.entities) {
-    const { visible } = resolveCadEntityAppearance({
-      entity,
-      layer: project.layers.find((candidate) => candidate.id === entity.layerId),
-      styleLibrary: project.styleLibrary,
-    });
-    if (!visible) hidden.add(entity.id);
-  }
-  return hidden;
-};
+export const viewportHiddenEntityIds = (
+  project: CadProject,
+): ReadonlySet<CadEntityId> => getCadViewportVisibilityIndex(project).hiddenEntityIds;
+

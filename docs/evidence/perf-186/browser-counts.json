@@ -1,0 +1,15 @@
+{
+  "flowA": {
+    "entities": 2,
+    "hiddenRendered": 0
+  },
+  "flowB": {
+    "selectedByBox": 2,
+    "selectedAfterShift": 2,
+    "restoredEntities": 3
+  },
+  "flowC": {
+    "entityCount": 1,
+    "rendered": 1
+  }
+}
