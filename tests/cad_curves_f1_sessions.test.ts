@@ -127,6 +127,7 @@ type LegacyArcSession = Extract<
   CommandSession,
   { key: 'RADIAL_BEARING' | 'POINT_ON_CURVE' | 'SUBDIVIDE_CURVE' | 'OFFSET_CURVE' | 'REVERSE_CURVE' | 'COMPOUND_CURVE' }
 >;
+type ThroughSession = Extract<CommandSession, { key: 'CURVE_THROUGH_POINT' }>;
 
 const betweenSession = (over?: Omit<Partial<BetweenSession>, 'key'>): BetweenSession => ({
   key: 'CURVE_BETWEEN_TWO_LINES',
@@ -341,18 +342,17 @@ describe('CAD Curves F1 Through-point submit', () => {
 
   it('no-solution stays active with zero mutation', () => {
     const project = rightAngleProject();
-    // A pass point on a source line admits no tangent circle.
-    const { history, replaced } = submitF1(project, throughSession(point(50, 0)), '');
+    // A pass point behind PI admits no tangent circle.
+    const { history, replaced } = submitF1(project, throughSession(point(-50, -50)), '');
     expect(replaced).not.toBeNull();
     expect(history.present.project.entities).toEqual(project.entities);
     expect(history.undoStack).toHaveLength(0);
   });
 
-  it('multi-solution through-point consults the stored side and never auto-picks', () => {
-    // Rays at 80deg and 0deg from a shared PI: pass point (6,0) admits two
-    // tangent circles that share a computed side. Enter must enumerate (no
-    // mutation), and the stored candidateSide must be consulted — never a
-    // silent candidates[0] commit.
+  const onRayThrough = (): { project: CadProject; session: ThroughSession } => {
+    // Rays at 80deg and 0deg from a shared PI: pass point (6,0) lies on the
+    // 0deg ray, so the true discriminant is zero and the tangent circle is
+    // unique (previously two phantom near-identical candidates).
     const a1 = (80 * Math.PI) / 180;
     const d1 = { x: Math.cos(a1), y: Math.sin(a1) };
     const project: CadProject = {
@@ -362,7 +362,7 @@ describe('CAD Curves F1 Through-point submit', () => {
         makeLine('line-b', { x: -1, y: 0 }, { x: 1, y: 0 }),
       ],
     };
-    const session: CommandSession = {
+    const session: ThroughSession = {
       key: 'CURVE_THROUGH_POINT',
       inputValue: '',
       firstEntityId: 'line-a',
@@ -372,17 +372,36 @@ describe('CAD Curves F1 Through-point submit', () => {
       throughPoint: point(6, 0),
       candidateSide: null,
     };
-    const enumerated = submitF1(project, session, '');
-    expect(enumerated.replaced?.resultText).toMatch(/Type L or R/);
-    expect(enumerated.history.present.project.entities).toEqual(project.entities);
-    expect(enumerated.history.undoStack).toHaveLength(0);
+    return { project, session };
+  };
 
-    // Both reachable candidates share a side for these rays, so the side is
-    // not usable: stay active with an honest message and zero mutation.
-    const sided = submitF1(project, { ...session, candidateSide: 'right' }, '');
-    expect(sided.replaced?.resultText).toMatch(/not unique/);
-    expect(sided.history.present.project.entities).toEqual(project.entities);
-    expect(sided.history.undoStack).toHaveLength(0);
+  it('commits the unique on-ray circle exactly once and keeps L/R consumable', () => {
+    const { project, session } = onRayThrough();
+    const committed = submitF1(project, session, '');
+    expect(committed.replaced).toBeNull();
+    expect(committed.reports).toBe(1);
+    expect(arcsOf(committed.history.present.project)).toHaveLength(1);
+    expect(committed.history.undoStack).toHaveLength(1);
+
+    // L/R are still valid side tokens: consumed into the session, no mutation.
+    for (const [token, side] of [['L', 'left'], ['R', 'right']] as const) {
+      const consumed = submitF1(project, session, token);
+      expect(consumed.replaced).not.toBeNull();
+      expect((consumed.replaced as ThroughSession).candidateSide).toBe(side);
+      expect(consumed.history.present.project.entities).toEqual(project.entities);
+      expect(consumed.history.undoStack).toHaveLength(0);
+    }
+
+    // A matching stored side commits the one circle; a mismatched side fails
+    // closed rather than silently committing candidates[0].
+    const matched = submitF1(project, { ...session, candidateSide: 'right' }, '');
+    expect(matched.replaced).toBeNull();
+    expect(arcsOf(matched.history.present.project)).toHaveLength(1);
+
+    const mismatched = submitF1(project, { ...session, candidateSide: 'left' }, '');
+    expect(mismatched.replaced).not.toBeNull();
+    expect(mismatched.history.present.project.entities).toEqual(project.entities);
+    expect(mismatched.history.undoStack).toHaveLength(0);
   });
 });
 

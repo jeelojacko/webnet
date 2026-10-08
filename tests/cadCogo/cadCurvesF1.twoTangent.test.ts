@@ -49,6 +49,17 @@ const dot = (a: CadWorldPoint, b: CadWorldPoint): number => a.x * b.x + a.y * b.
 const rightAngle = (): CadTwoTangentRays =>
   resolveTwoTangentRays(eastLine, verticalLine, { x: 80, y: 0 }, { x: 0, y: 80 })!;
 
+const southLine: CadCurveLineInput = {
+  entityId: 'line-s',
+  segmentId: 'line-s#0',
+  start: { x: 0, y: -300 },
+  end: { x: 0, y: 300 },
+};
+
+/** Mirrored corner (east ray + south ray) — the opposite turn direction. */
+const rightTurn = (): CadTwoTangentRays =>
+  resolveTwoTangentRays(eastLine, southLine, { x: 80, y: 0 }, { x: 0, y: -80 })!;
+
 describe('CAD Curves F1 two-tangent resolver', () => {
   it('resolves a 90-degree corner into PI and rays', () => {
     const rays = rightAngle();
@@ -249,12 +260,100 @@ describe('CAD Curves F1 through-point kernel', () => {
     }
   });
 
-  it('rejects near-line and behind-PI points as no-solution', () => {
+  it('solves the unique on-ray circle instead of rejecting a true double root', () => {
+    // Pass point (60,0) lies on the east ray: the discriminant is exactly zero,
+    // so the tangent circle is unique (r=60, center (60,60), PC (60,0), PT
+    // (0,60)). IEEE cancellation must not be mistaken for a negative root.
     const rays = rightAngle();
-    expect(solveCadCurveThroughTwoTangentRays(rays, { x: 60, y: 0 }).ok).toBe(false);
-    expect(solveCadCurveThroughTwoTangentRays(rays, { x: 60, y: 0 }).candidates).toHaveLength(0);
-    expect(solveCadCurveThroughTwoTangentRays(rays, { x: -50, y: -50 }).ok).toBe(false);
-    expect(solveCadCurveThroughTwoTangentRays(rays, { x: -50, y: -50 }).candidates).toHaveLength(0);
+    const outcome = solveCadCurveThroughTwoTangentRays(rays, { x: 60, y: 0 });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.candidates).toHaveLength(1);
+    if (!outcome.ok) return;
+    const { result } = outcome;
+    expect(result.metrics.radius).toBeCloseTo(60, 9);
+    expect(result.arc.center.x).toBeCloseTo(60, 9);
+    expect(result.arc.center.y).toBeCloseTo(60, 9);
+    expect(result.pc.x).toBeCloseTo(60, 9);
+    expect(result.pc.y).toBeCloseTo(0, 9);
+    expect(result.pt.x).toBeCloseTo(0, 9);
+    expect(result.pt.y).toBeCloseTo(60, 9);
+    expect(result.metrics.deltaDeg).toBeCloseTo(90, 9);
+    // |center->P| == r, radius perpendicular to both rays (G1 joins) and PC/PT
+    // on the selected positive rays.
+    expect(cadDistance(result.arc.center, { x: 60, y: 0 })).toBeCloseTo(result.metrics.radius, 9);
+    expect(
+      dot(
+        { x: result.pc.x - result.arc.center.x, y: result.pc.y - result.arc.center.y },
+        rays.ray1.direction,
+      ),
+    ).toBeCloseTo(0, 9);
+    expect(
+      dot(
+        { x: result.pt.x - result.arc.center.x, y: result.pt.y - result.arc.center.y },
+        rays.ray2.direction,
+      ),
+    ).toBeCloseTo(0, 9);
+    expect(result.pc.x).toBeGreaterThan(0);
+    expect(result.pt.y).toBeGreaterThan(0);
+  });
+
+  it('solves the mirrored on-ray circle for the opposite turn direction', () => {
+    const outcome = solveCadCurveThroughTwoTangentRays(rightTurn(), { x: 60, y: 0 });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.candidates).toHaveLength(1);
+    if (!outcome.ok) return;
+    expect(outcome.result.metrics.radius).toBeCloseTo(60, 6);
+    expect(outcome.result.arc.center.x).toBeCloseTo(60, 6);
+    expect(outcome.result.arc.center.y).toBeCloseTo(-60, 6);
+    expect(cadDistance(outcome.result.arc.center, { x: 60, y: 0 })).toBeCloseTo(
+      outcome.result.metrics.radius,
+      6,
+    );
+  });
+
+  it('still resolves a slightly perturbed interior point and rejects the outside perturbation', () => {
+    const rays = rightAngle();
+    const inside = solveCadCurveThroughTwoTangentRays(rays, { x: 60, y: 1e-6 });
+    expect(inside.ok).toBe(true);
+    expect(inside.candidates).toHaveLength(1);
+    if (inside.ok) {
+      expect(inside.result.metrics.radius).toBeGreaterThan(60);
+      expect(cadDistance(inside.result.arc.center, { x: 60, y: 1e-6 })).toBeCloseTo(
+        inside.result.metrics.radius,
+        9,
+      );
+    }
+    const outside = solveCadCurveThroughTwoTangentRays(rays, { x: 60, y: -1e-6 });
+    expect(outside.ok).toBe(false);
+    expect(outside.candidates).toHaveLength(0);
+  });
+
+  it('rejects behind-PI and off-sweep points as no-solution', () => {
+    const rays = rightAngle();
+    for (const candidate of [{ x: -50, y: -50 }, { x: 50, y: -50 }]) {
+      const outcome = solveCadCurveThroughTwoTangentRays(rays, candidate);
+      expect(outcome.ok).toBe(false);
+      expect(outcome.candidates).toHaveLength(0);
+    }
+  });
+
+  it('is invariant under source reversal and ray swap for an on-ray pass point', () => {
+    const reversed = resolveTwoTangentRays(
+      { ...eastLine, start: { x: 300, y: 0 }, end: { x: -300, y: 0 } },
+      { ...verticalLine, start: { x: 0, y: 300 }, end: { x: 0, y: -300 } },
+      { x: 80, y: 0 },
+      { x: 0, y: 80 },
+    )!;
+    const swapped = resolveTwoTangentRays(verticalLine, eastLine, { x: 0, y: 80 }, { x: 80, y: 0 })!;
+    for (const rays of [reversed, swapped]) {
+      const outcome = solveCadCurveThroughTwoTangentRays(rays, { x: 60, y: 0 });
+      expect(outcome.ok).toBe(true);
+      expect(outcome.candidates).toHaveLength(1);
+      if (!outcome.ok) continue;
+      expect(outcome.result.metrics.radius).toBeCloseTo(60, 6);
+      expect(outcome.result.arc.center.x).toBeCloseTo(60, 6);
+      expect(outcome.result.arc.center.y).toBeCloseTo(60, 6);
+    }
   });
 });
 

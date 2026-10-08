@@ -13,6 +13,7 @@
   },
   "flowD": {
     "throughRadius": 20.00046304838157,
+    "onRayRadius": 59.999999999999986,
     "noSolutionStaysActive": true
   },
   "flowE": {

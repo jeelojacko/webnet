@@ -296,7 +296,7 @@ test('C: On shares the arc with sources byte-unchanged', async ({ page }) => {
   await assertClean(page, errors);
 });
 
-test('D: Through pass-point trims; no-solution stays active', async ({ page }) => {
+test('D: Through pass-point trims; on-ray commits; genuinely invalid stays active', async ({ page }) => {
   test.setTimeout(180_000);
   const errors: string[] = [];
   await boot(page, errors);
@@ -304,6 +304,7 @@ test('D: Through pass-point trims; no-solution stays active', async ({ page }) =
   await makeLine(page, 0, 0, 0, 100);
   const before = await saveDrawing(page);
   const lineIds = linesOf(before.entities).map((e) => String(e.id));
+  const beforeEnt = await ent(page);
 
   await start(page, 'CURVETHROUGHPOINT', /CURVE_THROUGH_POINT/);
   await pickTwoLines(page, lineIds[0]!, lineIds[1]!);
@@ -311,24 +312,47 @@ test('D: Through pass-point trims; no-solution stays active', async ({ page }) =
   await expect(prompt(page)).toContainText(/CURVE_THROUGH_POINT/, { timeout: 10000 });
   await type(page, '');
   await expect.poll(() => ent(page), { timeout: 15000 }).toBe(11);
+  const perArcCommit = 11 - beforeEnt;
   const after = await saveDrawing(page);
   const throughArcs = arcsOf(after.entities);
   expect(throughArcs).toHaveLength(1);
   expect(JSON.stringify(linesOf(after.entities))).not.toBe(JSON.stringify(linesOf(before.entities)));
 
-  // No-solution: a pass point on a source line stays active with no commit.
+  // Valid on-ray pass point: the point is the tangency point itself (true
+  // double root), so exactly one circle commits instead of rejecting it.
+  await clearSel(page);
+  await start(page, 'CURVETHROUGHPOINT', /CURVE_THROUGH_POINT/);
+  const onRayBefore = await saveDrawing(page);
+  const onRayIds = linesOf(onRayBefore.entities).map((e) => String(e.id));
+  await pickTwoLines(page, onRayIds[0]!, onRayIds[1]!);
+  await type(page, '60,0');
+  await type(page, '');
+  await expect.poll(() => ent(page), { timeout: 15000 }).toBe(11 + perArcCommit);
+  const onRayAfter = await saveDrawing(page);
+  const onRayArcs = arcsOf(onRayAfter.entities);
+  expect(onRayArcs).toHaveLength(2);
+  const onRayArc = onRayArcs.find((a) => Math.abs(Number(a.radius) - 60) < 1e-3);
+  expect(onRayArc).toBeTruthy();
+  expect(Number(onRayArc!.centerX)).toBeCloseTo(60, 3);
+  expect(Number(onRayArc!.centerY)).toBeCloseTo(60, 3);
+
+  // Genuinely invalid: a pass point behind PI admits no tangent circle.
   await clearSel(page);
   await start(page, 'CURVETHROUGHPOINT', /CURVE_THROUGH_POINT/);
   const fresh = await saveDrawing(page);
   const freshIds = linesOf(fresh.entities).map((e) => String(e.id));
   await pickTwoLines(page, freshIds[0]!, freshIds[1]!);
-  await type(page, '50,0');
+  await type(page, '-50,-50');
   await type(page, '');
   await expect(prompt(page)).toContainText(/no tangent circle|stays active/i, { timeout: 10000 });
-  expect(await ent(page)).toBe(11);
+  expect(await ent(page)).toBe(11 + perArcCommit);
   await esc(page);
-  expect(await ent(page)).toBe(11);
-  evidence.flowD = { throughRadius: throughArcs[0]!.radius, noSolutionStaysActive: true };
+  expect(await ent(page)).toBe(11 + perArcCommit);
+  evidence.flowD = {
+    throughRadius: throughArcs[0]!.radius,
+    onRayRadius: Number(onRayArc!.radius),
+    noSolutionStaysActive: true,
+  };
   writeEvidence();
   await assertClean(page, errors);
 });

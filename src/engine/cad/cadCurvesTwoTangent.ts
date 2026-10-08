@@ -3,6 +3,7 @@ import {
   cadAzimuthDeg,
   cadDistance,
   cadInfiniteLineIntersection,
+  cadNormalizeAngleDeg,
   cadProjectPointOntoInfiniteLine,
   type CadArcDefinition,
   type CadWorldPoint,
@@ -32,6 +33,16 @@ import {
 /** Angular conditioning floor for near-parallel supporting lines. Matches the
  * existing FILLET line/line angular guard (`1e-6` rad). */
 export const CAD_CURVE_PARALLEL_SIN_FLOOR = 1e-6;
+
+/**
+ * Multiplier applied to `Number.EPSILON` when deciding whether a quadratic
+ * discriminant is numerically zero. `b*b - 4*a*c` is computed by catastrophic
+ * cancellation whenever the through point lies (near) on a source ray, where
+ * the true discriminant is zero; the residue is relative to the magnitude of
+ * `b*b` and `4*a*c`, not to a squared length tolerance. A few ulps is enough
+ * to absorb the cancellation while still rejecting materially negative roots.
+ */
+const CAD_CURVE_DISCRIMINANT_EPS_FACTOR = 32;
 
 export interface CadCurveLineInput {
   entityId: string;
@@ -117,6 +128,12 @@ const unitVector = (from: CadWorldPoint, to: CadWorldPoint): CadWorldPoint | nul
 };
 
 const cross = (a: CadWorldPoint, b: CadWorldPoint): number => a.x * b.y - a.y * b.x;
+
+/** Smallest absolute separation between two angles in degrees, in `[0, 180]`. */
+const angleSeparationDeg = (aDeg: number, bDeg: number): number => {
+  const delta = Math.abs(cadNormalizeAngleDeg(aDeg - bDeg));
+  return Math.min(delta, 360 - delta);
+};
 
 const scaleOf = (lines: readonly CadCurveLineInput[], picks: readonly CadWorldPoint[]): number => {
   let scale = 1;
@@ -329,9 +346,16 @@ const solveBisectorCenters = (
   const b = 2 * wb;
   const c = w.x * w.x + w.y * w.y;
   const discriminant = b * b - 4 * a * c;
-  if (a <= CAD_XY_DEGENERATE_FLOOR || discriminant < -tolerance * tolerance) return [];
-  const root = Math.sqrt(Math.max(0, discriminant));
-  const roots = [(-b + root) / (2 * a), (-b - root) / (2 * a)];
+  if (a <= CAD_XY_DEGENERATE_FLOOR) return [];
+  // Scale-aware zero test. A discriminant at the level of rounding noise in
+  // `b*b` / `4*a*c` is a true double root (through point on a source ray), not
+  // a rejection and not two phantom near-identical circles: clamp it to a
+  // single double root. Only materially negative values are rejected.
+  const discriminantScale = b * b + Math.abs(4 * a * c);
+  const discriminantEpsilon = CAD_CURVE_DISCRIMINANT_EPS_FACTOR * Number.EPSILON * discriminantScale;
+  if (discriminant < -discriminantEpsilon) return [];
+  const root = discriminant > discriminantEpsilon ? Math.sqrt(discriminant) : 0;
+  const roots = root === 0 ? [-b / (2 * a)] : [(-b + root) / (2 * a), (-b - root) / (2 * a)];
   const centers: CadWorldPoint[] = [];
   for (const s of roots) {
     if (!Number.isFinite(s) || Math.abs(s) <= tolerance) continue;
@@ -401,7 +425,17 @@ export const solveCadCurveThroughTwoTangentRays = (
       const arc = cadBuildArcFromCenterSweep(center, radius, startAngleDeg, signedSweep);
       if (!arc) continue;
       const throughAngleDeg = cadAngleDegFromCenter(center, throughPoint);
-      if (!cadIsAngleOnArcSweep(throughAngleDeg, arc.startAngleDeg, arc.endAngleDeg, 1e-6)) {
+      // A through point coincident with PC/PT (within tolerance) lies on the
+      // minor arc by definition; `cadIsAngleOnArcSweep` only tolerances the
+      // sweep magnitude, so guard the start/end boundary here for both turn
+      // directions (CW and CCW) without widening the shared primitive.
+      const coincidentWithEndpoint =
+        angleSeparationDeg(throughAngleDeg, arc.startAngleDeg) <= 1e-6 ||
+        angleSeparationDeg(throughAngleDeg, arc.endAngleDeg) <= 1e-6;
+      if (
+        !coincidentWithEndpoint &&
+        !cadIsAngleOnArcSweep(throughAngleDeg, arc.startAngleDeg, arc.endAngleDeg, 1e-6)
+      ) {
         continue;
       }
       const metrics = buildCadCurveMetricsSummaryFromRadiusDeltaDeg(radius, arc.deltaDeg);
