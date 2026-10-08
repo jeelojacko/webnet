@@ -4,6 +4,7 @@ import { resolveCurrentCadLayerId } from './cadLayers';
 import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
 import { buildTrimmedEntityPieces } from './cadTransactionsTrim';
+import { trimLabelForEntity, TRIM_EPSILON } from './cadTransactionsTrimCommon';
 import { createArcSupportEntities } from './cadTransactionsLinkedEntities';
 import { buildCurveLabels, nextCurveSequence } from './cadTransactionsEntityFactories';
 import { appendCogoComputation, createCogoProvenance } from './cadTransactionsCogoReports';
@@ -135,9 +136,27 @@ export const trimCadLineToCurve = ({
   ) ?? pieces.find((candidate): candidate is CadLineEntity => candidate.type === 'line');
   if (piece) return piece;
   if (!Number.isFinite(tangentPoint.x) || !Number.isFinite(tangentPoint.y)) return null;
-  return ray.trimStart
-    ? { ...line, fromX: tangentPoint.x, fromY: tangentPoint.y }
-    : { ...line, toX: tangentPoint.x, toY: tangentPoint.y };
+  // Extension path: the moved endpoint no longer coincides with its original
+  // station, so re-label it under the TRIM law instead of falsely reusing the
+  // station id at coordinates the station does not occupy.
+  if (ray.trimStart) {
+    const coincides =
+      Math.hypot(tangentPoint.x - line.fromX, tangentPoint.y - line.fromY) <= TRIM_EPSILON;
+    return {
+      ...line,
+      fromX: tangentPoint.x,
+      fromY: tangentPoint.y,
+      fromStationId: coincides ? line.fromStationId : trimLabelForEntity(line.id, 1, 'S'),
+    };
+  }
+  const coincides =
+    Math.hypot(tangentPoint.x - line.toX, tangentPoint.y - line.toY) <= TRIM_EPSILON;
+  return {
+    ...line,
+    toX: tangentPoint.x,
+    toY: tangentPoint.y,
+    toStationId: coincides ? line.toStationId : trimLabelForEntity(line.id, 1, 'E'),
+  };
 };
 
 export const replaceSourceLines = (

@@ -63,6 +63,13 @@ const rightAngleProject = (locked = false): CadProject =>
     makeLine('line-b', { x: 0, y: 0 }, { x: 0, y: 100 }),
   ]);
 
+/** Segments shorter than the tangent length force the extension fallback. */
+const shortRightAngleProject = (): CadProject =>
+  withEntities([
+    makeLine('line-a', { x: 0, y: 0 }, { x: 10, y: 0 }),
+    makeLine('line-b', { x: 0, y: 0 }, { x: 0, y: 10 }),
+  ]);
+
 const FIRST_PICK = { x: 80, y: 0 };
 const SECOND_PICK = { x: 0, y: 80 };
 
@@ -184,6 +191,42 @@ describe('CAD Curves F1 CURVE_BETWEEN / CURVE_ON transactions', () => {
     expect(next).toBe(history);
     expect(next.present.project.entities).toHaveLength(2);
     expect(next.present.project.cogoComputations).toHaveLength(0);
+  });
+});
+
+describe('CAD Curves F1 extend fallback labels', () => {
+  it('re-labels the extended end under the TRIM law and preserves the untouched end', () => {
+    const project = shortRightAngleProject();
+    const history = runCadCommand(createCadHistoryState(project), {
+      key: 'CURVE_BETWEEN_TWO_LINES_CREATE',
+      firstEntityId: 'line-a',
+      firstPickPoint: { x: 8, y: 0 },
+      secondEntityId: 'line-b',
+      secondPickPoint: { x: 0, y: 8 },
+      metric: { mode: 'radius', value: 50 },
+    });
+    expect(history.undoStack).toHaveLength(1);
+    // PC (50,0) / PT (0,50) lie beyond the 10 m segments, so the extension
+    // fallback moves exactly one endpoint on each source line.
+    for (const id of ['line-a', 'line-b']) {
+      const source = project.entities.find((entity) => entity.id === id) as CadLineEntity;
+      const extended = history.present.project.entities.find((entity) => entity.id === id) as CadLineEntity;
+      const fromMoved = Math.hypot(extended.fromX - source.fromX, extended.fromY - source.fromY) > 1e-9;
+      const toMoved = Math.hypot(extended.toX - source.toX, extended.toY - source.toY) > 1e-9;
+      expect(Number(fromMoved) + Number(toMoved)).toBe(1);
+      if (fromMoved) {
+        // The moved end must not claim the station occupying the old coords.
+        expect(extended.fromStationId).toBe(`${source.id}:TR1S`);
+        expect(extended.toX).toBeCloseTo(source.toX, 9);
+        expect(extended.toY).toBeCloseTo(source.toY, 9);
+        expect(extended.toStationId).toBe(source.toStationId);
+      } else {
+        expect(extended.toStationId).toBe(`${source.id}:TR1E`);
+        expect(extended.fromX).toBeCloseTo(source.fromX, 9);
+        expect(extended.fromY).toBeCloseTo(source.fromY, 9);
+        expect(extended.fromStationId).toBe(source.fromStationId);
+      }
+    }
   });
 });
 

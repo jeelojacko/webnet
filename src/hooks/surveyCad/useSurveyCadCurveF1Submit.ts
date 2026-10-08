@@ -1,5 +1,6 @@
 import { cadArcEndPoint } from '../../engine/cad/cadGeometry';
 import { cadIntersectLineCircle } from '../../engine/cad/cadCogo';
+import type { CadCurveMetricMode } from '../../engine/cad/cadCurveMetricsSolver';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type { CadProject } from '../../engine/cad/cadTypes';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
@@ -198,6 +199,17 @@ const handleFromEndPick = (options: CurveF1PickOptions, session: Extract<Command
   // Any line-or-arc body click (re)selects the source: the click point fixes
   // the nearest end. Background clicks are point-mode endpoints.
   const reselect = sourceEndOf(project, point.snapSourceEntityId ?? '', pick);
+  // Point-mode endpoint capture outranks source reselection: an endpoint
+  // snapped onto existing geometry completes the draft instead of resetting it.
+  if (session.sourceEntityId && session.mode === 'point' && !session.endPoint) {
+    replaceSession({
+      ...session,
+      endPoint: { x: point.x, y: point.y, label: point.label },
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  }
   if (!session.sourceEntityId) {
     if (!reselect) {
       stay(session, replaceSession, 'CURVE_FROM_END needs a direct line-or-arc body click. Background points do not select a source; the session stays active.');
@@ -224,15 +236,6 @@ const handleFromEndPick = (options: CurveF1PickOptions, session: Extract<Command
       signedRadius: null,
       extentMode: null,
       extentValue: null,
-      inputValue: '',
-      resultText: undefined,
-    });
-    return true;
-  }
-  if (session.mode === 'point' && !session.endPoint) {
-    replaceSession({
-      ...session,
-      endPoint: { x: point.x, y: point.y, label: point.label },
       inputValue: '',
       resultText: undefined,
     });
@@ -569,7 +572,10 @@ const submitLinePairMetric = (
         stay(session, replaceSession, `${session.key} has no tangent arc for the stored metric. Re-pick a line (click) or type another metric; U steps back.`);
         return true;
       }
-      return commitLinePairArc(options, session, solved.result);
+      return commitLinePairArc(options, session, solved.result, {
+        mode: session.metricMode,
+        value: session.metricValue,
+      });
     }
     stay(session, replaceSession, `${session.key} needs both line picks plus one metric (R200, T50, C100, L150, E5, M2, D1.5).`);
     return true;
@@ -594,13 +600,14 @@ const submitLinePairMetric = (
   }
   void applyHistoryUpdate;
   void publishReport;
-  return commitLinePairArc(options, session, solved.result);
+  return commitLinePairArc(options, session, solved.result, parsed);
 };
 
 const commitLinePairArc = (
   options: CurveF1SubmitOptions,
   session: Extract<CommandSession, { key: 'CURVE_BETWEEN_TWO_LINES' | 'CURVE_ON_TWO_LINES' }>,
   result: { arc: { center: { x: number; y: number }; radius: number; startAngleDeg: number; endAngleDeg: number }; metrics: { radius: number; deltaDeg: number; tangentLength: number; arcLength: number; chordLength: number } },
+  metric: { mode: CadCurveMetricMode; value: number },
 ): boolean => {
   const { applyHistoryUpdate, publishReport, replaceSession } = options;
   const trim = session.key === 'CURVE_BETWEEN_TWO_LINES';
@@ -616,7 +623,7 @@ const commitLinePairArc = (
       firstPickPoint: { x: session.firstPickPoint!.x, y: session.firstPickPoint!.y },
       secondEntityId: session.secondEntityId!,
       secondPickPoint: { x: session.secondPickPoint!.x, y: session.secondPickPoint!.y },
-      metric: { mode: session.metricMode ?? 'radius', value: session.metricValue ?? result.metrics.radius },
+      metric,
     } as Parameters<typeof runCadCommand>[1],
     {
       toolKey: session.key,

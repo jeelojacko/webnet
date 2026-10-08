@@ -300,6 +300,24 @@ describe('CAD Curves F1 Between / On submit', () => {
     expect(history.present.project.entities).toEqual(project.entities);
     expect(history.undoStack).toHaveLength(0);
   });
+
+  it('retries a stored metric with the freshly typed metric', () => {
+    const project = rightAngleProject();
+    // A degree-of-chord this shallow cannot solve, so the entry stores itself.
+    const failed = submitF1(project, betweenSession(), 'DC1e-11');
+    expect(failed.replaced).not.toBeNull();
+    expect((failed.replaced as BetweenSession).metricMode).toBe('degreeChord');
+    expect(failed.history.undoStack).toHaveLength(0);
+
+    // The retry must commit T50, not replay the stored degreeChord entry.
+    const retried = submitF1(project, failed.replaced!, 'T50');
+    expect(retried.replaced).toBeNull();
+    const arc = arcsOf(retried.history.present.project)[0]!;
+    expect(arc.radius).toBeCloseTo(50, 6);
+    expect(retried.history.present.project.cogoComputations[0]?.provenance.inputs).toMatchObject({
+      metric: { mode: 'tangent', value: 50 },
+    });
+  });
 });
 
 describe('CAD Curves F1 Through-point submit', () => {
@@ -577,6 +595,53 @@ describe('CAD Curves F1 picks (exact id law, invalid stays active)', () => {
     expect(reports).toBe(1);
     // POINT commits the point plus its label: two entities.
     expect(history.present.project.entities.length).toBe(project.entities.length + 2);
+  });
+
+  it('From-End point mode captures an endpoint snapped onto existing geometry', () => {
+    const project: CadProject = {
+      ...blankProject(),
+      entities: [
+        makeLine('line-a', { x: 0, y: 0 }, { x: 100, y: 0 }),
+        makeLine('line-b', { x: 150, y: 0 }, { x: 150, y: 100 }),
+      ],
+    };
+    const session: CommandSession = {
+      key: 'CURVE_FROM_END',
+      inputValue: '',
+      sourceEntityId: 'line-a',
+      pickPoint: point(90, 0),
+      end: 'end',
+      mode: 'point',
+      endPoint: null,
+      signedRadius: null,
+      extentMode: null,
+      extentValue: null,
+    };
+    const { replaced } = pick(project, session, entityPick(150, 50, 'line-b'));
+    type FromEndSession = Extract<CommandSession, { key: 'CURVE_FROM_END' }>;
+    const next = replaced as FromEndSession;
+    // Endpoint capture outranks source reselection: the source draft survives.
+    expect(next.sourceEntityId).toBe('line-a');
+    expect(next.mode).toBe('point');
+    expect(next.endPoint).toMatchObject({ x: 150, y: 50 });
+
+    // The captured endpoint then completes the draft on Enter.
+    let history = createCadHistoryState(project);
+    let committed: CommandSession | null | undefined;
+    const handled = handleSurveyCadCurveF1Submit({
+      applyHistoryUpdate: (updater) => {
+        history = updater(history);
+      },
+      publishReport: () => {},
+      replaceSession: (value) => {
+        committed = value;
+      },
+      session: { ...next, inputValue: '' } as CommandSession,
+      project,
+    });
+    expect(handled).toBe(true);
+    expect(committed).toBeNull();
+    expect(arcsOf(history.present.project)).toHaveLength(1);
   });
 });
 
