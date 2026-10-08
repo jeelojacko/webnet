@@ -1,0 +1,91 @@
+{
+  "flowA": {
+    "rows": [
+      {
+        "id": "bestfit-line",
+        "command": "BESTFITLINE",
+        "icon": "draw-best-fit-line"
+      },
+      {
+        "id": "bestfit-arc",
+        "command": "BESTFITARC",
+        "icon": "draw-best-fit-arc"
+      },
+      {
+        "id": "bestfit-parabola",
+        "command": "BESTFITPARABOLA",
+        "icon": "draw-best-fit-parabola"
+      }
+    ],
+    "distinctIcons": 3
+  },
+  "flowB": {
+    "vertices": [
+      {
+        "x": 0.016035032493336487,
+        "y": 0.08399917741269647
+      },
+      {
+        "x": 30.083964739440624,
+        "y": 30.216214394954513
+      }
+    ],
+    "rows": [
+      {
+        "label": "Method",
+        "value": "Orthogonal least squares (PCA)"
+      },
+      {
+        "label": "Sample count",
+        "value": "4"
+      },
+      {
+        "label": "RMS residual",
+        "value": "0.1312",
+        "unit": "m"
+      },
+      {
+        "label": "Max |residual|",
+        "value": "0.2195",
+        "unit": "m"
+      },
+      {
+        "label": "Azimuth",
+        "value": "44.9388",
+        "unit": "deg"
+      },
+      {
+        "label": "Bearing",
+        "value": "N44-56-19.74E"
+      },
+      {
+        "label": "Span",
+        "value": "42.568",
+        "unit": "m"
+      }
+    ]
+  },
+  "flowC": {
+    "center": [
+      0.0003775125186877837,
+      -0.00015641600398197397
+    ],
+    "radius": 9.99924497444323
+  },
+  "flowD": {
+    "vertex": [
+      100.00051302172886,
+      49.999721528028644
+    ],
+    "focal": 2.0000939463847613
+  },
+  "flowE": {
+    "stickyKept": true
+  },
+  "flowF": {
+    "zeroMutation": true
+  },
+  "flowG": {
+    "suggestions": 3
+  }
+}

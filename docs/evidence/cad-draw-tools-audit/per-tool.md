@@ -176,3 +176,19 @@ insert/delete, Z, line-chaining, right-click finish, command repeat, raw
 direct bulge-entry UI, arc-midpoint/width grips, full mixed-segment
 trim/extend/fillet, and general DXF import. Evidence:
 `docs/evidence/cad-polyline-c2-bulge-width/`.
+
+## Addendum — CAD Best Fit E1 current state (2026-10-08)
+
+Historical baseline and the C1/C2 addenda above are unchanged. The §7
+`POLICY/DESIGN_REQUIRED` verdict is now CLOSED: Best Fit E1 implements the
+v1 sketch from that section (fit over sampled points → 2-vertex polyline +
+COGO residual report) and extends it to arcs and parabolas. All three rows
+are live sessions (`BESTFITLINE`/`BESTFITARC`/`BESTFITPARABOLA` + `BFL`/
+`BFA`/`BFP` aliases) committing one-entry engine transactions; outputs and
+report support are exactly as recorded in the capability-matrix E1 addendum.
+The open design questions from §7 are resolved: inputs are session sample
+collectors (click/type/preseed, never polyline-vertex harvesting), the line
+is a 2-vertex polyline (no faked station ids), and the parabola is a
+first-class entity. Still deferred: full-circle arcs, Z, command repeat,
+right-click finish, live re-fit. Evidence:
+`docs/evidence/cad-best-fit-e1/`.

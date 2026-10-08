@@ -64,6 +64,14 @@ const cloneBlockChild = (child: CadBlockChild): CadBlockChild => {
             }
           : {}),
       };
+    default: {
+      // Parabola (and any other non-block-child kind) is rejected at block
+      // creation AND here at load: a corrupt persisted definition must fail
+      // closed, never silently drop the child (which would corrupt the
+      // entities array with `undefined`).
+      const unknown = child as { type: string };
+      throw new Error(`unsupported block child type: ${unknown.type}`);
+    }
   }
 };
 

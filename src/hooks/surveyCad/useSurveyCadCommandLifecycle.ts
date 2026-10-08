@@ -1,9 +1,11 @@
 import type { MutableRefObject } from 'react';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import {
   commitAnnotationSession,
   handleAnnotationEnterKey,
 } from './useSurveyCadAnnotationSessions';
+import { commitBestFitSession, isBestFitSession } from './useSurveyCadBestFitSession';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
@@ -23,6 +25,7 @@ interface UseSurveyCadCommandLifecycleOptions {
   applyHistoryUpdate: ApplyHistoryUpdate;
   project: CadProject;
   replaceSession: ReplaceSession;
+  reportComputation?: (_computation: CadCogoComputation) => void;
   session: CommandSession | null;
   sessionRef: MutableRefObject<CommandSession | null>;
   submitSessionInput: () => void;
@@ -45,6 +48,7 @@ export const useSurveyCadCommandLifecycle = ({
   applyHistoryUpdate,
   project,
   replaceSession,
+  reportComputation,
   session,
   sessionRef,
   submitSessionInput,
@@ -149,6 +153,12 @@ export const useSurveyCadCommandLifecycle = ({
     }
     // Phase 18O: MTEXT/LEADER lines append per Enter; empty Enter commits.
     if (live && handleAnnotationEnterKey({ session: live, project, applyHistoryUpdate, replaceSession })) return;
+    // CAD Best Fit E1: empty Enter commits once the minimum is met, else
+    // refuses and stays active. Typed input routes to the U/point parser.
+    if (live && isBestFitSession(live) && live.inputValue.trim().length === 0) {
+      commitBestFitSession({ applyHistoryUpdate, replaceSession, reportComputation, session: live });
+      return;
+    }
     if (session.key === 'TRIM' || session.key === 'EXTEND') {
       replaceSession(null);
       return;

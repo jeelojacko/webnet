@@ -204,6 +204,9 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   session('ARC_SED', 'Arc (Start/End/Direction)', 'Draw', 'Arc from start, end, direction.'),
   session('ARC_SER', 'Arc (Start/End/Radius)', 'Draw', 'Arc from start, end, radius.'),
   session('CONTINUE_CURVE', 'Continue Curve', 'Draw', 'Continue the selected arc.'),
+  session('BESTFITLINE', 'Best Fit Line', 'Draw', 'Least-squares best-fit line from sample points.', ['BFL']),
+  session('BESTFITARC', 'Best Fit Arc', 'Draw', 'Least-squares best-fit arc from sample points.', ['BFA']),
+  session('BESTFITPARABOLA', 'Best Fit Parabola', 'Draw', 'Least-squares best-fit parabola from sample points.', ['BFP']),
   session('TANGENT_CURVE', 'Tangent Curve', 'Draw', 'Tangent curve from selected line.'),
   session('BATCH_COGO', 'Batch COGO', 'Draw', 'Create points from a COGO list.'),
   // Modify

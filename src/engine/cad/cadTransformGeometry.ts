@@ -19,6 +19,7 @@ import {
   cadSignedSweepDeg,
 } from './cadGeometry';
 import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
+import { transformParabolaEntity } from './cadParabola';
 import { cadPolylineHasCurveOrWidth } from './cadPolylineCourses';
 import {
   applyPoint,
@@ -255,6 +256,17 @@ export const transformCadEntityGeometry = (
         ok: true,
         entity: { ...entity, centerX: center.x, centerY: center.y, radius },
       };
+    }
+    case 'parabola': {
+      // Exact similarity transform (translate/rotate/uniform-scale/reflection
+      // with t -> -t on a handedness flip). Nonuniform/shear/affine would
+      // leave the canonical parabola family — fail closed with an explicit
+      // reason, never a silently sheared or chorded curve.
+      const transformed = transformParabolaEntity(entity, transform, classification);
+      if (!transformed.ok) {
+        return { ok: false, reason: transformed.reason };
+      }
+      return { ok: true, entity: transformed.entity };
     }
     case 'alignment': {
       // Stationing (startStation, equations, raw chainage) is a dependency of

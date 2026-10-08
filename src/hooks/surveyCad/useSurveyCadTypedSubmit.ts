@@ -1,3 +1,4 @@
+import { handleBestFitTypedSubmit } from './useSurveyCadBestFitSession';
 import { handleSurveyCadAlignmentSubmit } from './useSurveyCadTypedSubmitAlignment';
 import { handleSurveyCadLineConstructionSubmit } from './useSurveyCadTypedSubmitLineConstruction';
 import { handleSurveyCadLineL1Submit } from './useSurveyCadLineL1Submit';
@@ -21,6 +22,11 @@ export const handleSurveyCadTypedSubmit = (
     });
   }
   return (
+    handleBestFitTypedSubmit({
+      consumePoint: options.consumePoint,
+      replaceSession: options.replaceSession,
+      session: options.session,
+    }) ||
     handleSurveyCadShapeSubmit(options) ||
     handleSurveyCadSequenceReportSubmit(options) ||
     handleSurveyCadParcelSplitSubmit(options) ||

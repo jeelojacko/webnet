@@ -116,6 +116,9 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'FILLET':
     case 'PASTE':
     case 'PLINE':
+    case 'BESTFITLINE':
+    case 'BESTFITARC':
+    case 'BESTFITPARABOLA':
     case 'PLINEINSERTVERTEX':
     case 'PLINEDELETEVERTEX':
     case 'TRAVERSE':

@@ -153,6 +153,10 @@ export const cadAnnotationAnchorFromCommandPoint = (
       // fixed (quadrant/nearest ride the circumference with no stable
       // arc-point identity, same as arcs).
       return fixed;
+    case 'parabola':
+      // No stable identifier for a point on a parabola: every parabola snap
+      // stays a fixed (non-associative) command point.
+      return fixed;
     case 'block-reference': {
       // Only the insertion snap binds: it carries no child segment scope and
       // lands on the insertion point (entity.x/entity.y, the same accessor

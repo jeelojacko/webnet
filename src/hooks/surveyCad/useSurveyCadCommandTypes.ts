@@ -158,6 +158,9 @@ export type ActiveCommandKey =
   | 'PARCELSHAREDEDIT'
   | 'PLINEINSERTVERTEX'
   | 'PLINEDELETEVERTEX'
+  | 'BESTFITLINE'
+  | 'BESTFITARC'
+  | 'BESTFITPARABOLA'
   | 'MOVE'
   | 'COPY'
   | 'ROTATE'
@@ -665,6 +668,14 @@ export type CommandSession =
       key: 'PLINEINSERTVERTEX' | 'PLINEDELETEVERTEX';
       inputValue: string;
       polylineId: string | null;
+      resultText?: string;
+    }
+  // CAD Best Fit E1 — ordered sample collector. Samples are snapshots:
+  // clicks never create survey points and the commit re-solves from these.
+  | {
+      key: 'BESTFITLINE' | 'BESTFITARC' | 'BESTFITPARABOLA';
+      inputValue: string;
+      samples: CommandPoint[];
       resultText?: string;
     }
   | CadLineL1SessionState;

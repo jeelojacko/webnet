@@ -138,6 +138,9 @@ export interface UseSurveyCadCommandsResult {
   startArcStartEndRadiusCommand: () => void;
   startContinueCurveCommand: () => void;
   startTangentCurveCommand: () => void;
+  startBestFitLineCommand: () => void;
+  startBestFitArcCommand: () => void;
+  startBestFitParabolaCommand: () => void;
   startInverseCommand: () => void;
   startMultiInverseCommand: () => void;
   startAreaCommand: () => void;

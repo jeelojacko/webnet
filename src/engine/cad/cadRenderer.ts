@@ -38,6 +38,7 @@ import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAp
 import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
 import { buildCadSurveyTablePrimitives } from './cadSurveyTableRender';
 import { expandedBlockPrimitives } from './cadRendererBlocks';
+import { cadParabolaTessellatePoints } from './cadParabola';
 import type { CadSurfaceCache } from './cadSurfaceCache';
 import { buildSurfaceDisplayLayers, type SurfaceContourDisplayInput } from './cadSurfaceView';
 import { buildVolumeDisplayLayers } from './cadVolumeView';
@@ -212,6 +213,43 @@ const buildVertexPrimitives = (
         )
       : entity.vertices;
   // Accumulated drawing-unit length keeps dashes continuous across segments.
+  let accumulatedUnits = 0;
+  return points.slice(0, -1).map((vertex, index) => {
+    const next = points[index + 1]!;
+    const offsetUnits = style.dashPatternUnits != null ? accumulatedUnits : undefined;
+    accumulatedUnits += Math.hypot(next.x - vertex.x, next.y - vertex.y) * ctx.linetypeScale;
+    return {
+      kind: 'line',
+      id: `primitive:${entity.id}:${index + 1}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      sourceSegmentId: `${entity.id}#${index}`,
+      stroke: style.stroke,
+      ...(style.opacity != null ? { opacity: style.opacity } : {}),
+      ...(style.dashPatternUnits != null
+        ? { dashPatternUnits: style.dashPatternUnits, dashOffsetUnits: offsetUnits ?? 0 }
+        : {}),
+      points: [vertex, next],
+      strokeWidth: style.widthPx(),
+    };
+  });
+};
+
+/**
+ * First-class finite parabola: deterministic bounded tessellation of the
+ * analytic P(t) into LINE primitives (chord tolerance, capped segments).
+ * The stored vertex/axis/focal/range are never replaced by the chords —
+ * tessellation is display/plot only, so hit testing and snaps stay
+ * analytic. Invalid geometry emits nothing (fail closed).
+ */
+const buildParabolaPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: Extract<CadEntity, { type: 'parabola' }>,
+): CadDisplayPrimitive[] => {
+  const points = cadParabolaTessellatePoints(entity);
+  if (points == null || points.length < 2) return [];
+  const style = entityScreenStyle(project, ctx, entity, 1.25);
   let accumulatedUnits = 0;
   return points.slice(0, -1).map((vertex, index) => {
     const next = points[index + 1]!;
@@ -1618,6 +1656,8 @@ const toPrimitives = (
         strokeWidth: style.widthPx(),
       }];
     }
+    case 'parabola':
+      return buildParabolaPrimitives(project, ctx, entity);
     case 'mtext':
       return buildMTextPrimitives(project, ctx, entity);
     case 'leader':

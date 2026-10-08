@@ -421,6 +421,11 @@ const convertEntities = (project: CadProject, acc: ProjectLandXmlAccum): void =>
       case 'error-ellipse':
         acc.ellipseIds.push(entity.id);
         break;
+      case 'parabola':
+        // LandXML 1.2 has no parabola (or any conic curve) representation.
+        // NOT_APPLICABLE: explicit omission, no geometry, never a chord.
+        accumSkipped(acc, entity.id, `parabola ${entity.id} has no LandXML representation (NOT_APPLICABLE)`);
+        break;
       // Phase 18O annotation: LandXML 1.2 carries no annotation/document
       // presentation entities, so every kind is NOT_APPLICABLE and omitted
       // with an explicit warning (never a silent drop). The 9 matrix kinds

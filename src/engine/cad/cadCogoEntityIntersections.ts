@@ -8,9 +8,11 @@ import type {
   CadArcEntity,
   CadEntity,
   CadLineEntity,
+  CadParabolaEntity,
   CadPolylineEntity,
 } from './cadTypes';
 import { resolveCadPolylineCourses } from './cadPolylineCourses';
+import { cadParabolaSegmentIntersections } from './cadParabola';
 
 interface CadSegmentRef {
   start: CadWorldPoint;
@@ -187,3 +189,31 @@ export const cadIntersectArcEntities = (
     point,
     label: `${first.id} x ${second.id}`,
   }));
+
+/**
+ * Exact segment vs finite parabola (quadratic in the canonical frame via
+ * cadParabolaGeometry). Returns points on the finite parabola arc AND within
+ * the segment; deterministic x-then-y ordering. Circle/arc/parabola-vs-
+ * parabola intersections are deliberately NOT provided here, so no caller
+ * can render a false chord.
+ */
+export const cadIntersectSegmentParabola = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  parabola: CadParabolaEntity,
+): CadWorldPoint[] =>
+  cadParabolaSegmentIntersections(parabola, start, end).sort((left, right) => {
+    if (Math.abs(left.x - right.x) > 1e-9) return left.x - right.x;
+    return left.y - right.y;
+  });
+
+/** Exact line-entity vs finite parabola intersections (flat, one segment). */
+export const cadIntersectLineParabola = (
+  line: CadLineEntity,
+  parabola: CadParabolaEntity,
+): CadEntityIntersection[] =>
+  cadIntersectSegmentParabola(
+    { x: line.fromX, y: line.fromY },
+    { x: line.toX, y: line.toY },
+    parabola,
+  ).map((point) => ({ point, label: `${line.id} x ${parabola.id}` }));

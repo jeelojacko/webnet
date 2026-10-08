@@ -528,6 +528,36 @@ export interface CadErrorEllipseEntity extends CadBaseEntity {
 }
 
 /**
+ * First-class finite parabola (best-fit E1). Canonical schema pinned in
+ * docs/evidence/cad-best-fit-e1/architecture.md §3:
+ *   P(t) = V + b * (2 f t) + a * (f t^2)
+ * where V is the world vertex, `a` is the unit opening axis from
+ * axisAngleDeg (degrees CCW from +X), `b` is the left perpendicular of `a`,
+ * f = focalLength > 0 (metres), and [tStart, tEnd] is the finite, non-zero
+ * extent. The model is analytic everywhere: tessellation is display/export
+ * only and never replaces these stored fields. Trailing optional kind in the
+ * WNCAD v2 schema (kinds are not enumerated by the version table, so legacy
+ * files stay byte-compatible and there is NO schema version bump).
+ *
+ * NOTE: parabolas are NOT a CadBlockChild. A block instance may carry a
+ * non-uniform scale, which cannot map a parabola to the canonical family,
+ * so block creation rejects them explicitly (see cadBlockSources
+ * SEMANTIC_TYPES) rather than silently distorting them.
+ */
+export interface CadParabolaEntity extends CadBaseEntity {
+  type: 'parabola';
+  vertexX: number;
+  vertexY: number;
+  /** Opening-axis direction, degrees CCW from +X. */
+  axisAngleDeg: number;
+  /** Focal length f > 0 (metres); opening is toward +axis. */
+  focalLength: number;
+  /** Finite curve extent; must satisfy tStart < tEnd. */
+  tStart: number;
+  tEnd: number;
+}
+
+/**
  * Phase 18N: reusable block child shapes. Existing entity interfaces are
  * reused verbatim; inside a block definition ids are block-local
  * (namespaced to the definition) and MUST NOT collide with top-level
@@ -778,6 +808,7 @@ export type CadEntity =
   | CadParcelEntity
   | CadTextEntity
   | CadErrorEllipseEntity
+  | CadParabolaEntity
   | CadBlockReferenceEntity
   | CadMTextEntity
   | CadLeaderEntity

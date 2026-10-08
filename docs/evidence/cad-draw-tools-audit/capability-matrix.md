@@ -78,3 +78,30 @@ Still missing/deferred: Z, line chaining, right-click finish, command repeat,
 raw direct bulge-entry UI, width grips, destructive arc↔line conversion, full
 mixed-segment trim/extend/fillet, and general DXF import. Evidence:
 `docs/evidence/cad-polyline-c3-vertex-editing/`.
+
+## Addendum — CAD Best Fit E1 current state (2026-10-08)
+
+Historical baseline and the C1/C2/C3 addenda above are unchanged. Best Fit
+update after E1 Worker C (branch `feat/cad-best-fit-e1`): all three rows are
+now SUPPORTED as live least-squares solvers — `BESTFITLINE` (`BFL`),
+`BESTFITARC` (`BFA`), `BESTFITPARABOLA` (`BFP`) sessions plus `BEST_FIT_LINE`
+/ `BEST_FIT_ARC` / `BEST_FIT_PARABOLA` engine transactions (one history entry
+each: exactly one geometry entity + one COGO computation + entity metadata,
+zero mutation on refusal). Outputs: line → open 2-vertex polyline
+(min/max-projection endpoints, no segment metadata — never a faked
+`CadLineEntity`); arc → native `CadArcEntity`; parabola → first-class
+`CadParabolaEntity` via the canonical projection. Sampling: viewport clicks
+through the snap pipeline (survey-point snaps keep the station id, all other
+picks take `P<n>` free labels), typed coordinates through the normal parser,
+all-survey-point selections preseed (mixed selections start empty), `U`
+backstep, Enter minimum gate (2/3/5, below-minimum refuses and stays
+active), Escape cancels with no changes. Preview renders the re-solved fit
+plus transient residual vectors once the minimum is met. Each commit stores a
+residual report (Method / Sample count / RMS / MaxAbs + geometry params +
+per-sample residual table with finite closest points) and surfaces it in the
+report panel. Exact Civil best-fit icon families back all three rows
+(`BEST_FIT_FIXED_LINE` / `BEST_FIT_FIXED_CURVE` / `BEST_FIT_PARABOLA`, see
+`docs/evidence/cad-best-fit-e1/icon-sources.md`).
+Still missing/deferred: full-circle arc fits (use CIRCLE), Z, command
+repeat, right-click finish, live re-fit on source edits (outputs are
+snapshots). Evidence: `docs/evidence/cad-best-fit-e1/`.

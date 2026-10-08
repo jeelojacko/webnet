@@ -152,19 +152,21 @@ describe('phase 21A split button (§79 A–J)', () => {
   });
 
   it('E+F: a planned row does nothing and never becomes current', async () => {
+    // Best Fit E1 went live, so the planned-row contract now uses the
+    // all-planned Ellipse family instead.
     const actions = stubActions();
     const onSelectVariant = vi.fn();
     const { container, root } = await render(
       <SplitHarness
-        toolFamily={family('bestfit')}
+        toolFamily={family('ellipse')}
         snapshot={stubSnapshot([])}
         actions={actions}
-        initialVariantId="bestfit-line"
+        initialVariantId="ellipse-center"
         onSelectVariant={onSelectVariant}
       />,
     );
-    await click(container.querySelector('[data-cad-family-caret="bestfit"]'));
-    const planned = container.querySelector('[data-cad-variant="bestfit-arc"]') as HTMLButtonElement;
+    await click(container.querySelector('[data-cad-family-caret="ellipse"]'));
+    const planned = container.querySelector('[data-cad-variant="ellipse-arc"]') as HTMLButtonElement;
     expect(planned?.getAttribute('aria-disabled')).toBe('true');
     expect(planned?.getAttribute('title')).toBe('Not implemented yet');
     await click(planned);
@@ -333,24 +335,26 @@ describe('phase 21A sticky/reset state (§81)', () => {
   });
 
   it('ignores planned selections', async () => {
+    // Best Fit E1 went live, so the planned-selection contract now uses the
+    // all-planned Ellipse family instead.
     const Probe: React.FC = () => {
       const [, setNoise] = useState(0);
       const state = useCadToolFamilyState({ drawingId: 'd1' });
-      const line = state.resolveVariant('bestfit');
+      const line = state.resolveVariant('ellipse');
       return (
         <div>
           <span data-cad-line={line?.id ?? 'none'} />
           <button data-cad-test="noop" onClick={() => setNoise((value) => value + 1)} />
-          <button data-cad-test="pick-planned" onClick={() => state.selectVariant('bestfit', 'bestfit-arc')} />
+          <button data-cad-test="pick-planned" onClick={() => state.selectVariant('ellipse', 'ellipse-arc')} />
         </div>
       );
     };
     const { container, root } = await render(<Probe />);
     const lineId = (): string | null =>
       container.querySelector('[data-cad-line]')?.getAttribute('data-cad-line') ?? null;
-    expect(lineId()).toBe('bestfit-line');
+    expect(lineId()).toBe('ellipse-center');
     await click(container.querySelector('[data-cad-test="pick-planned"]'));
-    expect(lineId()).toBe('bestfit-line');
+    expect(lineId()).toBe('ellipse-center');
     await cleanup(container, root);
   });
 });

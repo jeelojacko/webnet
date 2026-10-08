@@ -22,11 +22,17 @@ import type {
   CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
+  CadParabolaEntity,
   CadPolygonEntity,
   CadPolylineEntity,
   CadSnapCandidate,
 } from './cadTypes';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import {
+  cadParabolaEntityClosestPoint,
+  cadParabolaEntityEndpoints,
+  cadParabolaEntityMidpoint,
+} from './cadParabola';
 import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import {
   describeParcelArcCourse,
@@ -615,6 +621,41 @@ export const buildCircleEntitySnapCandidates = (
   return candidates;
 };
 
+/**
+ * First-class finite parabola snaps: both analytic endpoints, the HALF
+ * CURVE-LENGTH midpoint (exact primitive solve, never the t-average), and
+ * the true finite closest point. No vertex-as-center, quadrant, tangent, or
+ * perpendicular candidates are fabricated — only honest parabola snaps.
+ */
+export const buildParabolaEntitySnapCandidates = (
+  context: CadSpatialEntityCandidateContext,
+  entity: CadParabolaEntity,
+): CadSnapCandidate[] => {
+  const { allowed, worldPoint } = context;
+  const label = getCadEntityDisplayLabel(entity);
+  const endpoints = cadParabolaEntityEndpoints(entity);
+  const candidates: CadSnapCandidate[] = [];
+  if (allowed.has('endpoint')) {
+    candidates.push(
+      buildCandidate('endpoint', entity.id, endpoints.start, worldPoint, `${label} start`),
+      buildCandidate('endpoint', entity.id, endpoints.end, worldPoint, `${label} end`),
+    );
+  }
+  if (allowed.has('midpoint')) {
+    const midpoint = cadParabolaEntityMidpoint(entity);
+    if (midpoint) {
+      candidates.push(buildCandidate('midpoint', entity.id, midpoint, worldPoint, `${label} mid`));
+    }
+  }
+  if (allowed.has('nearest')) {
+    const nearest = cadParabolaEntityClosestPoint(entity, worldPoint);
+    if (nearest) {
+      candidates.push(buildCandidate('nearest', entity.id, nearest, worldPoint, label));
+    }
+  }
+  return candidates;
+};
+
 export const buildCadSpatialEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
 ): CadSnapCandidate[] => {
@@ -656,6 +697,9 @@ export const buildCadSpatialEntitySnapCandidates = (
         break;
       case 'circle':
         candidates.push(...buildCircleEntitySnapCandidates(context, entity));
+        break;
+      case 'parabola':
+        candidates.push(...buildParabolaEntitySnapCandidates(context, entity));
         break;
       default:
         break;

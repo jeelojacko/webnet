@@ -60,6 +60,10 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return 'POLYGON radius point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the center.';
     case 'PLINE':
       return 'PLINE next vertex: click in the model space or type `x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Type `A`/`ARC` for 3-point arc legs (the next pick is the through-point, the following pick the end; collinear or degenerate triples are rejected and keep the draft), `L`/`LINE` for straight legs (refused while a through-point is pending — type `U` first), `W`/`WIDTH` to set the default full centred band width for future segments (`2.5` constant, `1,3` tapered, `0` hairline; backstep never changes it). Type `C`/`CLOSE` to close the ring once 3+ distinct vertices exist (`C` in Arc mode closes with a bulged arc through the pending through-point), `U`/`UNDO`/`BACKSTEP` to clear the width prompt, then a pending through-point, then the newest vertex. Press Enter on an empty input to finish open after 2+ vertices. A closed ring stores no duplicate closure vertex.';
+    case 'BESTFITLINE':
+    case 'BESTFITARC':
+    case 'BESTFITPARABOLA':
+      return `${session.key} sample: click in the model space (survey-point snaps keep the station id) or type \`x,y\`, \`LABEL=x,y\`, \`@azimuth,distance\`, or bearing-distance from the last sample. Type \`U\` to remove the newest sample. Press Enter on an empty input to commit once the minimum is met (line 2, arc 3, parabola 5). Esc cancels with no changes.`;
     case 'TRAVERSE':
       return session.points.length > 0
         ? session.mode === 'point-to-point'

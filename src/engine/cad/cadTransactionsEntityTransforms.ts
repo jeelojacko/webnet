@@ -104,6 +104,13 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
         centerX: entity.centerX + deltaX,
         centerY: entity.centerY + deltaY,
       };
+    case 'parabola':
+      // MOVE translates the vertex; axis/focal/range are rigid-invariant.
+      return {
+        ...entity,
+        vertexX: entity.vertexX + deltaX,
+        vertexY: entity.vertexY + deltaY,
+      };
     case 'mtext':
     case 'block-reference':
       return {

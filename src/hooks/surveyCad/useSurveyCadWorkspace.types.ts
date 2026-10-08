@@ -155,6 +155,9 @@ export interface UseSurveyCadWorkspaceResult {
     | 'ARC_SER'
     | 'CONTINUE_CURVE'
     | 'TANGENT_CURVE'
+    | 'BESTFITLINE'
+    | 'BESTFITARC'
+    | 'BESTFITPARABOLA'
     | 'INVERSE'
     | 'MULTI_INVERSE'
     | 'AREA'
@@ -314,6 +317,9 @@ export interface UseSurveyCadWorkspaceResult {
   startArcStartEndRadiusCommand: () => void;
   startContinueCurveCommand: () => void;
   startTangentCurveCommand: () => void;
+  startBestFitLineCommand: () => void;
+  startBestFitArcCommand: () => void;
+  startBestFitParabolaCommand: () => void;
   startInverseCommand: () => void;
   startMultiInverseCommand: () => void;
   startAreaCommand: () => void;

@@ -1,4 +1,5 @@
 import type { CadSnapCandidate } from '../../engine/cad/cadTypes';
+import { bestFitMinSamples, isBestFitSession } from './useSurveyCadBestFitSession';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
@@ -28,7 +29,9 @@ export const buildSurveyCadCommandAvailability = ({
   canFinishCommand:
     session && isCadLineL1Key(session.key)
       ? cadLineL1CanFinish(session as CadLineL1SessionState)
-      : session?.key === 'PLINE'
+      : session != null && isBestFitSession(session)
+        ? session.samples.length >= bestFitMinSamples(session.key)
+        : session?.key === 'PLINE'
       ? session.points.length >= 2
       : session?.key === 'TRAVERSE'
         ? session.points.length >= 2 &&

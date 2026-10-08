@@ -41,6 +41,7 @@ import {
 } from './useSurveyCadCommandParsing';
 import { buildArcCommandPreview } from './useSurveyCadCommandArcPreview';
 import { buildPlinePreview } from './useSurveyCadPlinePreview';
+import { bestFitPreviewForSession } from './useSurveyCadBestFitPreview';
 
 export type CadCommandPreviewState =
   | {
@@ -498,6 +499,10 @@ export const buildCommandPreview = ({
       };
     case 'PLINE':
       return buildPlinePreview(session, previewPoint);
+    case 'BESTFITLINE':
+    case 'BESTFITARC':
+    case 'BESTFITPARABOLA':
+      return bestFitPreviewForSession(session);
     case 'TRAVERSE':
       if (!previewPoint) return null;
       if (session.points.length === 0) {

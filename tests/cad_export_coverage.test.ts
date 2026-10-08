@@ -117,13 +117,14 @@ const buildCoverageProject = (): CadProject => {
     { ...base, id: 'cov-parcel', type: 'parcel', vertices: [{ x: 5000, y: 1000 }, { x: 5020, y: 1000 }, { x: 5020, y: 1020 }, { x: 5000, y: 1020 }], vertexLabels: ['CP1', 'CP2', 'V4', 'V5'], parcelName: 'LOT 1', areaSquareMeters: 400 },
     { ...base, id: 'cov-text', type: 'text', x: 5005, y: 1005, text: 'cover note' },
     { ...base, id: 'cov-ellipse', type: 'error-ellipse', stationId: 'CP1', centerX: 5000, centerY: 1000, semiMajor: 0.05, semiMinor: 0.02, thetaDeg: 30 },
+    { ...base, id: 'cov-parabola', type: 'parabola', vertexX: 5000, vertexY: 1000, axisAngleDeg: 0, focalLength: 0.05, tStart: -2, tEnd: 2 },
     { ...base, id: 'cov-blockref', type: 'block-reference', blockDefinitionId: 'cov-def', x: 5030, y: 1020, rotationDeg: 30, scaleX: 2, scaleY: 2 },
     { ...base, id: 'cov-ptblock', type: 'survey-point', stationId: 'CPB', x: 5040, y: 1030, pointClass: 'free', source: 'parsed-input', pointStyleId: 'cov-block-style' },
   ];
   return { ...project, entities };
 };
 
-const ENTITY_IDS = ['cov-pt', 'cov-pt2', 'cov-line', 'cov-poly', 'cov-arc', 'cov-align', 'cov-polygon', 'cov-parcel', 'cov-text', 'cov-ellipse', 'cov-blockref', 'cov-ptblock'];
+const ENTITY_IDS = ['cov-pt', 'cov-pt2', 'cov-line', 'cov-poly', 'cov-arc', 'cov-align', 'cov-polygon', 'cov-parcel', 'cov-text', 'cov-ellipse', 'cov-parabola', 'cov-blockref', 'cov-ptblock'];
 
 const buildDraftWithObjects = (project: CadProject) => {
   let draft = createBlankDraftDocument({ projectId: project.id, layers: project.layers });
@@ -196,6 +197,8 @@ describe('cad export coverage matrix (§22)', () => {
       'cov-pt': 'FULL', 'cov-pt2': 'FULL', 'cov-line': 'FULL', 'cov-poly': 'FULL',
       'cov-arc': 'FULL', 'cov-align': 'FULL', 'cov-polygon': 'FULL',
       'cov-parcel': 'FULL', 'cov-text': 'FULL', 'cov-ellipse': 'FULL',
+      // E1: the analytic parabola tessellates to display LINE primitives.
+      'cov-parabola': 'FULL',
       // Phase 18N: refs + block markers expand to primitives (no second
       // export implementation — the scene renderer is the single source).
       'cov-blockref': 'FULL', 'cov-ptblock': 'FULL',
@@ -227,6 +230,8 @@ describe('cad export coverage matrix (§22)', () => {
       'cov-poly': 'FULL', 'cov-arc': 'FULL', 'cov-align': 'APPROXIMATED',
       'cov-polygon': 'APPROXIMATED', 'cov-parcel': 'APPROXIMATED',
       'cov-text': 'FULL', 'cov-ellipse': 'APPROXIMATED',
+      // E1: DXF R12 has no parabola entity — tessellated LWPOLYLINE + warning.
+      'cov-parabola': 'APPROXIMATED',
       // Phase 18N: native BLOCK/INSERT (sanitized name) + native marker
       // INSERT — exact, never approximated, never omitted.
       'cov-blockref': 'FULL', 'cov-ptblock': 'FULL',
@@ -276,6 +281,8 @@ describe('cad export coverage matrix (§22)', () => {
       'cov-pt': 'FULL', 'cov-pt2': 'FULL', 'cov-line': 'FULL', 'cov-poly': 'FULL',
       'cov-arc': 'APPROXIMATED', 'cov-align': 'FULL', 'cov-polygon': 'APPROXIMATED',
       'cov-parcel': 'APPROXIMATED', 'cov-text': 'UNSUPPORTED_WITH_WARNING', 'cov-ellipse': 'NOT_APPLICABLE',
+      // E1: LandXML 1.2 has no conic curve — NOT_APPLICABLE omission.
+      'cov-parabola': 'NOT_APPLICABLE',
       // Phase 18N: LandXML is presentation-blind — refs omit + warn, while
       // block-styled points still export their CgPoint (marker irrelevant).
       'cov-blockref': 'UNSUPPORTED_WITH_WARNING', 'cov-ptblock': 'FULL',

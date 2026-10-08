@@ -18,7 +18,9 @@ import {
   scopeAllowsSegment,
   segmentPathObstructed,
 } from './cadSpatialConstruction';
-import type { CadSnapCandidate } from './cadTypes';
+import { getCadEntityDisplayLabel } from './cadEntityNames';
+import { cadParabolaSegmentIntersections } from './cadParabola';
+import type { CadParabolaEntity, CadSnapCandidate } from './cadTypes';
 
 const pointsMatch = (left: CadWorldPoint, right: CadWorldPoint): boolean =>
   Math.abs(left.x - right.x) <= 1e-9 && Math.abs(left.y - right.y) <= 1e-9;
@@ -26,12 +28,14 @@ const pointsMatch = (left: CadWorldPoint, right: CadWorldPoint): boolean =>
 export const buildExactIntersectionCandidates = ({
   arcs,
   circles = [],
+  parabolas = [],
   segments,
   worldPoint,
 }: {
   segments: CadSegmentRef[];
   arcs: CadArcRef[];
   circles?: CadCircleRef[];
+  parabolas?: CadParabolaEntity[];
   worldPoint: CadWorldPoint;
 }): CadSnapCandidate[] => {
   const candidates: CadSnapCandidate[] = [];
@@ -114,6 +118,28 @@ export const buildExactIntersectionCandidates = ({
             intersection,
             worldPoint,
             `${segment.label} x ${circle.label}`,
+          ),
+        );
+      });
+    });
+  });
+
+  // Exact finite-parabola x line-like segment, analytic quadratic in the
+  // canonical frame (never tessellated chords). The parabola carries no
+  // segment identity, so both-entity attribution joins the segment owner and
+  // the parabola id exactly like every other exact intersection above.
+  // Circle/arc/parabola-vs-parabola pairs remain deliberately deferred: no
+  // loop here fabricates them.
+  segments.forEach((segment) => {
+    parabolas.forEach((parabola) => {
+      cadParabolaSegmentIntersections(parabola, segment.start, segment.end).forEach((intersection) => {
+        candidates.push(
+          buildCandidate(
+            'intersection',
+            `${segment.sourceEntityId}|${parabola.id}`,
+            intersection,
+            worldPoint,
+            `${segment.label} x ${getCadEntityDisplayLabel(parabola)}`,
           ),
         );
       });

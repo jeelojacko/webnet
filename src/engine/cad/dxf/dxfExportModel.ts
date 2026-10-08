@@ -28,6 +28,7 @@ import { blockReferenceScalesDistortPolylineCurve, expandBlockReference, findBlo
 import { surveyPointMarker } from '../cadRendererStyle';
 import { resolveCadParcelCourses } from '../cadParcelCourses';
 import { tessellateCadFeatureLine } from '../cadFeatureLines';
+import { cadParabolaTessellatePoints } from '../cadParabola';
 import { cadAngleDegFromCenter } from '../cadGeometry';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
@@ -534,6 +535,30 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         });
         result.exportedEntityIds.push(entity.id);
         break;
+      case 'parabola': {
+        // DXF R12 has no parabola entity, so the analytic curve is exported
+        // as a bounded chord-tolerance LWPOLYLINE approximation (the
+        // error-ellipse precedent). Never claimed as FULL: the id is marked
+        // approximated and an explicit warning is emitted.
+        const points = cadParabolaTessellatePoints(entity);
+        if (points == null || points.length < 2) {
+          warn({ code: 'SKIPPED_ENTITY', message: `parabola ${entity.id} has invalid geometry`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        model.polylines.push({
+          layer: registerLayer(entity.layerId),
+          vertices: points.map((point) => ({ x: point.x, y: point.y })),
+          closed: false,
+          ...entryStyle(entity),
+        });
+        result.exportedEntityIds.push(entity.id);
+        result.approximatedEntityIds.push(entity.id);
+        // No PARABOLA_APPROXIMATED code in the frozen warning union —
+        // SKIPPED_ENTITY carries the message; the id list marks it.
+        warn({ code: 'SKIPPED_ENTITY', message: `parabola ${entity.id} approximated as a tessellated LWPOLYLINE (DXF has no parabola entity)`, entityId: entity.id });
+        break;
+      }
       case 'text': {
         if (!finitePair(entity.x, entity.y)) {
           warn({ code: 'SKIPPED_ENTITY', message: `text ${entity.id} has non-finite coordinates`, entityId: entity.id });

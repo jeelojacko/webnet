@@ -1,3 +1,4 @@
+import { bestFitPromptForSession, isBestFitSession } from './useSurveyCadBestFitSession';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import { cadLineL1Prompt } from './useSurveyCadLineL1Session';
@@ -68,6 +69,7 @@ const plinePromptForSession = (session: PlineCommandSession): string => {
 export const promptForSession = (session: CommandSession | null, fallbackStatus: string): string => {
   if (!session) return fallbackStatus;
   if (isCadLineL1Key(session.key)) return cadLineL1Prompt(session as CadLineL1SessionState);
+  if (isBestFitSession(session)) return bestFitPromptForSession(session);
   switch (session.key) {
     case 'POINT':
       return session.resultText ?? 'POINT active. Click in model space or enter `x,y` / `LABEL=x,y`, then press Enter.';
