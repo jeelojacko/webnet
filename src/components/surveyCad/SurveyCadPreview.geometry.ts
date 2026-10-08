@@ -92,6 +92,13 @@ export const screenPointFromClientPoint = (
   };
 };
 
+/**
+ * Conservative per-glyph advance cap for the screen-space text estimate. Real
+ * SVG glyphs advance at most ~1em in mainstream faces, so a full em per
+ * character is the narrowest safe upper bound for the culling box.
+ */
+const TEXT_WIDTH_EM_FACTOR = 1;
+
 export const textPrimitiveScreenBox = (
   primitive: Extract<CadDisplayPrimitive, { kind: 'text' }>,
   project: ProjectPoint,
@@ -109,7 +116,13 @@ export const textPrimitiveScreenBox = (
     (current, line) => Math.max(current, line.length),
     0,
   );
-  const width = Math.max(24, longestLine * primitive.fontSize * 0.55);
+  // PERF-183.1 correction: the renderer draws real SVG glyphs, and wide glyphs
+  // ('W', CJK) advance near a full em. The old 0.55-per-glyph estimate
+  // under-sized the label box, so the cull pass dropped anchored text whose
+  // tail still reached inside the viewport. Use a full-em upper bound per
+  // glyph; the vertical/fontSize logic is unchanged, and the viewport cull
+  // still adds its own padding.
+  const width = Math.max(24, longestLine * primitive.fontSize * TEXT_WIDTH_EM_FACTOR);
   const height = Math.max(primitive.fontSize, lines.length * primitive.fontSize * 1.2);
   const anchorOffset =
     primitive.textAnchor === 'middle' ? width / 2 : primitive.textAnchor === 'end' ? width : 0;

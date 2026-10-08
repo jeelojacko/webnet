@@ -77,6 +77,34 @@ describe('PERF-183.1 viewport culling (render-only, fail-open)', () => {
     expect(isPrimitiveOutsideViewport(clear, identityProject, 1)).toBe(true);
   });
 
+  it('keeps a long wide-glyph label anchored past the right edge when its tail reaches inside', () => {
+    // Wide glyphs ('W') advance near a full em, so the previous 0.55-per-glyph
+    // estimate under-sized the cull box: this anchor sits past the right edge,
+    // but the real glyph run still extends into the viewport and must render.
+    const wideText = 'W'.repeat(20);
+    const anchoredPastEdge: CadDisplayPrimitive = {
+      ...base,
+      kind: 'text',
+      id: 't:wide-near',
+      sourceEntityId: 'text:wide-near',
+      point: { x: SURVEY_CAD_PREVIEW_WIDTH + 250, y: 260 },
+      text: wideText,
+      fontSize: 16,
+      textAnchor: 'end',
+    };
+    expect(isPrimitiveOutsideViewport(anchoredPastEdge, identityProject, 1)).toBe(false);
+
+    // The same wide-glyph run, moved well clear of the viewport, stays culled
+    // under the conservative full-em bound.
+    const farOutside: CadDisplayPrimitive = {
+      ...anchoredPastEdge,
+      id: 't:wide-far',
+      sourceEntityId: 'text:wide-far',
+      point: { x: 2000, y: 260 },
+    };
+    expect(isPrimitiveOutsideViewport(farOutside, identityProject, 1)).toBe(true);
+  });
+
   it('uses conservative circle/arc bounds and keeps rotated ellipses whose box overlaps', () => {
     const circleInside: CadDisplayPrimitive = {
       ...base,
