@@ -132,4 +132,7 @@ does not recompute.
 
 No change to `buildCadDisplayScene`, export scenes, snapping, selection
 semantics, history/undo, persistence, DXF/LandXML, worker protocol, or
-surface/contour revision hashes.
+surface/contour revision hashes. Production OSNAP is untouched; the browser
+spec only *uses* real endpoint OSNAP as an input path so the filtered scene is
+proven stable when a command picks an existing segment endpoint (badge read +
+pinned snapped vertex, `docs/evidence/perf-186/validation.md`).

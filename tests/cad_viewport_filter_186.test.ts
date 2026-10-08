@@ -368,6 +368,166 @@ describe('PERF-186.1 pipeline parity and scan counts', () => {
 });
 
 // ---------------------------------------------------------------------------
+// A' — full staged pipeline parity with hidden layers, labels, block hover
+// children, transient overlays, and fully populated derived families.
+// ---------------------------------------------------------------------------
+
+describe('PERF-186.1 full-pipeline parity (hidden layers, labels, derived)', () => {
+  const blockDefinition: CadBlockDefinition = {
+    id: 'block:bench',
+    name: 'Bench',
+    basePoint: { x: 0, y: 0 },
+    entities: [],
+  };
+
+  const blockReference: CadBlockReferenceEntity = {
+    id: 'blockref:1',
+    type: 'block-reference',
+    layerId: 'general',
+    visible: true,
+    locked: false,
+    blockDefinitionId: 'block:bench',
+    x: 0,
+    y: 0,
+    rotationDeg: 0,
+    scaleX: 1,
+    scaleY: 1,
+  };
+
+  const blockChild: Primitive = {
+    kind: 'line',
+    id: 'block:bench#0',
+    layerId: 'general',
+    sourceEntityId: blockReference.id,
+    sourceSegmentId: 'block:bench#0',
+    stroke: '#fff',
+    points: [{ x: 0, y: 0 }, { x: 2, y: 2 }],
+    strokeWidth: 1,
+  };
+
+  const buildRich = (): { target: CadProject; rawScene: CadDisplayScene; derived: DerivedBundle } => {
+    const eVisible = line(0, 'general');
+    const eOff = line(1, 'off-layer');
+    const eFrozen = line(2, 'frozen-layer');
+    const eInvisible = line(3, 'general', { visible: false });
+    const eMissing = line(4, 'no-such-layer');
+    const target = project({
+      layers: [
+        layer('general'),
+        layer('labels'),
+        layer('off-layer', { visible: false }),
+        layer('frozen-layer', { frozen: true }),
+        layer('visible-layer'),
+      ],
+      entities: [eVisible, eOff, eFrozen, eInvisible, eMissing, blockReference],
+      blockDefinitions: [blockDefinition],
+      analysisMaps: [
+        { id: 'map:general', name: 'General', source: { kind: 'surface', surfaceId: 's' } as never, bands: [] },
+        { id: 'map:off', name: 'Off', source: { kind: 'surface', surfaceId: 's' } as never, bands: [], layerId: 'off-layer' },
+        { id: 'map:frozen', name: 'Frozen', source: { kind: 'surface', surfaceId: 's' } as never, bands: [], layerId: 'frozen-layer' },
+      ],
+      analysisLegends: [
+        { id: 'legend:general', analysisId: 'map:general' },
+        { id: 'legend:off', analysisId: 'map:off' },
+        { id: 'legend:frozen', analysisId: 'map:frozen' },
+        { id: 'legend:broken', analysisId: 'map:missing' },
+      ] as never,
+    });
+    const rawScene = sceneOf(
+      [
+        linePrimitive(eVisible),
+        linePrimitive(eOff),
+        linePrimitive(eFrozen),
+        linePrimitive(eInvisible),
+        linePrimitive(eMissing),
+        textPrimitive(eVisible), // labels ON + backing ON -> kept
+        textPrimitive(eOff), // backing OFF -> hidden
+        textPrimitive(eInvisible), // backing visible:false -> hidden
+        linePrimitive(eVisible, 'off-layer'), // primitive layer OFF -> hidden
+        linePrimitive(eVisible, 'frozen-layer'), // primitive layer FROZEN -> hidden
+        blockChild, // block hover child (backing block-reference ON)
+        previewPrimitive('overlay:transient', 'off-layer'), // no backing -> kept
+      ],
+      {
+        // Populated raw derived arrays: the hook full scan filters these.
+        surfaceLayers: asDerived([
+          surfaceLayer('visible-layer'),
+          surfaceLayer('off-layer'),
+          surfaceLayer('frozen-layer'),
+        ]),
+        volumeLayers: asDerived([
+          simpleLayer('visible-layer', 'v0'),
+          simpleLayer('frozen-layer', 'v1'),
+        ]),
+      },
+    );
+    const derived: DerivedBundle = {
+      profileViewLayers: asDerived([simpleLayer('visible-layer', 'p0'), simpleLayer('off-layer', 'p1')]),
+      sampleLineLayers: asDerived([simpleLayer('general', 'sl0'), simpleLayer('frozen-layer', 'sl1')]),
+      sectionViewLayers: asDerived([simpleLayer('off-layer', 'sv0'), simpleLayer('visible-layer', 'sv1')]),
+      analysisLayers: asDerived([simpleLayer('off-layer', 'a0'), simpleLayer('general', 'a1')]),
+      analysisLegendLayers: asDerived([
+        { legendId: 'legend:general' },
+        { legendId: 'legend:off' },
+        { legendId: 'legend:frozen' },
+        { legendId: 'legend:broken' },
+        { legendId: 'legend:missing' },
+      ]),
+      gradingLayers: asDerived([simpleLayer('off-layer', 'g0'), simpleLayer('general', 'g1')]),
+      groupGradingLayers: asDerived([simpleLayer('frozen-layer', 'gg0'), simpleLayer('visible-layer', 'gg1')]),
+    };
+    return { target, rawScene, derived };
+  };
+
+  it('produces an identical final scene with hidden layers, labels, blocks, overlays, and populated derived families', () => {
+    const { target, rawScene, derived } = buildRich();
+    const legacyFinal = legacyPipeline(target, rawScene, derived, legacyCounters());
+    resetCadViewportVisibilityCounters();
+    const newFinal = newPipeline(target, rawScene, derived);
+
+    // Full final-scene parity: ordered primitive ids/props + all derived arrays.
+    expect(newFinal).toEqual(legacyFinal);
+    expect(newFinal.primitives.map((entry) => entry.id)).toEqual(legacyFinal.primitives.map((entry) => entry.id));
+    // Block hover child is tagged in both pipelines without changing the set.
+    expect(newFinal.primitives.find((entry) => entry.id === blockChild.id)?.hoverTitle).toBe('Block: Bench');
+    expect(newFinal.primitives.filter((entry) => entry.sourceEntityId === blockReference.id)).toHaveLength(1);
+    // Transient overlay with no backing entity survives the staged pipeline.
+    expect(newFinal.primitives.some((entry) => entry.id === 'overlay:transient')).toBe(true);
+    // Derived visibility matches the OFF/FROZEN contract in the final scene.
+    expect(newFinal.surfaceLayers!.map((entry) => entry.layerId)).toEqual(['visible-layer']);
+    expect(newFinal.volumeLayers!.map((entry) => entry.layerId)).toEqual(['visible-layer']);
+    expect(newFinal.profileViewLayers!.map((entry) => entry.layerId)).toEqual(['visible-layer']);
+    expect(newFinal.sampleLineLayers!.map((entry) => entry.layerId)).toEqual(['general']);
+    expect(newFinal.sectionViewLayers!.map((entry) => entry.layerId)).toEqual(['visible-layer']);
+    expect(newFinal.analysisLayers!.map((entry) => entry.layerId)).toEqual(['general']);
+    expect(newFinal.analysisLegendLayers!.map((entry) => entry.legendId)).toEqual([
+      'legend:general',
+      'legend:broken',
+      'legend:missing',
+    ]);
+    expect(newFinal.gradingLayers!.map((entry) => entry.layerId)).toEqual(['general']);
+    expect(newFinal.groupGradingLayers!.map((entry) => entry.layerId)).toEqual(['visible-layer']);
+  });
+
+  it('matches the legacy pipeline when the labels layer is OFF (synthetic labels hidden under either layer)', () => {
+    const { target, rawScene, derived } = buildRich();
+    const labelsOff: CadProject = {
+      ...target,
+      layers: target.layers.map((entry) =>
+        entry.id === 'labels' ? { ...entry, visible: false } : entry,
+      ),
+    };
+    const legacyFinal = legacyPipeline(labelsOff, rawScene, derived, legacyCounters());
+    resetCadViewportVisibilityCounters();
+    const newFinal = newPipeline(labelsOff, rawScene, derived);
+    expect(newFinal).toEqual(legacyFinal);
+    expect(newFinal.primitives.map((entry) => entry.id)).toEqual(legacyFinal.primitives.map((entry) => entry.id));
+    // Visible backing still hides its label when the labels layer is OFF.
+    expect(newFinal.primitives.some((entry) => entry.id === 'label:line:0')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // C — visibility contract
 // ---------------------------------------------------------------------------
 

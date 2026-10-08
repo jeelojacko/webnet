@@ -11,6 +11,7 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 const SHOTS = 'docs/evidence/perf-186';
@@ -93,6 +94,50 @@ async function drawLine(page: Page, from: [number, number], to: [number, number]
   await cancelCommand(page);
 }
 
+/** Rendered `<line>` endpoint in both SVG user units and client pixels. */
+interface RenderedLineGeometry {
+  ux1: number;
+  uy1: number;
+  ux2: number;
+  uy2: number;
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+}
+
+async function renderedLineGeometry(page: Page, entityId: string): Promise<RenderedLineGeometry> {
+  await page
+    .locator(`[data-cad-viewport] svg line[data-survey-cad-render-entity-id="${entityId}"]`)
+    .first()
+    .waitFor({ state: 'attached', timeout: 10000 });
+  return page.evaluate((id: string) => {
+    const line = document.querySelector(
+      `[data-cad-viewport] svg line[data-survey-cad-render-entity-id="${id}"]`,
+    ) as SVGLineElement | null;
+    if (!line) throw new Error(`no rendered line for ${id}`);
+    const svg = (line.ownerSVGElement ?? line.closest('svg')) as SVGSVGElement | null;
+    if (!svg) throw new Error('no owner svg');
+    const vb = svg.viewBox.baseVal;
+    const rect = svg.getBoundingClientRect();
+    const scale = Math.min(rect.width / vb.width, rect.height / vb.height);
+    const ox = rect.left + (rect.width - vb.width * scale) / 2 - vb.x * scale;
+    const oy = rect.top + (rect.height - vb.height * scale) / 2 - vb.y * scale;
+    const ux1 = Number(line.getAttribute('x1'));
+    const uy1 = Number(line.getAttribute('y1'));
+    const ux2 = Number(line.getAttribute('x2'));
+    const uy2 = Number(line.getAttribute('y2'));
+    return {
+      ux1, uy1, ux2, uy2,
+      ax: ox + ux1 * scale,
+      ay: oy + uy1 * scale,
+      bx: ox + ux2 * scale,
+      by: oy + uy2 * scale,
+    };
+  }, entityId);
+}
+
+/** All rendered segment endpoints of one entity in SVG user units. */
 test('A: OFF/ON + Freeze/Thaw hide/restore and retire selection', async ({ page }) => {
   test.setTimeout(180_000);
   const errors: string[] = [];
@@ -180,22 +225,68 @@ test('B: multi-select and undo/redo preserve the filtered scene', async ({ page 
   expect(errors).toEqual([]);
 });
 
-test('C: snapped polyline, pan/zoom/zoom-extents stay stable with zero errors', async ({ page }) => {
+test('C: endpoint-snapped polyline, pan/zoom/zoom-extents stay stable with zero errors', async ({ page }) => {
   test.setTimeout(180_000);
   const errors: string[] = [];
   await boot(page, errors);
 
-  // Snapped polyline: PLINE picks endpoints/nearest automatically.
-  await start(page, 'PLINE');
-  await canvasClick(page, 0.2, 0.4);
-  await canvasClick(page, 0.45, 0.6);
-  await canvasClick(page, 0.7, 0.35);
-  await type(page, '');
-  await cancelCommand(page);
+  // Draw a base line; its end endpoint becomes the OSNAP target.
+  await drawLine(page, [0.2, 0.4], [0.5, 0.58]);
   await expect.poll(() => entityCount(page)).toBe(1);
+  const baseId = (await renderEntityIds(page))[0]!;
+  const base = await renderedLineGeometry(page, baseId);
+
+  // PLINE: the first vertex snaps to the base line's end endpoint. Click just
+  // past the endpoint along its outward extension (~10px) so the click lands
+  // on the empty canvas background (clear of the 16-unit hit stroke) while
+  // staying inside the endpoint snap tolerance. Assert the live badge first.
+  await start(page, 'PLINE');
+  const segX = base.bx - base.ax;
+  const segY = base.by - base.ay;
+  const segLen = Math.hypot(segX, segY) || 1;
+  const snapX = base.bx + (segX / segLen) * 10;
+  const snapY = base.by + (segY / segLen) * 10;
+  await page.mouse.move(snapX - 40, snapY - 40);
+  await page.waitForTimeout(80);
+  await page.mouse.move(snapX, snapY);
+  await expect(page.locator('[data-survey-cad-snap-badge]')).toContainText(/endpoint/i, { timeout: 5000 });
+  const snapBadge = (await page.locator('[data-survey-cad-snap-badge]').textContent()) ?? '';
+  await page.mouse.click(snapX, snapY);
+  await expect(page.locator('[data-cad-command-prompt]')).toContainText(/1 vertex captured/i, { timeout: 5000 });
+  // Move to the second point and let the snap state settle before clicking so
+  // the mousedown cannot reuse a stale endpoint snap from the first vertex.
+  const second = await canvasPoint(page, 0.72, 0.35);
+  await page.mouse.move(second.x, second.y);
+  await page.waitForTimeout(150);
+  await page.mouse.click(second.x, second.y);
+  // Wait for the second vertex to commit before finishing (no Enter/click race).
+  await expect(page.locator('[data-cad-command-prompt]')).toContainText(/2 vertices captured/i, { timeout: 5000 });
+  await type(page, '');
+  await expect(page.locator('[data-cad-command-prompt]')).toContainText(/committed/i, { timeout: 5000 });
+  await cancelCommand(page);
+
+  await expect.poll(() => entityCount(page)).toBe(2);
   const rendered = await renderEntityIds(page);
-  expect(rendered.length).toBeGreaterThan(0);
-  const polylineId = rendered[0]!;
+  expect(rendered.length).toBe(2);
+  const polylineId = rendered.find((id) => id !== baseId) ?? '';
+  expect(polylineId).not.toBe('');
+
+  // Persisted-coordinate proof: the committed polyline's first vertex is the
+  // base line's end endpoint exactly (the raw click was ~10px past it), so the
+  // endpoint OSNAP drove the geometry, not the pointer position.
+  const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+  await page.getByRole('button', { name: 'Save Drawing' }).first().click();
+  const download = await downloadPromise;
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wn-perf-186-'));
+  const filePath = path.join(dir, 'drawing.wncad');
+  await download.saveAs(filePath);
+  const saved = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  const entities: Array<{ id: string; toX?: number; toY?: number; vertices?: Array<{ x: number; y: number }> }> =
+    saved?.project?.entities ?? saved?.entities ?? [];
+  const baseEntity = entities.find((entity) => entity.id === baseId);
+  const polylineEntity = entities.find((entity) => entity.id === polylineId);
+  expect(baseEntity).toBeTruthy();
+  expect(polylineEntity?.vertices?.[0]).toEqual({ x: baseEntity!.toX, y: baseEntity!.toY });
 
   const box = await page.locator('[data-cad-viewport] svg').first().boundingBox();
   if (!box) throw new Error('no viewport box');
@@ -215,7 +306,12 @@ test('C: snapped polyline, pan/zoom/zoom-extents stay stable with zero errors', 
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'middle', clickCount: 2 });
   await expect.poll(async () => renderStroke(page, polylineId).count()).toBeGreaterThan(0);
 
-  evidence.flowC = { entityCount: await entityCount(page), rendered: (await renderEntityIds(page)).length };
+  evidence.flowC = {
+    entityCount: await entityCount(page),
+    rendered: (await renderEntityIds(page)).length,
+    snapBadge,
+    snappedVertex: polylineEntity?.vertices?.[0] ?? null,
+  };
   writeEvidence();
   expect(errors).toEqual([]);
 });

@@ -45,9 +45,16 @@ The baseline and the new pipeline produce a **deep-equal final scene**
 `expect(newFinal).toEqual(legacyFinal)` against a verbatim pre-fix pipeline
 replica.
 
-## Parity coverage (`tests/cad_viewport_filter_186.test.ts`, 12 tests)
+## Parity coverage (`tests/cad_viewport_filter_186.test.ts`, 14 tests)
 
 - OFF layer, FROZEN layer, missing layer, `entity.visible: false`.
+- Full staged 4-pass-vs-new pipeline deep-equal with hidden layers,
+  `entity.visible: false`, missing layers/sources, synthetic labels under the
+  label-vs-backing rule, a block hover child, a transient overlay with no
+  backing entity, and **populated** surface/volume raw arrays plus every
+  attached derived family (profile/sample/section/analysis/legend/grading/
+  group) — ordered primitive ids/props and final derived visibility asserted; a
+  second variant toggles the `labels` layer OFF on the same fixture.
 - Unknown/transient preview primitives kept even on a hidden layer.
 - Synthesized label hidden under either the `labels` layer or the backing
   entity layer; `sourceEntityId` / `sourceSegmentId` preserved.
@@ -82,7 +89,7 @@ Backed by the same index, so `viewportHiddenEntityIds` itself is an O(1)
 
 ## Focused / neighbor unit suites
 
-- `tests/cad_viewport_filter_186.test.ts` — 12/12
+- `tests/cad_viewport_filter_186.test.ts` — 14/14
 - `tests/cad_viewport_filter_root_186.test.tsx` — 5/5
 - `tests/cad_render_standards.test.ts`, `tests/cad_section_ui.test.ts`,
   `tests/cad_grading_ui_20b.test.ts`, `tests/cad_surface_contour_ui.test.ts`,
@@ -105,8 +112,14 @@ New spec `tests-browser/cad-viewport-filter-186.spec.ts` (production bundle,
   `docs/evidence/perf-186/browser-counts.json`.
 - B: crossing box select, Select-All + Shift-click multi-select, undo/redo
   restore the filtered scene.
-- C: snapped polyline, middle-drag pan, wheel zoom, double-middle-click zoom
-  extents — geometry stable, zero errors.
+- C: endpoint-snapped polyline, middle-drag pan, wheel zoom, double-middle-
+  click zoom extents — geometry stable, zero errors. The polyline starts on a
+  base line's end endpoint: the pointer is moved ~10px past the endpoint (onto
+  the empty canvas, clear of the hit stroke), the live snap badge must read
+  `Endpoint: <coord>`, and the committed drawing is saved/parsed to assert the
+  polyline's first vertex **equals the base line's `toX`/`toY` exactly** (the
+  raw click was not on the endpoint). Counts/badge/vertex in
+  `docs/evidence/perf-186/browser-counts.json`.
 
 Existing neighbor specs (real `/cad` UI):
 

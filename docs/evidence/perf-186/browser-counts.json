@@ -9,7 +9,12 @@
     "restoredEntities": 3
   },
   "flowC": {
-    "entityCount": 1,
-    "rendered": 1
+    "entityCount": 2,
+    "rendered": 2,
+    "snapBadge": "Endpoint: 8.482,-1.824",
+    "snappedVertex": {
+      "x": 8.482142857142858,
+      "y": -1.8243573055645932
+    }
   }
 }
