@@ -44,7 +44,13 @@ const selectThroughPointCandidate = (
   outcome: ReturnType<typeof solveCadCurveThroughTwoTangentRays>,
   candidateSide: 'left' | 'right' | undefined,
 ): CadCurveThroughPointCandidate | null => {
-  if (outcome.ok) return outcome.result;
+  if (outcome.ok) {
+    // A caller-supplied side is a constraint, not a hint: fail closed when the
+    // unique kernel result disagrees instead of silently committing the other
+    // side (the session layer already rejects this mismatch).
+    if (candidateSide != null && outcome.result.side !== candidateSide) return null;
+    return outcome.result;
+  }
   if (outcome.code !== 'MULTIPLE_SOLUTIONS' || candidateSide == null) return null;
   const matches = outcome.candidates.filter((candidate) => candidate.side === candidateSide);
   return matches.length === 1 ? matches[0]! : null;

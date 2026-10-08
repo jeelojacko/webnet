@@ -251,6 +251,41 @@ describe('CAD Curves F1 CURVE_THROUGH_POINT transaction', () => {
       candidateSide: expect.any(String),
     });
   });
+
+  it('an explicit candidateSide matching the unique result commits normally', () => {
+    const history = runCadCommand(createCadHistoryState(rightAngleProject()), {
+      key: 'CURVE_THROUGH_POINT_CREATE',
+      firstEntityId: 'line-a',
+      firstPickPoint: FIRST_PICK,
+      secondEntityId: 'line-b',
+      secondPickPoint: SECOND_PICK,
+      throughPoint: { x: 30, y: 30 },
+      // Unique tangent circle through (30, 30) lies on the left of ray1.
+      candidateSide: 'left',
+    });
+    expect(history.undoStack).toHaveLength(1);
+    expect(onlyArc(history.present.project).radius).toBeCloseTo(102.4264, 3);
+    expect(history.present.project.cogoComputations).toHaveLength(1);
+  });
+
+  it('an explicit mismatched candidateSide fails closed with zero mutation', () => {
+    const history = createCadHistoryState(rightAngleProject());
+    const next = runCadCommand(history, {
+      key: 'CURVE_THROUGH_POINT_CREATE',
+      firstEntityId: 'line-a',
+      firstPickPoint: FIRST_PICK,
+      secondEntityId: 'line-b',
+      secondPickPoint: SECOND_PICK,
+      throughPoint: { x: 30, y: 30 },
+      // The unique kernel result is on the left, so an explicit right side
+      // must be refused instead of silently committing the other side.
+      candidateSide: 'right',
+    });
+    expect(next).toBe(history);
+    expect(next.undoStack).toHaveLength(0);
+    expect(next.present.project.entities).toHaveLength(2);
+    expect(next.present.project.cogoComputations).toHaveLength(0);
+  });
 });
 
 describe('CAD Curves F1 MULTIPLE_CURVES transaction', () => {

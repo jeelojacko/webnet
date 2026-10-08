@@ -18,7 +18,7 @@ flow). Evidence PNGs + `geometry.json` live in this directory.
 | A flyout | 16 Curves rows, zero `aria-disabled`, default face `CURVE_BETWEEN_TWO_LINES`; ribbon pick moves the sticky face; typed `CURVEONTWOLINES` runs without moving it; New drawing resets to Between |
 | B Between | Line clicks → `R20` shows arc preview → commit trims both lines (arc R≈20); report `Curve Between Two Lines`; one Undo restores lines byte-identical, Redo re-applies |
 | C On | Identical arc geometry; both source lines byte-unchanged |
-| D Through | Typed pass point commits the unique tangent circle and trims; a pass point on a source line reports no-solution and the session stays active (Escape cancels, zero mutation) |
+| D Through | Typed pass point commits the unique tangent circle and trims; an on-ray pass point commits the unique tangent circle (no longer no-solution), while genuinely invalid points (behind PI / outside the selected ray) report no-solution and the session stays active (Escape cancels, zero mutation) |
 | E Multiple | `3`, `F2`, three `L,R` entries preview the full chain; commit yields 3 G1-continuous arcs with sources unchanged; one Undo removes the whole chain |
 | F From-End | Line source + nearest-end click + `P` + typed endpoint continues from (100,0) with the source unchanged; arc source + `R100` + `L50` commits a radius-mode arc |
 | G Reverse/Compound | `R` and `C` continuations each start exactly at their own source end; report titles `Reverse Curve` / `Compound Curve` |
