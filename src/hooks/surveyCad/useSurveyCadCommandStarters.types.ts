@@ -2,6 +2,7 @@ import type {
   CadAlignmentEntity,
   CadArcEntity,
   CadParcelEntity,
+  CadProject,
 } from '../../engine/cad/cadTypes';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
 import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
@@ -96,6 +97,9 @@ export interface SurveyCadCommandStarters {
   startDimDiameterCommand: () => void;
   startBearingLabelCommand: () => void;
   startCurveLabelCommand: () => void;
+  startBestFitLineCommand: () => void;
+  startBestFitArcCommand: () => void;
+  startBestFitParabolaCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startRotateCommand: () => void;
@@ -140,4 +144,9 @@ export interface BuildSurveyCadCommandStartersOptions {
    * so a second pick is only needed for the vertex/course.
    */
   selectedEditablePolylineId?: string | null;
+  /**
+   * CAD Best Fit E1 — live project for selection preseed (survey-point
+   * attribution). Absent = sessions start empty.
+   */
+  bestFitProject?: CadProject | null;
 }

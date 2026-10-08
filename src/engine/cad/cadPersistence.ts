@@ -14,6 +14,7 @@ import type {
 } from './cadTypes';
 import { validateParcelCourseGeometry } from './cadParcelArcGeometry';
 import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
+import { isValidParabolaEntity } from './cadParabola';
 import { sanitizeFeatureLine } from './cadFeatureLines';
 import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
@@ -202,6 +203,19 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
       // geometry (both load sanitizers catch clone errors). No migration.
       if (!isValidCircleGeometry(entity.centerX, entity.centerY, entity.radius)) {
         throw new Error(`circle ${entity.id} has invalid geometry`);
+      }
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'parabola':
+      // First-class finite parabola: malformed geometry (non-finite vertex/
+      // axis/focal, focal at/below the CAD floor, or collapsed t range)
+      // fails closed at load/clone exactly like circle. Legacy files cannot
+      // contain this kind, so there is nothing to migrate and no bump.
+      if (!isValidParabolaEntity(entity)) {
+        throw new Error(`parabola ${entity.id} has invalid geometry`);
       }
       return {
         ...entity,

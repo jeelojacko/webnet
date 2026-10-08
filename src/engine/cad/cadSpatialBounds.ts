@@ -5,6 +5,7 @@ import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
 import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { arcRefFromEntity } from './cadSpatialEntityRefs';
+import { cadParabolaEntityBounds } from './cadParabola';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
 import { buildCadProjectLookup, type CadProjectLookup } from './cadProjectLookup';
 import { resolveCadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
@@ -279,6 +280,18 @@ export const entityIntersectsBounds = (
         entity.centerY + entity.semiMajor < bounds.minY ||
         entity.centerY - entity.semiMajor > bounds.maxY
       );
+    case 'parabola': {
+      // Analytic AABB (finite endpoints + dx/dt=0 / dy/dt=0 roots in range);
+      // invalid geometry never matches.
+      const box = cadParabolaEntityBounds(entity);
+      if (!box) return false;
+      return !(
+        box.maxX < bounds.minX ||
+        box.minX > bounds.maxX ||
+        box.maxY < bounds.minY ||
+        box.minY > bounds.maxY
+      );
+    }
     case 'block-reference': {
       // Single source: world-space bounds of the expanded instance.
       // Unknown definitions fall back to the insertion point (world

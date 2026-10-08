@@ -1,4 +1,5 @@
 import type { CadEntity, CadProject, MlightcadSpikeEntity, MlightcadSpikeScene } from './cadTypes';
+import { cadParabolaTessellatePoints } from './cadParabola';
 
 const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
   switch (entity.type) {
@@ -159,6 +160,28 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'parabola': {
+      // Spike adapter only: no native parabola object in the spike schema,
+      // so the analytic curve rides as a deterministic bounded tessellation.
+      // The geometry block marks the approximation explicitly (never a
+      // silent chord passed off as native).
+      const points = cadParabolaTessellatePoints(entity) ?? [];
+      return {
+        objectId: entity.id,
+        type: 'AcDbPolyline',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          vertices: points.map((point) => ({ x: point.x, y: point.y, z: 0 })),
+          closed: false,
+          approximation: 'parabola-tessellation',
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
+    }
     case 'error-ellipse':
       return {
         objectId: entity.id,

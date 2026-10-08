@@ -1,3 +1,4 @@
+import { buildBestFitPreseedSamples } from './useSurveyCadBestFitSession';
 import type {
   CadArcEntity,
 } from '../../engine/cad/cadTypes';
@@ -11,6 +12,27 @@ import type {
   BuildSurveyCadCommandStartersOptions,
   SurveyCadCommandStarters,
 } from './useSurveyCadCommandStarters.types';
+
+const bestFitPreseed = <K extends 'BESTFITLINE' | 'BESTFITARC' | 'BESTFITPARABOLA'>(
+  key: K,
+  project: BuildSurveyCadCommandStartersOptions['bestFitProject'],
+  selectedEntityIds: readonly string[],
+): Extract<CommandSession, { key: K }> => {
+  const preseed =
+    project != null
+      ? buildBestFitPreseedSamples(project, selectedEntityIds)
+      : { samples: [], skippedNonPointSelection: false };
+  return {
+    key,
+    inputValue: '',
+    samples: preseed.samples,
+    ...(preseed.skippedNonPointSelection
+      ? {
+          resultText: `${key} started without preseed: the selection must be all survey points. Click or type sample points.`,
+        }
+      : {}),
+  } as Extract<CommandSession, { key: K }>;
+};
 
 const lineCommandSession = (
   key: 'DEFLECT_POINT' | 'POINT_ALONG_LINE' | 'EXTEND_LINE' | 'OFFSET_POINT',
@@ -46,6 +68,7 @@ export const useSurveyCadCommandStarters = ({
   selectedEntityIds = [],
   surveyPointEntityIdsInStationOrder = [],
   selectedEditablePolylineId = null,
+  bestFitProject = null,
 }: BuildSurveyCadCommandStartersOptions): SurveyCadCommandStarters => ({
   startLineL1Command: (key: CadLineL1CommandKey) => {
     const referenceStart =
@@ -404,6 +427,12 @@ export const useSurveyCadCommandStarters = ({
     beginSession({ key: 'BDLABEL', inputValue: '', points: [], sourceEntityId: null }),
   startCurveLabelCommand: () =>
     beginSession({ key: 'CURVELABEL', inputValue: '', points: [], sourceEntityId: null }),
+  startBestFitLineCommand: () =>
+    beginSession(bestFitPreseed('BESTFITLINE', bestFitProject, selectedEntityIds)),
+  startBestFitArcCommand: () =>
+    beginSession(bestFitPreseed('BESTFITARC', bestFitProject, selectedEntityIds)),
+  startBestFitParabolaCommand: () =>
+    beginSession(bestFitPreseed('BESTFITPARABOLA', bestFitProject, selectedEntityIds)),
   startMoveCommand: () => {
     if (selectionCount === 0) return;
     beginSession({ key: 'MOVE', inputValue: '', startPoint: null });

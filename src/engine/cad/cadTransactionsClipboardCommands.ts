@@ -26,6 +26,7 @@ import type {
   CadCircleEntity,
   CadEntity,
   CadEntityId,
+  CadParabolaEntity,
   CadProject,
   CadSurveyPointEntity,
   CadTextEntity,
@@ -256,6 +257,21 @@ export const buildCopiedEntities = (
             manual: true,
           },
         });
+        break;
+      case 'parabola':
+        // Analytic copy: new id, vertex translated, axis/focal/range carried
+        // (translation is rigid — the canonical model is unchanged).
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-parabola'),
+          vertexX: entity.vertexX + deltaX,
+          vertexY: entity.vertexY + deltaY,
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        } satisfies CadParabolaEntity);
         break;
       case 'block-reference':
         copiedEntities.push({

@@ -111,7 +111,11 @@ export type CadRibbonIconId =
   | 'draw-line-extension'
   | 'draw-line-from-end'
   | 'draw-line-tangent-point'
-  | 'draw-line-perp-point';
+  | 'draw-line-perp-point'
+  // CAD Best Fit E1 — exact Civil best-fit families (see icon-sources.md).
+  | 'draw-best-fit-line'
+  | 'draw-best-fit-arc'
+  | 'draw-best-fit-parabola';
 
 export interface CadRibbonIconSources {
   src16: string;
@@ -229,4 +233,8 @@ export const CAD_RIBBON_ICONS: Record<CadRibbonIconId, CadRibbonIconSources> = {
   'draw-line-from-end': { src16: new URL('./draw-line-from-end-16.png', import.meta.url).href, src32: new URL('./draw-line-from-end-32.png', import.meta.url).href },
   'draw-line-tangent-point': { src16: new URL('./draw-line-tangent-point-16.png', import.meta.url).href, src32: new URL('./draw-line-tangent-point-32.png', import.meta.url).href },
   'draw-line-perp-point': { src16: new URL('./draw-line-perp-point-16.png', import.meta.url).href, src32: new URL('./draw-line-perp-point-32.png', import.meta.url).href },
+  // CAD Best Fit E1 — stripped Civil best-fit art (exact families only).
+  'draw-best-fit-line': { src16: new URL('./draw-best-fit-line-16.png', import.meta.url).href, src32: new URL('./draw-best-fit-line-32.png', import.meta.url).href },
+  'draw-best-fit-arc': { src16: new URL('./draw-best-fit-arc-16.png', import.meta.url).href, src32: new URL('./draw-best-fit-arc-32.png', import.meta.url).href },
+  'draw-best-fit-parabola': { src16: new URL('./draw-best-fit-parabola-16.png', import.meta.url).href, src32: new URL('./draw-best-fit-parabola-32.png', import.meta.url).href },
 };

@@ -140,11 +140,12 @@ export const CAD_RIBBON_TOOL_FAMILIES: readonly CadRibbonToolFamily[] = [
     id: 'bestfit',
     label: 'Best Fit',
     defaultVariantId: 'bestfit-line',
-    // §21 — no best-fit solver surface in the shell; all rows planned.
+    // Best Fit E1 — all three rows are live least-squares solvers with real
+    // command keys (session samplers + one-entry engine commits).
     variants: [
-      { id: 'bestfit-line', label: 'Create Best Fit Line', planned: true, hint: 'Planned: least-squares best-fit line.' },
-      { id: 'bestfit-arc', label: 'Create Best Fit Arc', planned: true, hint: 'Planned: least-squares best-fit arc.' },
-      { id: 'bestfit-parabola', label: 'Create Best Fit Parabola', planned: true, hint: 'Planned: least-squares best-fit parabola.' },
+      { id: 'bestfit-line', label: 'Create Best Fit Line', icon: 'draw-best-fit-line', commandKey: 'BESTFITLINE', hint: 'Least-squares best-fit line from sample points.' },
+      { id: 'bestfit-arc', label: 'Create Best Fit Arc', icon: 'draw-best-fit-arc', commandKey: 'BESTFITARC', hint: 'Least-squares best-fit arc from sample points.' },
+      { id: 'bestfit-parabola', label: 'Create Best Fit Parabola', icon: 'draw-best-fit-parabola', commandKey: 'BESTFITPARABOLA', hint: 'Least-squares best-fit parabola from sample points.' },
     ],
   },
   {

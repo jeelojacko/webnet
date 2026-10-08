@@ -332,7 +332,11 @@ export type CadCommandKey =
   | 'DESIGNPATCH'
   // Phase C3 — polyline vertex topology (insert/delete are count-changing).
   | 'POLYLINE_INSERT_VERTEX'
-  | 'POLYLINE_DELETE_VERTEX';
+  | 'POLYLINE_DELETE_VERTEX'
+  // CAD Best Fit E1 — least-squares geometry from stored sample snapshots.
+  | 'BEST_FIT_LINE'
+  | 'BEST_FIT_ARC'
+  | 'BEST_FIT_PARABOLA';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -481,6 +485,18 @@ export type CadCommand =
         endAngleDeg: number;
       };
       metadata?: Record<string, unknown>;
+    }
+  | {
+      key: 'BEST_FIT_LINE';
+      samples: { x: number; y: number; label: string; sourceEntityId?: string }[];
+    }
+  | {
+      key: 'BEST_FIT_ARC';
+      samples: { x: number; y: number; label: string; sourceEntityId?: string }[];
+    }
+  | {
+      key: 'BEST_FIT_PARABOLA';
+      samples: { x: number; y: number; label: string; sourceEntityId?: string }[];
     }
   | {
       key: 'TANGENT_CURVE';

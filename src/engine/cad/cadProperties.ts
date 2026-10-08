@@ -43,6 +43,11 @@ import type {
 } from './cadPropertiesModel';
 import { resolveCadParcelCourses } from './cadParcelCourses';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
+import {
+  cadParabolaAxisAzimuthDeg,
+  cadParabolaEntityEndpoints,
+  cadParabolaEntityLength,
+} from './cadParabola';
 import { cadPolylineCourseMidpoint, resolveCadPolylineCourses } from './cadPolylineCourses';
 import {
   deleteCadPolylineVertex,
@@ -827,6 +832,29 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('theta', 'Theta', numeric(entity.thetaDeg, 4)),
       );
       return rows;
+    case 'parabola': {
+      // Read-only analytic rows: stored vertex/axis/focal/range, derived
+      // curve length, and a chord cogo summary from the finite endpoints.
+      const curveLength = cadParabolaEntityLength(entity);
+      const endpoints = cadParabolaEntityEndpoints(entity);
+      const inverse = buildCadInverseSummary(endpoints.start, endpoints.end);
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('vertex-e', 'Vertex E', numeric(entity.vertexX)),
+        row('vertex-n', 'Vertex N', numeric(entity.vertexY)),
+        row('axis-angle', 'Axis angle', numeric(entity.axisAngleDeg, 4)),
+        row('axis-azimuth', 'Axis azimuth', formatCadNorthAzimuthDms(cadParabolaAxisAzimuthDeg(entity))),
+        row('focal-length', 'Focal length', numeric(entity.focalLength)),
+        row('t-start', 't start', numeric(entity.tStart, 4)),
+        row('t-end', 't end', numeric(entity.tEnd, 4)),
+        row('curve-length', 'Curve length', curveLength == null ? '--' : numeric(curveLength)),
+        row('chord-length', 'Chord length', numeric(inverse.distance)),
+        row('chord-azimuth', 'Chord azimuth', formatCadNorthAzimuthDms(inverse.azimuthDeg)),
+        row('start-point', 'Start point', `${numeric(endpoints.start.x)}, ${numeric(endpoints.start.y)}`),
+        row('end-point', 'End point', `${numeric(endpoints.end.x)}, ${numeric(endpoints.end.y)}`),
+      );
+      return rows;
+    }
     case 'mtext':
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),

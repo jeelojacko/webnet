@@ -103,8 +103,8 @@ describe('phase 21A tool-family manifests (§80)', () => {
     expect(curves.variants.find((variant) => variant.id === 'curves-tangent')?.separatorBefore).toBe(true);
   });
 
-  it('keeps Best Fit / Ellipse / Hatch as honest planned rows', () => {
-    for (const id of ['bestfit', 'ellipse', 'hatch']) {
+  it('keeps Ellipse / Hatch as honest planned rows', () => {
+    for (const id of ['ellipse', 'hatch']) {
       const entry = family(id);
       expect(entry.variants.length).toBeGreaterThan(0);
       expect(entry.variants.every((variant) => variant.planned === true)).toBe(true);
@@ -116,6 +116,21 @@ describe('phase 21A tool-family manifests (§80)', () => {
       'hatch-gradient',
       'hatch-retain-boundary',
     ]);
+  });
+
+  it('maps all three Best Fit rows to the live BESTFIT commands', () => {
+    // Best Fit E1 (Worker C): every row is live with a real command key and
+    // a curated icon; the family is no longer a planned placeholder.
+    const entry = family('bestfit');
+    expect(entry.defaultVariantId).toBe('bestfit-line');
+    const byId = new Map(entry.variants.map((variant) => [variant.id, variant]));
+    expect(byId.get('bestfit-line')?.commandKey).toBe('BESTFITLINE');
+    expect(byId.get('bestfit-arc')?.commandKey).toBe('BESTFITARC');
+    expect(byId.get('bestfit-parabola')?.commandKey).toBe('BESTFITPARABOLA');
+    expect(entry.variants.every((variant) => variant.planned == null)).toBe(true);
+    expect(isCadRibbonVariantSelectable(entry, 'bestfit-line')).toBe(true);
+    expect(isCadRibbonVariantSelectable(entry, 'bestfit-arc')).toBe(true);
+    expect(isCadRibbonVariantSelectable(entry, 'bestfit-parabola')).toBe(true);
   });
 
   it('maps all six Circle rows to the live CIRCLE family commands', () => {

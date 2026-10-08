@@ -172,6 +172,41 @@ describe('CAD ribbon icon manifest', () => {
     }
   });
 
+  it('pins every Best Fit variant to its curated icon', () => {
+    // Best Fit E1 (Worker C): each row carries an exact Civil best-fit
+    // family icon so a typo can never silently fall back to a text face.
+    const family = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === 'bestfit');
+    expect(family).toBeTruthy();
+    if (family == null) return;
+    const expected: Record<string, keyof typeof CAD_RIBBON_ICONS> = {
+      'bestfit-line': 'draw-best-fit-line',
+      'bestfit-arc': 'draw-best-fit-arc',
+      'bestfit-parabola': 'draw-best-fit-parabola',
+    };
+    const expectedCommandKeys: Record<string, string> = {
+      'bestfit-line': 'BESTFITLINE',
+      'bestfit-arc': 'BESTFITARC',
+      'bestfit-parabola': 'BESTFITPARABOLA',
+    };
+    expect(family.defaultVariantId).toBe('bestfit-line');
+    expect(family.variants.map((variant) => variant.id)).toEqual(Object.keys(expected));
+    for (const variant of family.variants) {
+      expect(variant.icon, `${variant.id} must not silently fall back to a text face`).toBe(
+        expected[variant.id],
+      );
+      const sources = variant.icon != null ? CAD_RIBBON_ICONS[variant.icon] : undefined;
+      expect(sources, `${variant.id} icon manifest entry`).toBeTruthy();
+      if (sources == null) continue;
+      for (const url of [sources.src16, sources.src32]) {
+        if (url == null) continue;
+        const file = path.join(ICON_DIR, pngBasename(url));
+        expect(fs.existsSync(file), `${variant.id} file ${file}`).toBe(true);
+      }
+      expect(variant.planned, `${variant.id} is live (no planned flag)`).not.toBe(true);
+      expect(variant.commandKey, `${variant.id} carries a full key`).toBe(expectedCommandKeys[variant.id]);
+    }
+  });
+
   it('pins every Line construction variant to its curated icon', () => {
     // CAD Draw Phase L1: each Line row carries an explicit icon so a typo can
     // never silently fall back to a text face. Row 1 keeps the existing

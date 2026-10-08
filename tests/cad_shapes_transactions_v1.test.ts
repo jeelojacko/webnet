@@ -255,17 +255,26 @@ describe('shape predicates', () => {
     expect(onlyPolygon(result!.nextSnapshot.project).vertices).toHaveLength(1024);
   });
 
-  it('BestFit/Ellipse/Hatch stay planned with no engine command; Circle is live', () => {
-    for (const family of ['bestfit', 'ellipse', 'hatch']) {
+  it('Ellipse/Hatch stay planned with no engine command; Circle and Best Fit are live', () => {
+    // Best Fit E1 went live (BEST_FIT_* engine commands + BESTFIT* sessions),
+    // so only Ellipse/Hatch remain planned placeholders here.
+    for (const family of ['ellipse', 'hatch']) {
       const found = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === family);
       expect(found).toBeDefined();
       expect(found!.variants.length).toBeGreaterThan(0);
       expect(found!.variants.every((variant) => variant.planned === true)).toBe(true);
     }
-    for (const key of ['BESTFIT', 'ELLIPSE', 'HATCH']) {
+    const bestfit = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === 'bestfit')!;
+    expect(bestfit.variants.every((variant) => variant.planned !== true)).toBe(true);
+    expect(bestfit.variants.map((variant) => variant.commandKey)).toEqual([
+      'BESTFITLINE',
+      'BESTFITARC',
+      'BESTFITPARABOLA',
+    ]);
+    for (const key of ['ELLIPSE', 'HATCH']) {
       expect(Object.hasOwn(CAD_COMMAND_REGISTRY, key)).toBe(false);
     }
-    for (const key of ['CIRCLE', 'CIRCLECD']) {
+    for (const key of ['CIRCLE', 'CIRCLECD', 'BEST_FIT_LINE', 'BEST_FIT_ARC', 'BEST_FIT_PARABOLA']) {
       expect(Object.hasOwn(CAD_COMMAND_REGISTRY, key)).toBe(true);
     }
     const shapes = CAD_RIBBON_TOOL_FAMILIES.find((entry) => entry.id === 'shapes')!;

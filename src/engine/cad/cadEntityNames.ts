@@ -98,6 +98,8 @@ export const getCadEntityDisplayLabel = (entity: CadEntity): string => {
       return entity.name;
     case 'error-ellipse':
       return entity.stationId;
+    case 'parabola':
+      return readNonOpaqueEntityId(entity) ?? 'Parabola';
     case 'text':
       return entity.text;
     case 'mtext':

@@ -66,6 +66,11 @@ import {
   tangentCurveCommand,
 } from './cadTransactionsCurveCommands';
 import {
+  bestFitArcCommand,
+  bestFitLineCommand,
+  bestFitParabolaCommand,
+} from './cadTransactionsBestFitCommands';
+import {
   editEntityCommand,
   polylineDeleteVertexCommand,
   polylineInsertVertexCommand,
@@ -556,6 +561,9 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
+  BEST_FIT_LINE: bestFitLineCommand as CadCommandDefinition<CadCommand>,
+  BEST_FIT_ARC: bestFitArcCommand as CadCommandDefinition<CadCommand>,
+  BEST_FIT_PARABOLA: bestFitParabolaCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_CREATE: alignmentCreateCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_OFFSET_CREATE: alignmentOffsetCreateCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_STATION_REPORT: alignmentStationReportCommand as CadCommandDefinition<CadCommand>,

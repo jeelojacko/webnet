@@ -80,6 +80,9 @@ const COMMAND_ICONS: Partial<Record<string, CadRibbonIconId>> = {
   PARCELREPORT: 'table',
   PARCELDESC: 'table',
   SHELL_IMPORT_LANDXML: 'landxml-import',
+  BESTFITLINE: 'draw-best-fit-line',
+  BESTFITARC: 'draw-best-fit-arc',
+  BESTFITPARABOLA: 'draw-best-fit-parabola',
 };
 
 /** 1-2 word icon faces; full labels live in flyouts/tooltips/aria. */

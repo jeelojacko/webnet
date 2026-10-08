@@ -25,6 +25,7 @@ import type {
   ReplaceSession,
 } from './useSurveyCadConsumePoint.types';
 import { handleAnnotationPointPick } from './useSurveyCadAnnotationSessions';
+import { handleBestFitPointPick } from './useSurveyCadBestFitSession';
 import { handleSurveyCadEditPointPick } from './useSurveyCadEditPointPick';
 import { handleSurveyCadTransformPointPick } from './useSurveyCadTransformPointPick';
 import { handleSurveyCadParcelSplitPointPick } from './useSurveyCadParcelSplitPointPick';
@@ -327,6 +328,12 @@ export const handleSurveyCadConsumePoint = (
     handleReportPointPick(options) ||
     handleStagedPointPick(current, point, replaceSession) ||
     handleIntersectionPointPick(current, point, replaceSession) ||
+    handleBestFitPointPick({
+      current,
+      point,
+      project: options.history.present.project,
+      replaceSession,
+    }) ||
     handlePerpendicularPointPick(options) ||
     handlePolylineOrTraversePointPick(options) ||
     handleSurveyCadTransformPointPick({

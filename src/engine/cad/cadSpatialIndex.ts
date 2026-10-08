@@ -10,6 +10,7 @@ import type {
   CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
+  CadParabolaEntity,
   CadPolygonEntity,
   CadPolylineEntity,
   CadProject,
@@ -18,6 +19,7 @@ import type {
   CadSnapKind,
 } from './cadTypes';
 import { expandBounds } from './cadSpatialBounds';
+import { cadParabolaEntityBounds } from './cadParabola';
 import {
   parcelArcBoundsPoints,
   parcelCourseCanonicalKind,
@@ -119,6 +121,7 @@ type SnapEntity =
   | CadParcelEntity
   | CadArcEntity
   | CadCircleEntity
+  | CadParabolaEntity
   | CadFeatureLineEntity;
 
 const isSnapGeometry = (entity: CadEntity): entity is SnapEntity =>
@@ -128,6 +131,7 @@ const isSnapGeometry = (entity: CadEntity): entity is SnapEntity =>
   entity.type === 'parcel' ||
   entity.type === 'arc' ||
   entity.type === 'circle' ||
+  entity.type === 'parabola' ||
   entity.type === 'feature-line';
 
 const segmentBounds = (ref: CadSegmentRef): PreparedSegment => ({
@@ -365,6 +369,12 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
         if (Number.isFinite(minX) && Number.isFinite(minY)) {
           preparedEntities.push({ entity, minX, minY, maxX, maxY });
         }
+      } else if (entity.type === 'parabola') {
+        // Analytic AABB (finite ends + in-range axis extrema) keeps the
+        // cursor-box broad phase honest; the curve is NEVER indexed as a
+        // chord, so intersection/construction snaps stay analytic.
+        const box = cadParabolaEntityBounds(entity);
+        if (box) preparedEntities.push({ entity, ...box });
       } else {
         const refs = entitySegments(entity);
         let minX = Number.POSITIVE_INFINITY;

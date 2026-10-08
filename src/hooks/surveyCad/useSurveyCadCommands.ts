@@ -381,6 +381,9 @@ export const useSurveyCadCommands = ({
     applyHistoryUpdate,
     project: history.present.project,
     replaceSession,
+    // Best Fit E1: forward the engine-appended residual computation (with
+    // its tables) to the report panel; never a synthetic second entry.
+    reportComputation: (computation) => onReportComputation?.(computation),
     session,
     sessionRef,
     submitSessionInput,
@@ -408,6 +411,7 @@ export const useSurveyCadCommands = ({
     selectionCount,
     selectedEntityIds,
     surveyPointEntityIdsInStationOrder,
+    bestFitProject: history.present.project,
     selectedEditablePolylineId: resolveSoleSelectedEditablePolyline(
       history.present.project,
       selectedEntityIds ?? [],

@@ -20,7 +20,7 @@ export type CadBlockCommandError =
   | 'CAD_BLOCK_INVALID_TRANSFORM'
   | 'CAD_BLOCK_REFERENCED';
 
-const SEMANTIC_TYPES = new Set(['survey-point', 'alignment', 'parcel', 'error-ellipse', 'block-reference']);
+const SEMANTIC_TYPES = new Set(['survey-point', 'alignment', 'parcel', 'error-ellipse', 'parabola', 'block-reference']);
 
 export const isBlockEligibleSource = (entity: CadEntity): boolean => {
   switch (entity.type) {

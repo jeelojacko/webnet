@@ -1,6 +1,7 @@
 import { cadIsAngleOnArcSweep } from './cadGeometry';
 import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
 import { cadPolylineWidthEnvelopePoints } from './cadPolylineCourses';
+import { cadParabolaEntityBounds } from './cadParabola';
 import { getFeatureLineCourseCount } from './cadFeatureLines';
 import type { CadFeatureLineEntity, CadParcelEntity } from './cadTypes';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
@@ -144,6 +145,16 @@ export const buildCadBounds = (
         includePoint(entity.centerX - entity.semiMajor, entity.centerY - entity.semiMajor);
         includePoint(entity.centerX + entity.semiMajor, entity.centerY + entity.semiMajor);
         break;
+      case 'parabola': {
+        // Analytic AABB (finite ends + in-range axis extrema), never the
+        // chord hull; invalid geometry contributes nothing.
+        const box = cadParabolaEntityBounds(entity);
+        if (box) {
+          includePoint(box.minX, box.minY);
+          includePoint(box.maxX, box.maxY);
+        }
+        break;
+      }
       case 'block-reference': {
         // Single source: world-space expansion bounds; unknown definitions
         // (or bad scales) fall back to the insertion point, never crash.
