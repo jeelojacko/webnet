@@ -16,7 +16,9 @@ import {
   cadPointOnCircle,
   cadSignedSweepDeg,
 } from './cadGeometry';
-import { resolveCadEntityAppearance } from './cadAppearance';
+import { checkCadEntityEditable, resolveCadEntityAppearance } from './cadAppearance';
+import { validateBoundaryEntityVertexEdit } from './cadBoundaryCandidateValidation';
+import { validateBreaklineEntityVertexEdit } from './cadSurfaceDefinitionReferences';
 import { getCadEntityDisplayLabel, getCadEntityEditableName } from './cadEntityNames';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import {
@@ -41,7 +43,12 @@ import type {
 } from './cadPropertiesModel';
 import { resolveCadParcelCourses } from './cadParcelCourses';
 import { cadPolylineVerticesWrapToFirst } from './cadPolylineGeometry';
-import { resolveCadPolylineCourses } from './cadPolylineCourses';
+import { cadPolylineCourseMidpoint, resolveCadPolylineCourses } from './cadPolylineCourses';
+import {
+  deleteCadPolylineVertex,
+  describeCadPolylineVertexDeleteBlock,
+  insertCadPolylineVertexOnCourse,
+} from './cadPolylineTopology';
 import {
   cadParcelPlanDesignation,
   cadParcelPlanInfo,
@@ -248,12 +255,117 @@ const alignmentEndStationLabel = (entity: CadAlignmentEntity): string => {
 };
 
 /**
+ * Phase C3 — Properties row actions for polyline vertex topology. The insert
+ * action's immediate point is the TRUE course midpoint (line midpoint or
+ * signed-sweep arc midpoint) recomputed from the live entity at dispatch
+ * time, so a stale panel can never insert at a moved position. Delete is
+ * preflighted with the pure legality helper (no mutation) so the button
+ * renders disabled with a reason instead of silently failing.
+ */
+/**
+ * Phase C3 correction — shared surface preflight behind the Properties
+ * vertex actions (read-only; the engine transactions re-run the same
+ * checks at commit). Null = the count change keeps every surface valid.
+ */
+const surfaceVertexEditBlockReason = (
+  project: CadProject,
+  entityId: Extract<CadEntity, { type: 'polyline' }>['id'],
+  candidateVertices: ReadonlyArray<{ x: number; y: number }>,
+): string | null => {
+  const boundary = validateBoundaryEntityVertexEdit(project, entityId, candidateVertices);
+  if (boundary) {
+    return `Vertex editing is disabled \u2014 the boundary source would become invalid (${boundary}).`;
+  }
+  const breakline = validateBreaklineEntityVertexEdit(project, entityId);
+  if (breakline) {
+    return `Vertex editing is disabled \u2014 the polyline backs a surface breakline (${breakline}).`;
+  }
+  return null;
+};
+
+/** Locked/hidden sources reject every edit kind at commit — say so up front. */
+const entityEditableBlockReason = (project: CadProject, entity: CadEntity): string | null => {
+  const check = checkCadEntityEditable(project, entity);
+  if (check.editable) return null;
+  return check.reason === 'ENTITY_HIDDEN'
+    ? 'Vertex editing is disabled \u2014 the entity is hidden (ENTITY_HIDDEN).'
+    : 'Vertex editing is disabled \u2014 the entity is locked (LAYER_LOCKED).';
+};
+
+const polylineInsertRowAction = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+  courseIndex: number,
+): CadEntityPropertyRowAction => {
+  const editableBlock = entityEditableBlockReason(project, entity);
+  const course = resolveCadPolylineCourses(entity)?.[courseIndex];
+  const midpoint = course == null ? null : cadPolylineCourseMidpoint(course);
+  let disabledReason: string | undefined;
+  if (editableBlock != null) disabledReason = editableBlock;
+  else if (midpoint == null) disabledReason = 'Course geometry does not resolve.';
+  else {
+    // Read-only re-run of the commit topology so a stale panel disables
+    // exactly the courses the engine would refuse (no mutation).
+    const topology = insertCadPolylineVertexOnCourse(entity, {
+      courseIndex,
+      x: midpoint.x,
+      y: midpoint.y,
+    });
+    disabledReason = !topology.ok
+      ? topology.message
+      : (surfaceVertexEditBlockReason(project, entity.id, topology.entity.vertices) ?? undefined);
+  }
+  return {
+    kind: 'polyline-insert-vertex',
+    linkId: `${entity.id}:insert:${courseIndex}`,
+    entityId: entity.id,
+    courseIndex,
+    label: 'Insert Vertex',
+    ...(disabledReason != null ? { disabledReason } : {}),
+  };
+};
+
+const polylineDeleteRowAction = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+  vertexIndex: number,
+): CadEntityPropertyRowAction => {
+  const editableBlock = entityEditableBlockReason(project, entity);
+  let disabledReason: string | undefined;
+  if (editableBlock != null) disabledReason = editableBlock;
+  else {
+    const block = describeCadPolylineVertexDeleteBlock(entity, vertexIndex);
+    if (block != null) disabledReason = block;
+    else {
+      // Topology is legal; derive the candidate vertices read-only for the
+      // surface preflight (no mutation). A defensive topology failure here
+      // surfaces its own message rather than a generic one.
+      const topology = deleteCadPolylineVertex(entity, { vertexIndex });
+      disabledReason = !topology.ok
+        ? topology.message
+        : (surfaceVertexEditBlockReason(project, entity.id, topology.entity.vertices) ?? undefined);
+    }
+  }
+  return {
+    kind: 'polyline-delete-vertex',
+    linkId: `${entity.id}:vertex:${vertexIndex}`,
+    entityId: entity.id,
+    vertexIndex,
+    label: 'Delete Vertex',
+    ...(disabledReason != null ? { disabledReason } : {}),
+  };
+};
+
+/**
  * Segment rows: polyline emits the N-1 open edges, or all N ring edges when
  * closed (C1). Polygon emits all N ring edges including the implicit
  * last→first closing edge (polygons store no duplicate closure vertex, so
  * the ring wraps).
  */
-const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }>): CadEntityPropertyRow[] => {
+const segmentRows = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }>,
+): CadEntityPropertyRow[] => {
   const ringClosed =
     entity.type === 'polygon' ||
     (entity.type === 'polyline' && cadPolylineVerticesWrapToFirst(entity.vertices, entity.closed));
@@ -273,6 +385,7 @@ const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }
         `Segment ${index + 1} azimuth`,
         formatCadNorthAzimuthDms(inverse.azimuthDeg),
         entity.type === 'polyline' ? { kind: 'polyline-segment-azimuth', segmentIndex: index } : undefined,
+        entity.type === 'polyline' ? [polylineInsertRowAction(project, entity, index)] : undefined,
       ),
     ];
   });
@@ -284,7 +397,10 @@ const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }
  * centred band width (0 / constant / start→end). Only used when metadata is
  * present so legacy polylines keep the byte-identical chord rows.
  */
-const polylineSegmentRows = (entity: Extract<CadEntity, { type: 'polyline' }>): CadEntityPropertyRow[] => {
+const polylineSegmentRows = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'polyline' }>,
+): CadEntityPropertyRow[] => {
   const courses = resolveCadPolylineCourses(entity);
   if (!courses) return [];
   const hasWidths = entity.segmentWidths != null;
@@ -294,7 +410,13 @@ const polylineSegmentRows = (entity: Extract<CadEntity, { type: 'polyline' }>): 
       const metrics = course.metrics;
       const bulge = (course.geometry as { bulge: number }).bulge;
       rows.push(
-        row(`segment:${course.index}:kind`, `Segment ${course.index + 1} type`, 'Arc'),
+        row(
+          `segment:${course.index}:kind`,
+          `Segment ${course.index + 1} type`,
+          'Arc',
+          undefined,
+          [polylineInsertRowAction(project, entity, course.index)],
+        ),
         row(`segment:${course.index}:length`, `Segment ${course.index + 1} length`, numeric(metrics.arcLength)),
         row(
           `segment:${course.index}:curve`,
@@ -306,7 +428,13 @@ const polylineSegmentRows = (entity: Extract<CadEntity, { type: 'polyline' }>): 
     } else {
       const inverse = buildCadInverseSummary(course.from, course.to);
       rows.push(
-        row(`segment:${course.index}:kind`, `Segment ${course.index + 1} type`, 'Line'),
+        row(
+          `segment:${course.index}:kind`,
+          `Segment ${course.index + 1} type`,
+          'Line',
+          undefined,
+          [polylineInsertRowAction(project, entity, course.index)],
+        ),
         row(`segment:${course.index}:length`, `Segment ${course.index + 1} length`, numeric(inverse.distance)),
         row(
           `segment:${course.index}:azimuth`,
@@ -428,9 +556,19 @@ const parcelSharedBoundaryRows = (
   return rows;
 };
 
-const vertexRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 'parcel' }>): CadEntityPropertyRow[] =>
+const vertexRows = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 'parcel' }>,
+): CadEntityPropertyRow[] =>
   entity.vertices.flatMap((vertex, index) => {
-    const label = entity.vertexLabels[index] ?? `V${index + 1}`;
+    // Display-only fallback (polyline only): a blank stored polyline label
+    // (legacy files and every C3-inserted non-survey vertex) renders the
+    // ordinal `V{i+1}`. The token is never persisted and never becomes a
+    // survey-point or breakline ref. Polygon/parcel keep nullish-only
+    // behavior so a stored '' renders a blank prefix, as before C3.
+    const storedLabel = entity.vertexLabels[index];
+    const label =
+      entity.type === 'polyline' ? storedLabel || `V${index + 1}` : (storedLabel ?? `V${index + 1}`);
     return [
       row(
         `vertex:${index}:x`,
@@ -443,6 +581,7 @@ const vertexRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 
         `${label} Northing`,
         numeric(vertex.y),
         entity.type === 'polyline' ? { kind: 'polyline-vertex-y', vertexIndex: index } : undefined,
+        entity.type === 'polyline' ? [polylineDeleteRowAction(project, entity, index)] : undefined,
       ),
     ];
   });
@@ -536,8 +675,8 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       );
       if (entity.vertexLabels[0]) rows.push(row('start-label', 'Start label', entity.vertexLabels[0]));
       if (entity.vertexLabels.at(-1)) rows.push(row('end-label', 'End label', entity.vertexLabels.at(-1)!));
-      rows.push(...(hasMetadata ? polylineSegmentRows(entity) : segmentRows(entity)));
-      rows.push(...vertexRows(entity));
+      rows.push(...(hasMetadata ? polylineSegmentRows(project, entity) : segmentRows(project, entity)));
+      rows.push(...vertexRows(project, entity));
       return rows;
     }
     case 'polygon':
@@ -549,7 +688,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       );
       if (entity.vertexLabels[0]) rows.push(row('start-label', 'Start label', entity.vertexLabels[0]));
       if (entity.vertexLabels.at(-1)) rows.push(row('end-label', 'End label', entity.vertexLabels.at(-1)!));
-      rows.push(...segmentRows(entity));
+      rows.push(...segmentRows(project, entity));
       return rows;
     case 'parcel':
       rows.push(
@@ -574,7 +713,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       );
       rows.push(...parcelInquiryRows(entity));
       rows.push(...parcelSharedBoundaryRows(project, entity));
-      rows.push(...vertexRows(entity));
+      rows.push(...vertexRows(project, entity));
       return rows;
     case 'survey-table': {
       const style = resolveCadSurveyTableStyle(project, entity.tableStyleId);

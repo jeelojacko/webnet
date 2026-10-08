@@ -15,6 +15,7 @@ import {
   countDistinctPlinePositions,
   revalidateCadPolylineVertexMove,
 } from './cadPolylineGeometry';
+import { resolveCadPolylineCourses } from './cadPolylineCourses';
 import type { CadCommand } from './cadTransactions.types';
 import type {
   CadEntity,
@@ -390,7 +391,43 @@ export const buildCadGripHandles = (entity: CadEntity): CadGripHandle[] => {
           y: entity.toY,
         },
       ];
-    case 'polyline':
+    case 'polyline': {
+      // Phase C3 — every vertex grip stays a plain `vertex` move, plus one
+      // secondary hollow insert grip per resolved course. The grip rides the
+      // TRUE course midpoint: a line's finite midpoint, or the signed-sweep
+      // arc midpoint (never the chord midpoint). Open N-1 / closed N, so a
+      // closed ring never grows a duplicate closure grip.
+      const vertexGrips: CadGripHandle[] = entity.vertices.map((vertex, index) => ({
+        id: `${entity.id}:vertex:${index}`,
+        entityId: entity.id,
+        kind: 'vertex',
+        x: vertex.x,
+        y: vertex.y,
+        vertexIndex: index,
+      }));
+      const courses = resolveCadPolylineCourses(entity);
+      if (!courses) return vertexGrips;
+      const insertGrips: CadGripHandle[] = courses.map((course) => {
+        const midpoint =
+          course.kind === 'arc' && course.metrics != null
+            ? cadArcMidpoint(
+                course.metrics.center,
+                course.metrics.radius,
+                course.metrics.startAngleDeg,
+                course.metrics.endAngleDeg,
+              )
+            : { x: (course.from.x + course.to.x) / 2, y: (course.from.y + course.to.y) / 2 };
+        return {
+          id: `${entity.id}:insert:${course.index}`,
+          entityId: entity.id,
+          kind: 'polyline-insert',
+          x: midpoint.x,
+          y: midpoint.y,
+          courseIndex: course.index,
+        };
+      });
+      return [...vertexGrips, ...insertGrips];
+    }
     case 'polygon':
     case 'parcel':
     case 'feature-line':

@@ -103,6 +103,8 @@ export interface UseSurveyCadCommandsResult {
   startCircleTangentTangentTangentCommand: () => void;
   startPolygonCommand: () => void;
   startPolylineCommand: () => void;
+  startPlineInsertVertexCommand: () => void;
+  startPlineDeleteVertexCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
   startMTextCommand: () => void;

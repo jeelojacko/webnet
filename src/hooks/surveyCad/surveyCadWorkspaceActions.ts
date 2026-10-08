@@ -350,14 +350,25 @@ export const useSurveyCadWorkspaceActions = ({
               y: worldPoint.y,
             };
       applyHistoryUpdate((current) =>
-        runCadCommand(current, {
-          key: 'GRIP_EDIT',
-          entityId: committedHandle.entityId,
-          gripKind: committedHandle.kind,
-          x: committedHandle.x,
-          y: committedHandle.y,
-          vertexIndex: committedHandle.vertexIndex,
-        }),
+        runCadCommand(
+          current,
+          committedHandle.kind === 'polyline-insert' && committedHandle.courseIndex != null
+            ? {
+                key: 'POLYLINE_INSERT_VERTEX',
+                entityId: committedHandle.entityId,
+                courseIndex: committedHandle.courseIndex,
+                x: committedHandle.x,
+                y: committedHandle.y,
+              }
+            : {
+                key: 'GRIP_EDIT',
+                entityId: committedHandle.entityId,
+                gripKind: committedHandle.kind,
+                x: committedHandle.x,
+                y: committedHandle.y,
+                vertexIndex: committedHandle.vertexIndex,
+              },
+        ),
       );
       activeGripHandleRef.current = null;
       setActiveGripHandle(null);

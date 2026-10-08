@@ -1050,7 +1050,7 @@ describe('C2 grips: metadata rides verbatim, degenerates fail closed', () => {
     expect(moved.vertices[1]).toEqual({ x: 12, y: 0 });
     expect(moved.segmentGeometry).toEqual(entity.segmentGeometry);
     expect(moved.segmentWidths).toEqual(entity.segmentWidths);
-    expect(buildCadGripHandles(moved)).toHaveLength(3);
+    expect(buildCadGripHandles(moved).filter((grip) => grip.kind === 'vertex')).toHaveLength(3);
   });
 
   it('collapsing an arc chord fails closed (no metadata shift)', () => {

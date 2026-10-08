@@ -331,12 +331,18 @@ describe('C1 consumers honor the synthesized closing edge', () => {
 
   it('keeps one grip per stored vertex (no duplicate first-vertex grip)', () => {
     const grips = buildCadGripHandles(closedPolyline());
-    expect(grips).toHaveLength(3);
-    expect(grips.map((grip) => grip.id)).toEqual([
+    const vertexGrips = grips.filter((grip) => grip.kind === 'vertex');
+    const insertGrips = grips.filter((grip) => grip.kind === 'polyline-insert');
+    expect(vertexGrips).toHaveLength(3);
+    expect(vertexGrips.map((grip) => grip.id)).toEqual([
       'polyline:c1:vertex:0',
       'polyline:c1:vertex:1',
       'polyline:c1:vertex:2',
     ]);
+    // Phase C3: a closed N-vertex ring exposes N insert grips (no duplicate
+    // closure grip).
+    expect(insertGrips).toHaveLength(3);
+    expect(insertGrips.map((grip) => grip.courseIndex)).toEqual([0, 1, 2]);
   });
 
   it('emits N property segment rows for a closed polyline', () => {

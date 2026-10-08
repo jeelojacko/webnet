@@ -83,3 +83,16 @@ missing globally: line chaining, Point Z, DXF/DWG import, ortho/polar/grid,
 repeat, right-click finish. Evidence:
 `docs/evidence/cad-polyline-c1-close-backstep/`,
 `docs/evidence/cad-polyline-c2-bulge-width/`.
+
+## Addendum — Phase C3 current state (2026-10-07)
+
+Historical baseline and the C1/C2 addendum above are unchanged. Item 4
+(Polyline capability upgrades) is now fully delivered: Phase C3
+(`feat/cad-polyline-vertex-editing-c3`) shipped count-changing vertex
+insert/delete as one-undo-entry transactions over a pure topology core, with
+per-course insert grips, Properties Delete/Insert actions, and typed
+`PLINEINSERTVERTEX`/`PLINEDELETEVERTEX` sessions. No schema bump. Still missing
+globally: Z, line chaining, right-click finish, command repeat, raw
+bulge-entry UI, width grips, destructive arc↔line conversion, full
+mixed-segment trim/extend/fillet, DXF/DWG import, ortho/polar/grid. Evidence:
+`docs/evidence/cad-polyline-c3-vertex-editing/`.

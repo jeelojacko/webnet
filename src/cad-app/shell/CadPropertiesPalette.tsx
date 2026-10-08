@@ -496,8 +496,14 @@ const PropertyRow: React.FC<{
             if (draft != null) commit();
           }}
         />
+        <RowActionButtons
+          rowActions={row.actions}
+          onRun={actions?.runParcelLinkAction}
+          onMessage={setActionMessage}
+        />
         {error ? <span role="status">{error}</span> : null}
       </dd>
+      {actionMessage ? <dd role="status">{actionMessage}</dd> : null}
     </div>
   );
 };

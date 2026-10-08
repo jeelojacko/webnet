@@ -125,6 +125,27 @@ export const GripHandleLayer: React.FC<{
       {gripHandles.map((handle) => {
         const point = project(handle.x, handle.y);
         const isActive = activeGripHandleId === handle.id;
+        if (handle.kind === 'polyline-insert') {
+          // Phase C3 — secondary hollow diamond: visually distinct from the
+          // solid vertex grips so it never reads as a vertex move.
+          const size = isActive ? 7.4 : 6;
+          return (
+            <polygon
+              key={handle.id}
+              data-survey-cad-grip-handle={handle.kind}
+              data-survey-cad-grip-handle-id={handle.id}
+              data-survey-cad-grip-entity-id={handle.entityId}
+              data-survey-cad-grip-course-index={handle.courseIndex}
+              points={`${point.x},${point.y - size} ${point.x + size},${point.y} ${point.x},${point.y + size} ${point.x - size},${point.y}`}
+              fill={isActive ? 'rgba(34,211,238,0.35)' : 'rgba(15,23,42,0.15)'}
+              stroke={isActive ? '#67e8f9' : '#0f172a'}
+              strokeWidth={1.2}
+              strokeDasharray="2 1.6"
+              className="cursor-move"
+              onMouseDown={(event) => onStartGrip(event as unknown as React.MouseEvent<SVGCircleElement>, handle)}
+            />
+          );
+        }
         return (
           <circle
             key={handle.id}

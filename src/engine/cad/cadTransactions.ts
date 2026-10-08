@@ -65,7 +65,11 @@ import {
   arcCreateCommand,
   tangentCurveCommand,
 } from './cadTransactionsCurveCommands';
-import { editEntityCommand } from './cadTransactionsEditCommands';
+import {
+  editEntityCommand,
+  polylineDeleteVertexCommand,
+  polylineInsertVertexCommand,
+} from './cadTransactionsEditCommands';
 import {
   annotationAwareCopyCommand,
   annotationAwarePasteCommand,
@@ -583,6 +587,9 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   TABLESTYLE: tableStyleCommand as CadCommandDefinition<CadCommand>,
   SURVEYTABLE_EDIT: surveyTableEditCommand as CadCommandDefinition<CadCommand>,
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
+  // Phase C3 — count-changing polyline vertex topology (one undo entry each).
+  POLYLINE_INSERT_VERTEX: polylineInsertVertexCommand as CadCommandDefinition<CadCommand>,
+  POLYLINE_DELETE_VERTEX: polylineDeleteVertexCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: annotationAwareCopyCommand as CadCommandDefinition<CadCommand>,
   ROTATE: rotateCommand as CadCommandDefinition<CadCommand>,

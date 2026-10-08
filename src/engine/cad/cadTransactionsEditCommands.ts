@@ -1,7 +1,13 @@
 import { createCadSelectionState } from './cadSelection';
 import { checkCadEntityEditable } from './cadAppearance';
 import { validateBoundaryEntityVertexEdit } from './cadBoundaryCandidateValidation';
+import { validateBreaklineEntityVertexEdit } from './cadSurfaceDefinitionReferences';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
+import {
+  deleteCadPolylineVertex,
+  insertCadPolylineVertexOnCourse,
+  type CadPolylineTopologyResult,
+} from './cadPolylineTopology';
 import { stationIdExists } from './cadTransactionsEntityFactories';
 import {
   movePointReferences,
@@ -10,8 +16,13 @@ import {
 } from './cadTransactionsLinkedEntities';
 import { withEntityMetadataName } from './cadTransactionsMetadata';
 import { replaceCadProjectEntities } from './cadProjectState';
-import type { CadCommandDefinition } from './cadTransactions.types';
-import type { CadEntity, CadEntityAppearance, CadEntityId, CadLayerId, CadProject } from './cadTypes';
+import type {
+  CadCommand,
+  CadCommandDefinition,
+  CadCommandExecutionResult,
+  CadWorkspaceSnapshot,
+} from './cadTransactions.types';
+import type { CadEntity, CadEntityAppearance, CadEntityId, CadLayerId, CadPolylineEntity, CadProject } from './cadTypes';
 const replaceEntityInProject = (
   project: CadProject,
   entityId: CadEntityId,
@@ -293,3 +304,87 @@ export const editEntityCommand: CadCommandDefinition<{
   },
 };
 
+
+// ---------------------------------------------------------------------------
+// Phase C3 — count-changing polyline vertex topology transactions.
+// ---------------------------------------------------------------------------
+
+type PolylineInsertVertexCommand = Extract<CadCommand, { key: 'POLYLINE_INSERT_VERTEX' }>;
+type PolylineDeleteVertexCommand = Extract<CadCommand, { key: 'POLYLINE_DELETE_VERTEX' }>;
+
+const findPolyline = (project: CadProject, entityId: CadEntityId): CadPolylineEntity | null => {
+  const target = project.entities.find((entity) => entity.id === entityId);
+  return target?.type === 'polyline' ? target : null;
+};
+
+/**
+ * Shared commit for one count-changing polyline vertex edit: the editable
+ * gate and the boundary/breakline preflight run BEFORE any mutation, the
+ * pure topology helper owns geometry + width + label repair, and the whole
+ * edit lands as ONE history entry. A rejected preflight mutates nothing.
+ *
+ * NOTE: `syncEditedEntityDependencies` is deliberately NOT used here. Its
+ * station sync is index-aligned and assumes an unchanged vertex count; on an
+ * insert/delete it would map a label to a shifted (different) vertex and move
+ * the linked survey point to the wrong place. Insert/delete never move an
+ * existing vertex, and the inserted vertex is never associated with a survey
+ * point, so there is nothing to sync.
+ */
+const commitPolylineVertexEdit = (
+  entityId: CadEntityId,
+  snapshot: CadWorkspaceSnapshot,
+  commandKey: 'POLYLINE_INSERT_VERTEX' | 'POLYLINE_DELETE_VERTEX',
+  result: CadPolylineTopologyResult,
+): CadCommandExecutionResult | null => {
+  if (!result.ok) return null;
+  const updatedEntity = result.entity;
+  // Phase 18W parity: a boundary source (and any surface breakline crossing
+  // it) must stay valid. The same choke point supports count changes.
+  if (validateBoundaryEntityVertexEdit(snapshot.project, entityId, updatedEntity.vertices)) return null;
+  // Phase C3 correction: an entity-backed breakline consumes the polyline's
+  // vertex labels as point refs, so any insert/delete rewrites the chain.
+  // Fail closed with zero mutation/history, like the boundary preflight.
+  if (validateBreaklineEntityVertexEdit(snapshot.project, entityId)) return null;
+  const nextProject = replaceEntityInProject(snapshot.project, entityId, () => updatedEntity);
+  const label = getCadEntityDisplayLabel(updatedEntity);
+  return {
+    nextSnapshot: {
+      project: nextProject,
+      selection: createCadSelectionState(nextProject, [entityId]),
+    },
+    commandState: {
+      key: commandKey,
+      phase: 'committed',
+      prompt: `${commandKey === 'POLYLINE_INSERT_VERTEX' ? 'Vertex inserted' : 'Vertex deleted'} on ${label}.`,
+    },
+    transactionLabel: `${commandKey} (${label})`,
+    addedEntityIds: [],
+    removedEntityIds: [],
+  };
+};
+
+export const polylineInsertVertexCommand: CadCommandDefinition<PolylineInsertVertexCommand> = {
+  key: 'POLYLINE_INSERT_VERTEX',
+  execute: (snapshot, command) => {
+    const target = findPolyline(snapshot.project, command.entityId);
+    if (!target) return null;
+    if (!checkCadEntityEditable(snapshot.project, target).editable) return null;
+    const result = insertCadPolylineVertexOnCourse(target, {
+      courseIndex: command.courseIndex,
+      x: command.x,
+      y: command.y,
+    });
+    return commitPolylineVertexEdit(command.entityId, snapshot, 'POLYLINE_INSERT_VERTEX', result);
+  },
+};
+
+export const polylineDeleteVertexCommand: CadCommandDefinition<PolylineDeleteVertexCommand> = {
+  key: 'POLYLINE_DELETE_VERTEX',
+  execute: (snapshot, command) => {
+    const target = findPolyline(snapshot.project, command.entityId);
+    if (!target) return null;
+    if (!checkCadEntityEditable(snapshot.project, target).editable) return null;
+    const result = deleteCadPolylineVertex(target, { vertexIndex: command.vertexIndex });
+    return commitPolylineVertexEdit(command.entityId, snapshot, 'POLYLINE_DELETE_VERTEX', result);
+  },
+};

@@ -180,6 +180,10 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
     session(key, CAD_LINE_L1_COMMAND_META[key].label, 'Draw', CAD_LINE_L1_COMMAND_META[key].hint),
   ),
   session('PLINE', 'Polyline', 'Draw', 'Draw a connected polyline.', ['PL']),
+  // Phase C3 — count-changing polyline vertex topology (pick-gated sessions;
+  // aliases PIV/PDV are collision-free with every key and alias above).
+  session('PLINEINSERTVERTEX', 'Insert Polyline Vertex', 'Modify', 'Insert a vertex on a polyline course (pick the polyline then the course point).', ['PIV']),
+  session('PLINEDELETEVERTEX', 'Delete Polyline Vertex', 'Modify', 'Delete a polyline vertex (pick the polyline then the vertex).', ['PDV']),
   session('RECTANGLE', 'Rectangle', 'Draw', 'Rectangle from two corners.'),
   session('POLYGON', 'Polygon', 'Draw', 'Regular polygon from center and radius point.'),
   session('CIRCLE', 'Circle', 'Draw', 'Circle from center and radius.'),

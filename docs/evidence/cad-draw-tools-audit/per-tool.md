@@ -45,14 +45,21 @@ field-book import, no network object type. Placement in Draw is deliberate
 ## 4. POLYLINE — USABLE_BUT_INCOMPLETE (HIGH)
 Button `:102`; vertex-accumulation session, Enter commits, Esc cancels
 (starters:60; consumePoint:127-169; lifecycle:44-53). `CadPolylineEntity`
-(`:294`); engine hardcodes `closed:false`
-(`cadTransactionsPolylineCommand.ts:38`). No Close/backstep/bulge/width;
-vertex insert/delete absent — grip move only (transforms:253,363). Tx `:558`,
-render `:1378`, per-segment snaps, transform, trim pieces (`:175,306`),
-surface-boundary source. Grips per-vertex; props vertex XY + segment rows
-(`cadProperties.ts:257,367`). DXF polyline (`:326`). Missing: close, backstep,
-arc segments, width, insert/delete. Tests: `surveyCadWorkspace.12:261/.14`,
-`cadCommandHistory.01:121/.02:257`, browser `cad-shell-compact-ribbon-21a:338`.
+(`:294`); Close/backstep delivered in C1, per-course bulge/arc legs +
+centred band width in C2, and count-changing vertex insert/delete in C3
+(pure topology `cadPolylineTopology.ts`; transactions
+`POLYLINE_INSERT_VERTEX`/`POLYLINE_DELETE_VERTEX`; per-course secondary
+insert grips + Properties Delete/Insert actions + typed
+`PLINEINSERTVERTEX`/`PLINEDELETEVERTEX` sessions). Tx `:558`, render `:1378`,
+per-segment snaps, transform, trim pieces (`:175,306`), surface-boundary
+source. Grips per-vertex + per-course insert; props vertex XY + segment rows
++ vertex/course actions (`cadProperties.ts:257,367`). DXF polyline (`:326`).
+Missing: Z, line chaining, right-click finish, command repeat, raw
+bulge-entry UI, width grips, destructive arc↔line conversion, full
+mixed-segment trim/extend/fillet, general DXF import. Tests:
+`surveyCadWorkspace.12:261/.14`, `cadCommandHistory.01:121/.02:257`,
+`cad_polyline_vertex_topology_c3*`, `cad_polyline_vertex_editing_c3*`,
+browser `cad-shell-compact-ribbon-21a:338` + `cad-draw-polyline-c3`.
 
 ## 5. ARC — PRODUCTION_READY (HIGH)
 Split, 11 runnable rows incl. default 3-Point (families:57-92; starters

@@ -156,6 +156,8 @@ export type ActiveCommandKey =
   | 'PARCELCHECK'
   | 'PARCELSCHEDULE'
   | 'PARCELSHAREDEDIT'
+  | 'PLINEINSERTVERTEX'
+  | 'PLINEDELETEVERTEX'
   | 'MOVE'
   | 'COPY'
   | 'ROTATE'
@@ -654,6 +656,15 @@ export type CommandSession =
       sourceEntityIds: string[];
       insertion: CommandPoint | null;
       title?: string;
+      resultText?: string;
+    }
+  // Phase C3 — count-changing polyline vertex topology. The first pick (or
+  // the sole selected editable polyline at start) fixes `polylineId`; the
+  // next pick fixes the exact vertex (delete) or on-course point (insert).
+  | {
+      key: 'PLINEINSERTVERTEX' | 'PLINEDELETEVERTEX';
+      inputValue: string;
+      polylineId: string | null;
       resultText?: string;
     }
   | CadLineL1SessionState;

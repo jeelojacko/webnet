@@ -12,6 +12,7 @@ import {
   buildCadGripHandles,
   buildCadTrimPreview,
 } from '../../engine/cad/cadTransactions';
+import { insertCadPolylineVertexOnCourse } from '../../engine/cad/cadPolylineTopology';
 import type { ActiveCommandKey } from './useSurveyCadCommandTypes';
 import type { CadCommandPreviewState } from './useSurveyCadCommands';
 import type { CommandHoverTarget } from './useSurveyCadWorkspace.types';
@@ -365,6 +366,42 @@ export const useSurveyCadWorkspacePreviews = ({
   }, [activeGripHandle, gripHandles, setActiveGripHandle]);
   const gripPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
     if (!activeGripHandle) return [];
+    // Phase C3 — an insert grip previews the projected insertion and the
+    // split path through the pure topology helper. An off-course/endpoint
+    // projection fails closed and shows no preview (never a shape change).
+    if (activeGripHandle.kind === 'polyline-insert') {
+      if (activeGripHandle.courseIndex == null) return [];
+      const source = cadProject.entities.find(
+        (entity) => entity.id === activeGripHandle.entityId && entity.type === 'polyline',
+      );
+      if (!source || source.type !== 'polyline') return [];
+      const insert = insertCadPolylineVertexOnCourse(source, {
+        courseIndex: activeGripHandle.courseIndex,
+        x: activeGripHandle.x,
+        y: activeGripHandle.y,
+      });
+      if (!insert.ok) return [];
+      const previewProject: CadProject = {
+        ...cadProject,
+        entities: cadProject.entities.map((entity) =>
+          entity.id === source.id ? insert.entity : entity,
+        ),
+      };
+      return buildCadDisplayScene(previewProject).primitives
+        .filter((primitive) => primitive.sourceEntityId === activeGripHandle.entityId)
+        .map((primitive) => ({
+          ...primitive,
+          stroke: '#22d3ee',
+          ...(primitive.kind === 'point' || primitive.kind === 'band'
+            ? { fill: '#22d3ee' }
+            : {}),
+          opacity: 0.9,
+          strokeDasharray:
+            primitive.kind === 'text' || primitive.kind === 'point'
+              ? primitive.strokeDasharray
+              : primitive.strokeDasharray ?? '8 6',
+        }));
+    }
     const previewProject = applyCadGripEdit(cadProject, {
       key: 'GRIP_EDIT',
       entityId: activeGripHandle.entityId,

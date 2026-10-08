@@ -3,6 +3,7 @@ import type { CadEntityId } from '../../engine/cad/cadTypes';
 import { cadConvertAreaSquareMeters, type CadParcelReportSummary } from '../../engine/cad/cadCogo';
 import type {
   CadEntityPropertyEditField,
+  CadEntityPropertyRow,
   CadEntityPropertyRowAction,
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
@@ -58,6 +59,32 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
   );
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const [editMessage, setEditMessage] = useState<string | null>(null);
+
+  /**
+   * Phase C3 — row actions render beside BOTH plain values and editable
+   * inputs, so a polyline vertex can stay numerically editable while still
+   * exposing its Delete Vertex action (parcel Shared Boundary rows keep the
+   * value-only layout).
+   */
+  const renderRowActions = (row: CadEntityPropertyRow) =>
+    row.actions?.map((action) => (
+      <button
+        key={`${action.kind}:${action.linkId}`}
+        type="button"
+        className="cad-shell-tree-action"
+        disabled={action.disabledReason != null}
+        title={action.disabledReason ?? action.label}
+        onClick={() => {
+          const outcome = onParcelRowAction?.(action);
+          setEditMessage(
+            outcome && !outcome.applied ? (outcome.reason ?? 'Action not applied.') : null,
+          );
+        }}
+        data-survey-cad-properties-action={`${action.kind}:${action.linkId}`}
+      >
+        {action.label}
+      </button>
+    ));
 
   useEffect(() => {
     if (panelState.mode !== 'multi') {
@@ -244,85 +271,69 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
                 (() => {
                   const editableField = row.editableField;
                   return (
-                    <input
-                      type="text"
-                      className="min-w-0 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] text-slate-100 outline-none focus:border-cyan-400"
-                      value={draftValues[row.key] ?? row.value}
-                      onChange={(event) =>
-                        setDraftValues((current) => ({
-                          ...current,
-                          [row.key]: event.target.value,
-                        }))
-                      }
-                      onBlur={() =>
-                        setDraftValues((current) => {
-                          if (!(row.key in current)) return current;
-                          const nextValues = { ...current };
-                          delete nextValues[row.key];
-                          return nextValues;
-                        })
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === 'Escape') {
+                    <span className="flex min-w-0 items-center gap-1">
+                      <input
+                        type="text"
+                        className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] text-slate-100 outline-none focus:border-cyan-400"
+                        value={draftValues[row.key] ?? row.value}
+                        onChange={(event) =>
+                          setDraftValues((current) => ({
+                            ...current,
+                            [row.key]: event.target.value,
+                          }))
+                        }
+                        onBlur={() =>
+                          setDraftValues((current) => {
+                            if (!(row.key in current)) return current;
+                            const nextValues = { ...current };
+                            delete nextValues[row.key];
+                            return nextValues;
+                          })
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            setDraftValues((current) => {
+                              if (!(row.key in current)) return current;
+                              const nextValues = { ...current };
+                              delete nextValues[row.key];
+                              return nextValues;
+                            });
+                            return;
+                          }
+                          if (event.key !== 'Enter') return;
                           event.preventDefault();
+                          const outcome = onEditField(
+                            activeEntity.entityId,
+                            editableField,
+                            draftValues[row.key] ?? row.value,
+                          );
+                          if (!outcome.applied) {
+                            setEditMessage(
+                              outcome.reason === 'LAYER_LOCKED'
+                                ? 'Edit rejected: source layer is locked (LAYER_LOCKED).'
+                                : 'Edit rejected: invalid value.',
+                            );
+                            return;
+                          }
+                          setEditMessage(null);
                           setDraftValues((current) => {
                             if (!(row.key in current)) return current;
                             const nextValues = { ...current };
                             delete nextValues[row.key];
                             return nextValues;
                           });
-                          return;
-                        }
-                        if (event.key !== 'Enter') return;
-                        event.preventDefault();
-                        const outcome = onEditField(
-                          activeEntity.entityId,
-                          editableField,
-                          draftValues[row.key] ?? row.value,
-                        );
-                        if (!outcome.applied) {
-                          setEditMessage(
-                            outcome.reason === 'LAYER_LOCKED'
-                              ? 'Edit rejected: source layer is locked (LAYER_LOCKED).'
-                              : 'Edit rejected: invalid value.',
-                          );
-                          return;
-                        }
-                        setEditMessage(null);
-                        setDraftValues((current) => {
-                          if (!(row.key in current)) return current;
-                          const nextValues = { ...current };
-                          delete nextValues[row.key];
-                          return nextValues;
-                        });
-                      }}
-                      data-survey-cad-properties-input={row.key}
-                    />
+                        }}
+                        data-survey-cad-properties-input={row.key}
+                      />
+                      {renderRowActions(row)}
+                    </span>
                   );
                 })()
               ) : (
                 <span className="cad-shell-properties-value">
                   {row.value}
-                  {row.actions?.map((action) => (
-                    <button
-                      key={`${action.kind}:${action.linkId}`}
-                      type="button"
-                      className="cad-shell-tree-action"
-                      disabled={action.disabledReason != null}
-                      title={action.disabledReason ?? action.label}
-                      onClick={() => {
-                        const outcome = onParcelRowAction?.(action);
-                        setEditMessage(
-                          outcome && !outcome.applied
-                            ? (outcome.reason ?? 'Action not applied.')
-                            : null,
-                        );
-                      }}
-                      data-survey-cad-properties-action={`${action.kind}:${action.linkId}`}
-                    >
-                      {action.label}
-                    </button>
-                  ))}
+                  {renderRowActions(row)}
                 </span>
               )}
             </React.Fragment>

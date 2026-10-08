@@ -41,6 +41,10 @@ import { buildProjectTransformPanelState } from './useSurveyCadProjectTransformP
 import { handleSurveyCadParcelNetworkSubmit } from './useSurveyCadParcelNetworkSubmit';
 import { handleSurveyCadTypedSubmit } from './useSurveyCadTypedSubmit';
 import { handleSurveyCadPlineSubmit } from './useSurveyCadPlineSession';
+import {
+  handlePlineVertexTypedSubmit,
+  resolveSoleSelectedEditablePolyline,
+} from './useSurveyCadPolylineVertexSession';
 import { handleSurveyCadConsumePoint } from './useSurveyCadConsumePoint';
 import { handleSurveyCadDefaultSubmit } from './useSurveyCadDefaultSubmit';
 import type {
@@ -286,6 +290,16 @@ export const useSurveyCadCommands = ({
       return;
     }
     if (
+      handlePlineVertexTypedSubmit({
+        applyHistoryUpdate,
+        history,
+        replaceSession,
+        session,
+      })
+    ) {
+      return;
+    }
+    if (
       handleSurveyCadTypedSubmit({
         applyHistoryUpdate,
         consumePoint,
@@ -394,6 +408,10 @@ export const useSurveyCadCommands = ({
     selectionCount,
     selectedEntityIds,
     surveyPointEntityIdsInStationOrder,
+    selectedEditablePolylineId: resolveSoleSelectedEditablePolyline(
+      history.present.project,
+      selectedEntityIds ?? [],
+    )?.id ?? null,
   });
 
   return {

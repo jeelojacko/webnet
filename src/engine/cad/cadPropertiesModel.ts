@@ -1,11 +1,21 @@
 import type { CadEntity, CadEntityId, CadLayer } from './cadTypes';
 
 export interface CadEntityPropertyRowAction {
-  kind: 'parcel-unlink' | 'parcel-shared-edit';
+  kind:
+    | 'parcel-unlink'
+    | 'parcel-shared-edit'
+    | 'polyline-delete-vertex'
+    | 'polyline-insert-vertex';
   linkId: string;
   label: string;
   /** Present when the action cannot run yet (rendered disabled with reason). */
   disabledReason?: string;
+  /** Polyline vertex-delete target (count-changing transaction). */
+  vertexIndex?: number;
+  /** Polyline course-insert target (count-changing transaction). */
+  courseIndex?: number;
+  /** Owning entity for polyline actions (parcel actions carry linkId). */
+  entityId?: CadEntityId;
 }
 
 export interface CadEntityPropertyRow {

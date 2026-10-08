@@ -364,4 +364,158 @@ describe('Survey CAD properties builder', () => {
     expect(state.groups[1]?.entities[0]?.entityLabel).toBe('C');
     expect(state.groups[2]?.entities[0]?.entityLabel).toBe('ALIGN1');
   });
+
+  it('renders V<n> fallback only for polyline blank stored labels', () => {
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
+      {
+        id: 'polyline:blank',
+        type: 'polyline',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 20, y: 0 },
+        ],
+        vertexLabels: ['A', ''],
+        closed: false,
+      },
+      {
+        id: 'polygon:blank',
+        type: 'polygon',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 20, y: 0 },
+          { x: 20, y: 15 },
+        ],
+        vertexLabels: ['A', '', 'C'],
+      },
+      {
+        id: 'parcel:blank',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', '', 'C'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.154759,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+    ]);
+    const rowLabels = (entityId: string): string[] => {
+      const entity = project.entities.find((candidate) => candidate.id === entityId);
+      if (!entity) throw new Error(`${entityId} not found`);
+      const state = buildCadPropertiesPanelState(project, [entity]);
+      if (!state || state.mode !== 'single') throw new Error(`${entityId} properties missing`);
+      return state.entity.properties.map((row) => row.label);
+    };
+
+    // 1. Polyline stored '' renders the V<n> display fallback.
+    const polylineLabels = rowLabels('polyline:blank');
+    expect(polylineLabels).toContain('A Easting');
+    expect(polylineLabels).toContain('V2 Easting');
+    expect(polylineLabels).toContain('V2 Northing');
+
+    // 2. Polygon stored '' keeps exact pre-C3 behavior: the polygon branch
+    // emits no per-vertex rows (only start/end label + segment rows), so no
+    // synthetic V<n> and no per-vertex Easting/Northing rows appear.
+    const polygonLabels = rowLabels('polygon:blank');
+    expect(polygonLabels).not.toContain('V2 Easting');
+    expect(polygonLabels).not.toContain('V2 Northing');
+    expect(polygonLabels.filter((label) => label.endsWith('Easting') || label.endsWith('Northing'))).toEqual([]);
+    expect(polygonLabels).toContain('Start label');
+    expect(polygonLabels).toContain('End label');
+
+    // 3. Parcel stored '' keeps exact pre-C3 behavior.
+    const parcelLabels = rowLabels('parcel:blank');
+    expect(parcelLabels).toContain('A Easting');
+    expect(parcelLabels).toContain(' Easting');
+    expect(parcelLabels).toContain(' Northing');
+    expect(parcelLabels).not.toContain('V2 Easting');
+    expect(parcelLabels).not.toContain('V2 Northing');
+  });
+
+  it('keeps non-empty real vertex labels unchanged for polyline, polygon, and parcel', () => {
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
+      {
+        id: 'polyline:real',
+        type: 'polyline',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 20, y: 0 },
+        ],
+        vertexLabels: ['A', 'B'],
+        closed: false,
+      },
+      {
+        id: 'polygon:real',
+        type: 'polygon',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 20, y: 0 },
+        ],
+        vertexLabels: ['A', 'B'],
+      },
+      {
+        id: 'parcel:real',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+        ],
+        vertexLabels: ['A', 'B'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.154759,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+    ]);
+    for (const entityId of ['polyline:real', 'parcel:real']) {
+      const entity = project.entities.find((candidate) => candidate.id === entityId);
+      if (!entity) throw new Error(`${entityId} not found`);
+      const state = buildCadPropertiesPanelState(project, [entity]);
+      if (!state || state.mode !== 'single') throw new Error(`${entityId} properties missing`);
+      const labels = state.entity.properties.map((row) => row.label);
+      expect(labels).toContain('A Easting');
+      expect(labels).toContain('B Easting');
+      expect(labels).toContain('B Northing');
+    }
+    // Polygon keeps its pre-C3 shape: start/end labels only, no vertex rows.
+    const polygon = project.entities.find((candidate) => candidate.id === 'polygon:real');
+    if (!polygon) throw new Error('polygon:real not found');
+    const polygonState = buildCadPropertiesPanelState(project, [polygon]);
+    if (!polygonState || polygonState.mode !== 'single') throw new Error('polygon:real properties missing');
+    const polygonLabels = polygonState.entity.properties.map((row) => row.label);
+    expect(polygonLabels).toContain('Start label');
+    expect(polygonLabels).toContain('End label');
+    expect(polygonLabels.filter((label) => label.endsWith('Easting') || label.endsWith('Northing'))).toEqual([]);
+  });
 });

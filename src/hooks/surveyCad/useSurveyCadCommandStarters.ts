@@ -45,6 +45,7 @@ export const useSurveyCadCommandStarters = ({
   selectionCount,
   selectedEntityIds = [],
   surveyPointEntityIdsInStationOrder = [],
+  selectedEditablePolylineId = null,
 }: BuildSurveyCadCommandStartersOptions): SurveyCadCommandStarters => ({
   startLineL1Command: (key: CadLineL1CommandKey) => {
     const referenceStart =
@@ -130,6 +131,18 @@ export const useSurveyCadCommandStarters = ({
       plineArcThrough: null,
       plineWidthPhase: false,
       plineDefaultWidth: { startWidth: 0, endWidth: 0 },
+    }),
+  startPlineInsertVertexCommand: () =>
+    beginSession({
+      key: 'PLINEINSERTVERTEX',
+      inputValue: '',
+      polylineId: selectedEditablePolylineId,
+    }),
+  startPlineDeleteVertexCommand: () =>
+    beginSession({
+      key: 'PLINEDELETEVERTEX',
+      inputValue: '',
+      polylineId: selectedEditablePolylineId,
     }),
   startTraverseCommand: () =>
     beginSession({

@@ -49,3 +49,34 @@ export const countSurfaceDefinitionReferencesToEntity = (
 export const surfaceDefinitionReferenceCount = (
   references: SurfaceDefinitionEntityReferences,
 ): number => references.boundaryUses.length + references.breaklineUses.length;
+
+/** Fail-closed code when a count-changing vertex edit would rewrite a breakline chain. */
+export const BREAKLINE_VERTEX_EDIT_BLOCKED = 'SURFACE_BREAKLINE_INVALID' as const;
+
+/**
+ * Phase C3 correction — fail-closed preflight for count-changing polyline
+ * vertex edits on a breakline source. An entity-backed breakline consumes
+ * the polyline's vertex labels as point refs (see `breaklineEntityRefs` in
+ * cadSurfaceRevision.ts), so any insert/delete rewrites the chain. Refuse
+ * when the entity backs >=1 entity-kind breakline chain AND carries label
+ * refs (explicit vertex labels or metadata sourcePointIds). Unlabeled
+ * polylines carry no resolvable refs, so they stay out of scope. Null = clean.
+ */
+export const validateBreaklineEntityVertexEdit = (
+  project: CadProject,
+  entityId: CadEntityId,
+): string | null => {
+  const references = countSurfaceDefinitionReferencesToEntity(project, entityId);
+  if (references.breaklineUses.length === 0) return null;
+  const entity = project.entities.find((candidate) => candidate.id === entityId);
+  const labels: readonly string[] =
+    entity?.type === 'polyline' || entity?.type === 'polygon' || entity?.type === 'parcel'
+      ? entity.vertexLabels
+      : [];
+  const metadata = (entity?.metadata ?? {}) as Record<string, unknown>;
+  const sourcePointIds = metadata['sourcePointIds'];
+  const carriesRefs =
+    labels.some((label) => label !== '') ||
+    (Array.isArray(sourcePointIds) && sourcePointIds.length > 0);
+  return carriesRefs ? BREAKLINE_VERTEX_EDIT_BLOCKED : null;
+};

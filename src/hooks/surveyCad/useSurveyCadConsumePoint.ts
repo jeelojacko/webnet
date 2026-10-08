@@ -34,6 +34,10 @@ import {
   handlePerpendicularPointPick,
   handleReportPointPick,
 } from './useSurveyCadReportPointPick';
+import {
+  handlePlineVertexPointPick,
+  isPlineVertexSession,
+} from './useSurveyCadPolylineVertexSession';
 
 const handleStagedPointPick = (
   current: CommandSession,
@@ -343,6 +347,15 @@ export const handleSurveyCadConsumePoint = (
     handleLinePointPick(options) ||
     handleSurveyCadEditPointPick(options) ||
     handleSurveyCadParcelSplitPointPick({ current, point, replaceSession }) ||
+    (isPlineVertexSession(current) &&
+      handlePlineVertexPointPick({
+        applyHistoryUpdate,
+        current,
+        history: options.history,
+        pickToleranceWorld: options.pickToleranceWorld,
+        point,
+        replaceSession,
+      })) ||
     handleSurveyTablePointPick({ applyHistoryUpdate, current, point, replaceSession }) ||
     handleInversePointPick(options)
   ) {
