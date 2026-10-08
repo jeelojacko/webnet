@@ -34,10 +34,12 @@ never be inserted off-course.
 - Open polyline: the new vertex lands at stored index `courseIndex + 1`.
 - Closed polyline: the final course appends last→new→first; a closed ring is
   stored WITHOUT a duplicate closure vertex.
-- `vertexLabels`: legacy all-empty labels stay empty (display falls back to
-  `V{i+1}`); once any explicit label exists, the inserted vertex takes its
-  ordinal slot, probing upward to avoid a collision, and existing labels are
-  never renumbered.
+- `vertexLabels`: the inserted vertex ALWAYS stores the empty string `''` —
+  an inserted vertex is non-survey, so it never fabricates a station id, a
+  survey point, a `metadata.sourcePointIds` entry, or a breakline ref.
+  Existing explicit labels shift positionally with their vertices and are
+  never renumbered or rewritten. Display falls back to `V{i+1}` for a blank
+  slot (see Properties); that token is display-only and is never persisted.
 - `segmentGeometry` / `segmentWidths`: the single course entry is replaced by
   two entries (first start→split, second split→end), so the arrays stay
   course-aligned. Absent metadata stays absent (legacy byte-shape preserved).

@@ -140,21 +140,6 @@ const finalize = (
   return { ok: true, entity: applyCanonicalPath(entity, path) };
 };
 
-/**
- * Deterministic non-survey label. Legacy all-empty labels stay empty (the
- * display fallback renders `V{i+1}`, keeping old files behavior-compatible).
- * Once any explicit label exists, the inserted vertex takes the V{i+1}
- * ordinal at its slot, probing upward only to avoid colliding with an
- * existing label. Existing explicit labels are never renumbered.
- */
-const insertedVertexLabel = (labels: readonly string[], insertIndex: number): string => {
-  const used = new Set(labels.filter((label) => label !== ''));
-  if (used.size === 0) return '';
-  let ordinal = insertIndex + 1;
-  while (used.has(`V${ordinal}`)) ordinal += 1;
-  return `V${ordinal}`;
-};
-
 /** Insert `entries` at `courseIndex`, replacing the single course there. */
 const spliceCourseEntries = <Entry>(
   entries: readonly Entry[],
@@ -257,11 +242,7 @@ export const insertCadPolylineVertexOnCourse = (
           );
     return finalize(entity, {
       vertices: insertVertexAt(canonical.vertices, insertAt, projected),
-      vertexLabels: insertLabelAt(
-        canonical.vertexLabels,
-        insertAt,
-        insertedVertexLabel(canonical.vertexLabels, insertAt),
-      ),
+      vertexLabels: insertLabelAt(canonical.vertexLabels, insertAt, ''),
       segmentGeometry: geometry,
       segmentWidths: splitWidthAtFraction(canonical.segmentWidths, courseIndex, fraction),
     });
@@ -296,11 +277,7 @@ export const insertCadPolylineVertexOnCourse = (
   );
   return finalize(entity, {
     vertices: insertVertexAt(canonical.vertices, insertAt, projected),
-    vertexLabels: insertLabelAt(
-      canonical.vertexLabels,
-      insertAt,
-      insertedVertexLabel(canonical.vertexLabels, insertAt),
-    ),
+    vertexLabels: insertLabelAt(canonical.vertexLabels, insertAt, ''),
     segmentGeometry: geometry,
     segmentWidths: splitWidthAtFraction(canonical.segmentWidths, courseIndex, fraction),
   });

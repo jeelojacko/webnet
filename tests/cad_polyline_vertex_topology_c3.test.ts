@@ -88,7 +88,7 @@ describe('C3 insert line', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.entity.vertices).toEqual([A, B, P(10, 4), C]);
-    expect(result.entity.vertexLabels).toEqual(['A', 'B', 'V3', 'C']);
+    expect(result.entity.vertexLabels).toEqual(['A', 'B', '', 'C']);
     expect(resolveCadPolylineCourses(result.entity)).toHaveLength(3);
   });
 
