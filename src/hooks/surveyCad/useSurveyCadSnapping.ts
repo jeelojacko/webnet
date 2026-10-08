@@ -165,10 +165,10 @@ export const useSurveyCadSnapping = (
         setPointerWorldPoint(worldPoint);
       }
       if (!worldPoint) {
-        setActiveSnap(null);
-        setNearbySnaps([]);
+        setActiveSnap((current) => (current == null ? current : null));
+        setNearbySnaps((current) => (cadSnapListEqual(current, []) ? current : []));
         if (!options?.lockConstruction) {
-          setLockedConstructionSnap(null);
+          setLockedConstructionSnap((current) => (current == null ? current : null));
         }
         return;
       }
