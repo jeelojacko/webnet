@@ -9,6 +9,12 @@ import {
   cadCreateCurveMetrics,
 } from './cadGeometryCurveCore';
 
+export * from './cadCurveMetricsSolver';
+export * from './cadCurvesTwoTangent';
+export * from './cadCurvesMultiple';
+export * from './cadCurvesFromEnd';
+export * from './cadCurvesReverseCompound';
+
 export const cadBuildTangentCurve = (
   piPoint: CadWorldPoint,
   backTangentPoint: CadWorldPoint,

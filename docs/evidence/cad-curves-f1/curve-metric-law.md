@@ -16,6 +16,7 @@ introduced; the solver only adds the inverse directions Civil curve tools need.
 
 | mode | R |
 | --- | --- |
+| `radius` | `R` (identity; Between/On pass a known radius) |
 | `tangent` | `T / tan(Δ/2)` |
 | `chord` | `C / (2·sin(Δ/2))` |
 | `arc` | `L / Δ_rad` |
@@ -28,6 +29,7 @@ introduced; the solver only adds the inverse directions Civil curve tools need.
 
 | mode | Δ |
 | --- | --- |
+| `radius` | not invertible (input R is already known) |
 | `tangent` | `2·atan(T/R)` |
 | `chord` | `2·asin(C / 2R)` |
 | `arc` | `L/R` |
