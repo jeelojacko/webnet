@@ -11,6 +11,7 @@ import {
   cadSolveCurveMetrics,
 } from '../../engine/cad/cadCogo';
 import { cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
+import type { CadProject } from '../../engine/cad/cadTypes';
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import {
   parseChordBearingCurveInput,
@@ -22,6 +23,10 @@ import {
   parseOffsetArcInput,
 } from './useSurveyCadCommandParsing';
 import type { HandleSurveyCadCurveSubmitOptions } from './useSurveyCadCurveSubmit.types';
+
+/** Count only survey-point entities: subdivide labels are never marker points. */
+const countSurveyPointEntities = (project: CadProject): number =>
+  project.entities.filter((entity) => entity.type === 'survey-point').length;
 
 const handleSelectedArcSubmit = ({
   applyHistoryUpdate,
@@ -136,6 +141,9 @@ const handleSelectedArcSubmit = ({
     }
     // Atomic marker points: every interior point lands in ONE history entry
     // via SUBDIVIDE_CURVE_CREATE (the arc is never split).
+    // The transaction emits one survey-point per interior point PLUS one
+    // anchored text label per point, so a raw entity delta double-counts.
+    // Derive the visible count from committed survey-points only.
     let committedCount: number | null = null;
     applyHistoryUpdate((existing) => {
       const next = runCadCommand(existing, {
@@ -145,7 +153,8 @@ const handleSelectedArcSubmit = ({
         value: parsed.value,
       });
       if (next !== existing) {
-        committedCount = next.present.project.entities.length - existing.present.project.entities.length;
+        committedCount =
+          countSurveyPointEntities(next.present.project) - countSurveyPointEntities(existing.present.project);
       }
       return next;
     });

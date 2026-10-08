@@ -347,6 +347,43 @@ describe('CAD Curves F1 Through-point submit', () => {
     expect(history.present.project.entities).toEqual(project.entities);
     expect(history.undoStack).toHaveLength(0);
   });
+
+  it('multi-solution through-point consults the stored side and never auto-picks', () => {
+    // Rays at 80deg and 0deg from a shared PI: pass point (6,0) admits two
+    // tangent circles that share a computed side. Enter must enumerate (no
+    // mutation), and the stored candidateSide must be consulted — never a
+    // silent candidates[0] commit.
+    const a1 = (80 * Math.PI) / 180;
+    const d1 = { x: Math.cos(a1), y: Math.sin(a1) };
+    const project: CadProject = {
+      ...blankProject(),
+      entities: [
+        makeLine('line-a', { x: -d1.x, y: -d1.y }, { x: d1.x, y: d1.y }),
+        makeLine('line-b', { x: -1, y: 0 }, { x: 1, y: 0 }),
+      ],
+    };
+    const session: CommandSession = {
+      key: 'CURVE_THROUGH_POINT',
+      inputValue: '',
+      firstEntityId: 'line-a',
+      firstPickPoint: point(50 * d1.x, 50 * d1.y),
+      secondEntityId: 'line-b',
+      secondPickPoint: point(50, 0),
+      throughPoint: point(6, 0),
+      candidateSide: null,
+    };
+    const enumerated = submitF1(project, session, '');
+    expect(enumerated.replaced?.resultText).toMatch(/Type L or R/);
+    expect(enumerated.history.present.project.entities).toEqual(project.entities);
+    expect(enumerated.history.undoStack).toHaveLength(0);
+
+    // Both reachable candidates share a side for these rays, so the side is
+    // not usable: stay active with an honest message and zero mutation.
+    const sided = submitF1(project, { ...session, candidateSide: 'right' }, '');
+    expect(sided.replaced?.resultText).toMatch(/not unique/);
+    expect(sided.history.present.project.entities).toEqual(project.entities);
+    expect(sided.history.undoStack).toHaveLength(0);
+  });
 });
 
 describe('CAD Curves F1 Multiple submit', () => {

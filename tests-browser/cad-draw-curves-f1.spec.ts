@@ -515,6 +515,13 @@ test('H: existing reps — calculator report-only, tangent 3-point, subdivide ma
   const chords: number[] = [];
   for (let i = 0; i + 1 < markers.length; i += 1) chords.push(dist(markers[i]!, markers[i + 1]!));
   for (const c of chords) expect(c).toBeCloseTo(chords[0]!, 2);
+  // Finding 1 regression: the visible marker count equals the engine
+  // survey-point count (one point + one anchored label each), never doubled
+  // by the labels.
+  const subPanel = page.locator('[data-survey-cad-cogo-panel]');
+  await expect(subPanel).toContainText('Curve Subdivision');
+  await expect(subPanel).toContainText(`Created ${markers.length} subdivision marker point`);
+  await expect(subPanel).toContainText('Marker Points');
   await shot(page, 'H-subdivision');
   evidence.flowH = { markers: markers.length, chord: chords[0] };
 
