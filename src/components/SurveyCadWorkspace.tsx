@@ -1650,9 +1650,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     clearSelection: surfaceBulkSelection.clearSelection,
   });
 
+  // PERF-184 — destructure exactly the seven `cadWorkspace` fields this
+  // closure reads. Depending on the whole result object pinned the memo to an
+  // identity that is rebuilt on every root render, re-running all twelve
+  // snapshot builders (and republishing) for unrelated renders.
+  const {
+    snapPreferences,
+    commandInputValue,
+    canUndo,
+    canRedo,
+    historyDepth,
+    redoDepth,
+    annotationSnapshot,
+  } = cadWorkspace;
+
   const shellSnapshot: CadWorkspaceSnapshot | null = useMemo(() => {
     if (!shellLink) return null;
-    const enabledSnaps = Object.entries(cadWorkspace.snapPreferences)
+    const enabledSnaps = Object.entries(snapPreferences)
       .filter(([, enabled]) => enabled)
       .map(([kind]) => kind);
     const layerEntityCounts: Record<string, number> = {};
@@ -1677,12 +1691,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       properties: propertiesPanelState,
       activeCommandKey,
       commandPrompt: statusText,
-      commandInputValue: cadWorkspace.commandInputValue,
-      canUndo: cadWorkspace.canUndo,
-      canRedo: cadWorkspace.canRedo,
-      historyDepth: cadWorkspace.historyDepth,
-      redoDepth: cadWorkspace.redoDepth,
-      snapPreferences: cadWorkspace.snapPreferences,
+      commandInputValue,
+      canUndo,
+      canRedo,
+      historyDepth,
+      redoDepth,
+      snapPreferences,
       snapStatusText: enabledSnaps.length > 0 ? `SNAP: ${enabledSnaps.join(', ')}` : 'OSNAP off',
       stationCount: stationIds.size,
       dependencyStatus: dependencySummary.status,
@@ -1699,7 +1713,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         sessionDiagnostics: groupInputs.sessionDiagnostics,
       }),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
-      annotation: cadWorkspace.annotationSnapshot,
+      annotation: annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
       surface: buildCadSurfaceSnapshot(activeProject, surfaceCache, selectedSurfaceId, {
         revisionIndex: surfaceRevisionIndex,
@@ -1740,7 +1754,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     };
   }, [
     shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
-    propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
+    propertiesPanelState, activeCommandKey, statusText, stationIds, dependencySummary, units,
+    snapPreferences, commandInputValue, canUndo, canRedo, historyDepth, redoDepth, annotationSnapshot,
     shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
     surfaceBuildInputs, volumeCache, selectedVolumeId, surfaceVolumeInputs, analysisSnapshot,
     surfaceBulkSelection.summary,
