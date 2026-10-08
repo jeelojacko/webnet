@@ -23,7 +23,7 @@ import {
 } from './cadTransactionsCogoReports';
 import { nextEntityName } from './cadTransactionsEntityFactories';
 import type { CadCommandDefinition } from './cadTransactions.types';
-import type { CadEntity } from './cadTypes';
+import type { CadEntity, CadProject } from './cadTypes';
 
 export interface BestFitSampleInput {
   x: number;
@@ -66,6 +66,33 @@ const distinctSourceIds = (samples: readonly BestFitSampleInput[]): string[] => 
     if (sample.sourceEntityId != null) seen.add(sample.sourceEntityId);
   }
   return [...seen];
+};
+
+/**
+ * Source-point IDs are survey station ids only. A free pick is labelled
+ * `P<n>` by the session and carries no survey attribution, so it must never
+ * surface as a source point. Resolve each sample source against the live
+ * project and keep the station id of true survey-point sources.
+ */
+const surveySourcePointIds = (
+  project: CadProject,
+  samples: readonly BestFitSampleInput[],
+): string[] => {
+  const surveyPoints = new Map(
+    project.entities
+      .filter(
+        (entity): entity is Extract<CadProject['entities'][number], { type: 'survey-point' }> =>
+          entity.type === 'survey-point',
+      )
+      .map((entity) => [entity.id, entity.stationId] as const),
+  );
+  const labels: string[] = [];
+  for (const sample of samples) {
+    if (sample.sourceEntityId == null) continue;
+    const stationId = surveyPoints.get(sample.sourceEntityId);
+    if (stationId != null) labels.push(stationId);
+  }
+  return labels;
 };
 
 const commonRows = (method: string, sampleCount: number, rms: number, maxAbs: number): CadCogoReportRow[] => [
@@ -142,7 +169,7 @@ const commitLineResult = (
     toolKey: 'BEST_FIT_LINE',
     summary,
     sourceEntityIds: distinctSourceIds(command.samples),
-    sourcePointIds: command.samples.map((sample) => sample.label),
+    sourcePointIds: surveySourcePointIds(snapshot.project, command.samples),
     inputs: { samples: snapshotSamples(command.samples) },
     parameters: { method: 'orthogonal-least-squares' },
   });
@@ -206,7 +233,7 @@ const commitArcResult = (
     toolKey: 'BEST_FIT_ARC',
     summary,
     sourceEntityIds: distinctSourceIds(command.samples),
-    sourcePointIds: command.samples.map((sample) => sample.label),
+    sourcePointIds: surveySourcePointIds(snapshot.project, command.samples),
     inputs: { samples: snapshotSamples(command.samples) },
     parameters: { method: 'geometric-least-squares' },
   });
@@ -283,7 +310,7 @@ const commitParabolaResult = (
     toolKey: 'BEST_FIT_PARABOLA',
     summary,
     sourceEntityIds: distinctSourceIds(command.samples),
-    sourcePointIds: command.samples.map((sample) => sample.label),
+    sourcePointIds: surveySourcePointIds(snapshot.project, command.samples),
     inputs: { samples: snapshotSamples(command.samples) },
     parameters: { method: 'rotated-geometric-least-squares' },
   });

@@ -50,6 +50,9 @@ in input order). Row count always equals the sample count.
 `[{ x, y, label, sourceEntityId? }]` taken at commit; later edits to the
 session or the drawing never rewrite it. `sourceEntityIds` carries the
 distinct sample source entity ids (survey points, snapped geometry, or
-absent for free picks); `sourcePointIds` carries the sample labels. The
-created entity's `metadata.cogo` records `toolKey`, `provenanceId`,
-`inputs`, and `resultSummary`, so the saved file stays traceable.
+absent for free picks); `sourcePointIds` carries only the station ids of
+samples whose source resolves to a survey point. A free pick keeps its
+`P<n>` label in the snapshot and residual table, but is never listed as a
+source point (no-station-mislabeling law). The created entity's
+`metadata.cogo` records `toolKey`, `provenanceId`, `inputs`, and
+`resultSummary`, so the saved file stays traceable.

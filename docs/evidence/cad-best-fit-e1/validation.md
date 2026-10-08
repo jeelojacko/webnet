@@ -10,7 +10,7 @@ Worker B entity semantics are reused untouched.
 
 | Suite | Tests | Result |
 |---|---|---|
-| `tests/cad_best_fit_commands_c1.test.ts` (new: atomic 1+1, undo/redo, layer, provenance snapshot, report rows=tables=sample count, failure-zero-mutation ×3) | 15 | pass |
+| `tests/cad_best_fit_commands_c1.test.ts` (atomic 1+1, undo/redo, layer, provenance snapshot, source-point gating, report rows=tables=sample count, failure-zero-mutation ×3) | 19 | pass |
 | `tests/cad_best_fit_sessions_c1.test.tsx` (new: registry/aliases/gates, collection, typed, attribution, duplicates, U, min-gate, commit+report-forward, failure-stays, canFinish, prompt, preseed, preview, dock suppression) | 21 | pass |
 | `tests/cad_best_fit_line.test.ts` (Worker A, untouched) | 10 | pass |
 | `tests/cad_best_fit_arc.test.ts` (Worker A, untouched) | 9 | pass |
@@ -20,7 +20,7 @@ Worker B entity semantics are reused untouched.
 | Polyline C3 command neighbors | 23 | pass |
 | Ribbon families + controls + icon manifest + shell registry | 64 | pass |
 
-Total focused: 71 new Worker C tests + 363 neighboring assertions green,
+Total focused: 75 new Worker C tests + 363 neighboring assertions green,
 zero Worker A/B semantic changes.
 
 ## 2. Typecheck / build

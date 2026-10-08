@@ -21,7 +21,10 @@ zero unhandled rejections.** Screenshots + `geometry.json` live in
 - `B-line-report.png`: committed `BFL1` polyline selected; `LATEST COGO
   RESULT` shows Method / Sample count / RMS / Max / Azimuth 44.9388° /
   Bearing N44-56-19.74E / Span; Properties shows `Created by
-  BEST_FIT_LINE`, source points `P1..P4`, 2 vertices, open.
+  BEST_FIT_LINE`, source points `P1..P4`, 2 vertices, open. **Stale note:**
+  this capture predates the no-station-mislabeling fix; the four samples
+  are free picks, so current builds must NOT show a `Source points` row
+  (the labels stay `P1..P4` in the residual table).
 - `D-parabola-properties.png`: committed `BFP1`; report shows the rotated
   geometric method with vertex (100.001, 50.000), focal ≈ 2.0 (the 37°
   fixture value, asserted in flow D), axis azimuth 52°59'53";

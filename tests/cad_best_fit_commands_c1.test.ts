@@ -9,12 +9,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { createBlankCadProject } from '../src/engine/cad/cadDrawingFile';
+import { buildCadPropertiesPanelState } from '../src/engine/cad/cadProperties';
 import type { CadCogoComputation } from '../src/engine/cad/cadCogoTypes';
 import type {
   CadArcEntity,
+  CadEntity,
   CadParabolaEntity,
   CadPolylineEntity,
   CadProject,
+  CadSurveyPointEntity,
 } from '../src/engine/cad/cadTypes';
 import type { CadCommand } from '../src/engine/cad/cadTransactions.types';
 import {
@@ -26,6 +29,24 @@ import {
 } from '../src/engine/cad/cadUndoRedo';
 
 const blankProject = (): CadProject => createBlankCadProject({ name: 'best fit', units: 'm' });
+
+const surveyPoint = (id: string, stationId: string, x: number, y: number): CadSurveyPointEntity => ({
+  id,
+  type: 'survey-point',
+  layerId: 'general',
+  visible: true,
+  locked: false,
+  x,
+  y,
+  stationId,
+  pointClass: 'free',
+  source: 'parsed-input',
+});
+
+const projectWithSurvey = (...points: CadSurveyPointEntity[]): CadProject => ({
+  ...blankProject(),
+  entities: [...points],
+});
 
 const lineSamples = () => [
   { x: 0, y: 0.1, label: 'P1' },
@@ -125,15 +146,16 @@ describe('best-fit line transaction', () => {
   });
 
   it('snapshots provenance inputs and source ids', () => {
+    const project = projectWithSurvey(surveyPoint('pt-a', 'A1', 0, 0), surveyPoint('pt-b', 'A2', 10, 0));
     const samples = [
       { x: 0, y: 0, label: 'A1', sourceEntityId: 'pt-a' },
       { x: 10, y: 0.5, label: 'A2', sourceEntityId: 'pt-b' },
       { x: 20, y: -0.4, label: 'P3' },
     ];
-    const history = run({ key: 'BEST_FIT_LINE', samples });
+    const history = run({ key: 'BEST_FIT_LINE', samples }, project);
     const computation = computationsOf(history.present.project)[0]!;
     expect(computation.provenance.sourceEntityIds).toEqual(['pt-a', 'pt-b']);
-    expect(computation.provenance.sourcePointIds).toEqual(['A1', 'A2', 'P3']);
+    expect(computation.provenance.sourcePointIds).toEqual(['A1', 'A2']);
     const snapshot = computation.provenance.inputs['samples'] as typeof samples;
     expect(snapshot).toEqual(samples);
     expect(snapshot).not.toBe(samples);
@@ -215,6 +237,102 @@ describe('best-fit parabola transaction', () => {
     expect(undone.present.project.entities).toHaveLength(0);
     const redone = redoCadHistory(undone);
     expect(redone.present.project.entities).toHaveLength(1);
+  });
+});
+
+describe('best-fit source-point attribution', () => {
+  const surveyPoints = [surveyPoint('pt-a', 'A1', 0, 0), surveyPoint('pt-b', 'A2', 10, 10)];
+
+  it('keeps an all-free-pick fit free of source points while retaining P<n> labels', () => {
+    const samples = lineSamples();
+    const history = run({ key: 'BEST_FIT_LINE', samples }, projectWithSurvey(...surveyPoints));
+    const computation = computationsOf(history.present.project)[0]!;
+    expect(computation.provenance.sourcePointIds).toEqual([]);
+    expect(computation.provenance.sourceEntityIds).toEqual([]);
+    const snapshot = computation.provenance.inputs['samples'] as Array<{ label: string }>;
+    expect(snapshot.map((entry) => entry.label)).toEqual(['P1', 'P2', 'P3', 'P4']);
+    expect(computation.report.tables![0]!.rows.map((row) => row[0])).toEqual(['P1', 'P2', 'P3', 'P4']);
+    // The Properties "Source points" row reads metadata.cogo.sourcePointIds, so
+    // the display stays gated with the provenance field.
+    const entity = onlyEntityOfType(history.present.project, 'polyline');
+    const meta = entity.metadata?.['cogo'] as { sourcePointIds: string[] };
+    expect(meta.sourcePointIds).toEqual([]);
+    const panel = buildCadPropertiesPanelState(history.present.project, [entity]);
+    expect(panel?.mode).toBe('single');
+    if (!panel || panel.mode !== 'single') throw new Error('best-fit properties missing');
+    expect(panel.entity.properties.find((row) => row.label === 'Source points')).toBeUndefined();
+  });
+
+  it('keeps only true survey station ids for a mixed survey + free fit', () => {
+    const samples = [
+      { x: 0, y: 0, label: 'A1', sourceEntityId: 'pt-a' },
+      { x: 10, y: 10, label: 'A2', sourceEntityId: 'pt-b' },
+      { x: 20, y: 19.5, label: 'P1' },
+      { x: 30, y: 30.1, label: 'P2' },
+    ];
+    const history = run({ key: 'BEST_FIT_LINE', samples }, projectWithSurvey(...surveyPoints));
+    const computation = computationsOf(history.present.project)[0]!;
+    expect(computation.provenance.sourcePointIds).toEqual(['A1', 'A2']);
+    expect(computation.provenance.sourceEntityIds).toEqual(['pt-a', 'pt-b']);
+    expect(computation.report.tables![0]!.rows.map((row) => row[0])).toEqual(['A1', 'A2', 'P1', 'P2']);
+  });
+
+  it('does not surface P<n> labels when a non-survey entity is the snap source', () => {
+    const project: CadProject = {
+      ...blankProject(),
+      entities: [
+        {
+          id: 'line-1',
+          type: 'line',
+          layerId: 'general',
+          visible: true,
+          locked: false,
+          fromStationId: 'A1',
+          toStationId: 'A2',
+        } as unknown as CadEntity,
+      ],
+    };
+    const samples = [
+      { x: 0, y: 0, label: 'P1', sourceEntityId: 'line-1' },
+      { x: 10, y: 10.2, label: 'P2', sourceEntityId: 'line-1' },
+      { x: 20, y: 19.8, label: 'P3' },
+      { x: 30, y: 30.3, label: 'P4' },
+    ];
+    const history = run({ key: 'BEST_FIT_LINE', samples }, project);
+    const computation = computationsOf(history.present.project)[0]!;
+    expect(computation.provenance.sourcePointIds).toEqual([]);
+    expect(computation.provenance.sourceEntityIds).toEqual(['line-1']);
+  });
+
+  it('gates arc and parabola source points the same way', () => {
+    const arcHistory = run(
+      {
+        key: 'BEST_FIT_ARC',
+        samples: [
+          { x: 10, y: 0, label: 'A1', sourceEntityId: 'pt-a' },
+          { x: 7.07, y: 7.07, label: 'P1' },
+          { x: 0, y: 10, label: 'P2' },
+          { x: -7.07, y: 7.07, label: 'P3' },
+        ],
+      },
+      projectWithSurvey(...surveyPoints),
+    );
+    expect(computationsOf(arcHistory.present.project)[0]!.provenance.sourcePointIds).toEqual(['A1']);
+    const parabolaHistory = run(
+      {
+        key: 'BEST_FIT_PARABOLA',
+        samples: [
+          { x: 0, y: 0, label: 'P1' },
+          { x: 1, y: 1, label: 'P2' },
+          { x: 2, y: 4, label: 'P3' },
+          { x: 3, y: 9, label: 'P4' },
+          { x: 4, y: 16, label: 'P5' },
+          { x: 5, y: 25, label: 'P6' },
+        ],
+      },
+      projectWithSurvey(...surveyPoints),
+    );
+    expect(computationsOf(parabolaHistory.present.project)[0]!.provenance.sourcePointIds).toEqual([]);
   });
 });
 
