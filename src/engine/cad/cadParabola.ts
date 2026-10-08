@@ -159,9 +159,10 @@ export const cadParabolaEntityClosestPoint = (
 ): { x: number; y: number } | null =>
   cadParabolaClosestPoint(parabolaToCanonical(entity), point);
 
-interface TessellationWork {
-  points: Array<{ x: number; y: number }>;
-  tolerance: number;
+interface TessellationNode {
+  t0: number;
+  t1: number;
+  deviation: number;
 }
 
 /** Distance from point to the chord (a, b); degenerate chords read 0. */
@@ -179,35 +180,61 @@ const chordDeviation = (
   return Math.hypot(candidate.x - (a.x + dx * clamped), candidate.y - (a.y + dy * clamped));
 };
 
-const subdivideRange = (
+/** Midpoint chord deviation of the curve over [t0, t1]. */
+const chordDeviationAt = (
   canonical: CanonicalParabola,
   t0: number,
   t1: number,
-  work: TessellationWork,
-): void => {
-  if (work.points.length >= CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS + 1) return;
-  const p0 = cadParabolaParamPoint(canonical, t0);
-  const p1 = cadParabolaParamPoint(canonical, t1);
+): number => {
   const mid = (t0 + t1) / 2;
-  const pm = cadParabolaParamPoint(canonical, mid);
-  if (chordDeviation(pm, p0, p1) <= work.tolerance) {
-    work.points.push(p1);
-    return;
+  return chordDeviation(
+    cadParabolaParamPoint(canonical, mid),
+    cadParabolaParamPoint(canonical, t0),
+    cadParabolaParamPoint(canonical, t1),
+  );
+};
+
+/** Max-heap order: worst chord deviation first, then leftmost for determinism. */
+const deviationPrecedes = (left: TessellationNode, right: TessellationNode): boolean =>
+  left.deviation > right.deviation ||
+  (left.deviation === right.deviation && left.t0 < right.t0);
+
+const heapPush = (heap: TessellationNode[], node: TessellationNode): void => {
+  heap.push(node);
+  let index = heap.length - 1;
+  while (index > 0) {
+    const parent = (index - 1) >> 1;
+    if (!deviationPrecedes(heap[index]!, heap[parent]!)) break;
+    [heap[index], heap[parent]] = [heap[parent]!, heap[index]!];
+    index = parent;
   }
-  if (work.points.length >= CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS) {
-    work.points.push(p1);
-    return;
+};
+
+const heapReplaceTop = (heap: TessellationNode[], node: TessellationNode): void => {
+  heap[0] = node;
+  const size = heap.length;
+  let index = 0;
+  for (;;) {
+    const left = index * 2 + 1;
+    const right = left + 1;
+    let largest = index;
+    if (left < size && deviationPrecedes(heap[left]!, heap[largest]!)) largest = left;
+    if (right < size && deviationPrecedes(heap[right]!, heap[largest]!)) largest = right;
+    if (largest === index) break;
+    [heap[index], heap[largest]] = [heap[largest]!, heap[index]!];
+    index = largest;
   }
-  subdivideRange(canonical, t0, mid, work);
-  subdivideRange(canonical, mid, t1, work);
 };
 
 /**
  * Deterministic bounded tessellation of P(t) over [tStart, tEnd].
- * Recursive midpoint subdivision in t order (never reordered); every
- * emitted chord deviates from the analytic curve by at most `tolerance`
- * unless the segment cap binds (then the tail chord closes the range so
- * the endpoints stay exact). Returns null for invalid geometry.
+ *
+ * Worst-chord-priority midpoint subdivision: repeatedly split the currently
+ * coarsest chord until every chord meets `tolerance` or the segment cap
+ * binds. The split set always tiles the full finite range, so the output is
+ * ordered, starts exactly at P(tStart), ends exactly at P(tEnd), and is never
+ * a truncated prefix when the cap is reached: the cap is authoritative and
+ * yields a complete-but-coarser curve. O(n log n) in the segment count.
  */
 export const cadParabolaTessellatePoints = (
   entity: CadParabolaEntity,
@@ -216,12 +243,34 @@ export const cadParabolaTessellatePoints = (
   if (!isValidParabolaEntity(entity)) return null;
   if (!Number.isFinite(tolerance) || tolerance <= 0) return null;
   const canonical = parabolaToCanonical(entity);
-  const work: TessellationWork = {
-    points: [cadParabolaParamPoint(canonical, entity.tStart)],
-    tolerance,
-  };
-  subdivideRange(canonical, entity.tStart, entity.tEnd, work);
-  return work.points;
+  const heap: TessellationNode[] = [
+    {
+      t0: entity.tStart,
+      t1: entity.tEnd,
+      deviation: chordDeviationAt(canonical, entity.tStart, entity.tEnd),
+    },
+  ];
+  while (heap.length < CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS) {
+    const worst = heap[0]!;
+    if (!(worst.deviation > tolerance)) break;
+    const mid = (worst.t0 + worst.t1) / 2;
+    // No representable midpoint (tiny range): cap is authoritative.
+    if (!(mid > worst.t0 && mid < worst.t1)) break;
+    heapReplaceTop(heap, {
+      t0: worst.t0,
+      t1: mid,
+      deviation: chordDeviationAt(canonical, worst.t0, mid),
+    });
+    heapPush(heap, {
+      t0: mid,
+      t1: worst.t1,
+      deviation: chordDeviationAt(canonical, mid, worst.t1),
+    });
+  }
+  const ordered = [...heap].sort((left, right) => left.t0 - right.t0);
+  const points = ordered.map((node) => cadParabolaParamPoint(canonical, node.t0));
+  points.push(cadParabolaParamPoint(canonical, entity.tEnd));
+  return points;
 };
 
 export interface CadParabolaBounds {

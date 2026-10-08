@@ -568,6 +568,12 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
       }
     }
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
+    // First-class parabolas are not segment/arc/circle refs: collect the
+    // visible finite parabolas here so the exact intersection pass can pair
+    // them analytically with visible line-like segments (never as chords).
+    const parabolas = visibleEntities.filter(
+      (entity): entity is CadParabolaEntity => entity.type === 'parabola',
+    );
     // A polyline/feature-line arc course id is a valid snap identity but not a
     // segment scope seed: dropping it here matches the pre-C2 law where arc
     // snaps carried no segment id, while a genuinely missing id still filters
@@ -702,7 +708,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     }
 
     if (allowed.has('intersection')) {
-      candidates.push(...buildExactIntersectionCandidates({ segments, arcs, circles, worldPoint }));
+      candidates.push(...buildExactIntersectionCandidates({ segments, arcs, circles, parabolas, worldPoint }));
     }
     if (constructionContext.active && allowed.has('apparent-intersection')) {
       candidates.push(

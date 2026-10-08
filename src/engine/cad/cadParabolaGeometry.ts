@@ -42,6 +42,27 @@ export interface CadParabolaBounds {
 const PARABOLA_FLOOR = 1e-12;
 const CUBIC_ROOT_TOLERANCE = 1e-12;
 const CUBIC_NEWTON_ITERATIONS = 4;
+/**
+ * Relative half-width of the segment-quadratic discriminant gray zone.
+ * Coefficient roundoff perturbs the discriminant at ~1e-15 relative, so
+ * 1e-12 keeps a ~1000x safety margin above pure roundoff while no longer
+ * swallowing genuine grazing discriminants (a 1 nm chord offset at metre
+ * scale moves the discriminant ~8e-11 relative, which 1e-9 absorbed).
+ * Anything inside the gray zone is NOT decided by discriminant magnitude —
+ * it is resolved geometrically via SEGMENT_CONTACT_ULPS below, because the
+ * magnitude alone cannot distinguish true-tangent roundoff from a genuine
+ * near-miss or grazing secant.
+ */
+const SEGMENT_ROOT_TOLERANCE = 1e-12;
+/**
+ * Strict ulp budget for the gray-zone geometric contact epsilon (metres,
+ * scale-aware). 64 ulps over the working scale sits far below any
+ * resolvable CAD contact yet above double roundoff, so a true tangent
+ * (gap ~0) collapses to one point, a genuine miss (nanometre gap and up)
+ * returns zero, and a grazing secant (nanometre penetration yet ~0.2 mm
+ * root separation) keeps both roots.
+ */
+const SEGMENT_CONTACT_ULPS = 64;
 
 export const cadParabolaAxisBasis = (axisAngleDeg: number): CadParabolaAxisBasis => {
   const radians = (axisAngleDeg * Math.PI) / 180;
@@ -276,6 +297,46 @@ interface LocalLine {
   dv: number;
 }
 
+/**
+ * Relative noise floor for the segment-quadratic discriminant. A clearly
+ * negative discriminant is a genuine miss and a clearly positive one is a
+ * genuine secant; only |discriminant| within this floor enters the
+ * geometric gray zone resolved by solveSegmentIntersections. The floor is
+ * relative to the coefficient magnitudes so the law holds at every scale.
+ */
+const segmentDiscriminantNoise = (b: number, fourAC: number): number =>
+  SEGMENT_ROOT_TOLERANCE * (b * b + Math.abs(fourAC));
+
+/**
+ * Strict scale-aware geometric contact epsilon (metres) for gray-zone
+ * resolution. The local frame is orthonormal, so u/v units are world units;
+ * scaling by coordinates, segment extent, and focal length ties the epsilon
+ * to floating-point resolution at the working scale.
+ */
+const segmentContactEpsilon = (local: LocalLine, f: number): number => {
+  const scale =
+    1 +
+    Math.abs(local.u0) +
+    Math.abs(local.v0) +
+    Math.abs(local.du) +
+    Math.abs(local.dv) +
+    Math.abs(f);
+  return SEGMENT_CONTACT_ULPS * Number.EPSILON * scale;
+};
+
+/**
+ * Signed gap (metres, local-u direction) between the segment point at s and
+ * the parabola at the same v. Zero (within contact epsilon) means genuine
+ * contact; a value beyond epsilon means the segment runs strictly inside
+ * (positive) or outside (negative) the curve there.
+ */
+const segmentParabolaGap = (local: LocalLine, f: number, s: number): number => {
+  const u = local.u0 + local.du * s;
+  const v = local.v0 + local.dv * s;
+  const t = v / (2 * f);
+  return u - f * t * t;
+};
+
 const solveSegmentIntersections = (local: LocalLine, f: number): number[] => {
   const { u0, v0, du, dv } = local;
   if (Math.abs(dv) <= PARABOLA_FLOOR) {
@@ -286,7 +347,27 @@ const solveSegmentIntersections = (local: LocalLine, f: number): number[] => {
   const a = dv * dv;
   const b = 2 * v0 * dv - 4 * f * du;
   const c = v0 * v0 - 4 * f * u0;
-  const discriminant = b * b - 4 * a * c;
+  const fourAC = 4 * a * c;
+  const discriminant = b * b - fourAC;
+  const noise = segmentDiscriminantNoise(b, fourAC);
+  if (discriminant < -noise) return [];
+  if (discriminant > noise) {
+    const root = Math.sqrt(discriminant);
+    return [(-b - root) / (2 * a), (-b + root) / (2 * a)];
+  }
+  // Gray zone: |discriminant| is within the noise floor, so its sign alone
+  // cannot distinguish roundoff around a true tangent from a genuine
+  // grazing secant or near-miss. Resolve geometrically at the midpoint
+  // candidate s0: genuine contact (gap within the strict ulp epsilon)
+  // collapses to the single tangent point; otherwise a non-negative
+  // discriminant keeps both secant roots and a negative one is a miss.
+  // Exact double roots (discriminant zero to the ulp) always land here with
+  // a zero gap, so they collapse deterministically; clearly separated roots
+  // never enter this branch.
+  const single = -b / (2 * a);
+  if (Math.abs(segmentParabolaGap(local, f, single)) <= segmentContactEpsilon(local, f)) {
+    return [single];
+  }
   if (discriminant < 0) return [];
   const root = Math.sqrt(discriminant);
   return [(-b - root) / (2 * a), (-b + root) / (2 * a)];

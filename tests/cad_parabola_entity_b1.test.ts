@@ -17,6 +17,8 @@ import {
   type CadSpatialEntityCandidateContext,
 } from '../src/engine/cad/cadSpatialEntityCandidates';
 import { buildCadSpatialIndex } from '../src/engine/cad/cadSpatialIndex';
+import { buildExactIntersectionCandidates } from '../src/engine/cad/cadSpatialIntersectionCandidates';
+import type { CadSegmentRef } from '../src/engine/cad/cadSpatialIndexTypes';
 import { buildCadPropertiesPanelState } from '../src/engine/cad/cadProperties';
 import { buildMlightcadSpikeScene } from '../src/engine/cad/cadMlightcadAdapter';
 import { classifyBlockSources } from '../src/engine/cad/cadBlockSources';
@@ -36,11 +38,14 @@ import {
 import { transformCadEntityGeometry } from '../src/engine/cad/cadTransformGeometry';
 import {
   cadParabolaArcLength,
+  cadParabolaAxisBasis,
+  cadParabolaLineIntersection,
   cadParabolaParamPoint,
   type CanonicalParabola,
 } from '../src/engine/cad/cadParabolaGeometry';
 import {
   CAD_PARABOLA_TESSELLATION_CHORD_TOLERANCE,
+  CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS,
   cadParabolaAxisAzimuthDeg,
   cadParabolaEntityBounds,
   cadParabolaEntityClosestPoint,
@@ -53,7 +58,7 @@ import {
 } from '../src/engine/cad/cadParabola';
 import { createCadHistoryState, runCadCommand } from '../src/engine/cad/cadUndoRedo';
 import type { CadCommand } from '../src/engine/cad/cadTransactions.types';
-import type { CadLineEntity, CadParabolaEntity, CadProject } from '../src/engine/cad/cadTypes';
+import type { CadLineEntity, CadParabolaEntity, CadPolylineEntity, CadProject } from '../src/engine/cad/cadTypes';
 
 const PARABOLA: CadParabolaEntity = {
   id: 'cad-parabola:test',
@@ -79,6 +84,21 @@ const sampleMany = (entity: CadParabolaEntity, count: number) => {
   return Array.from({ length: count + 1 }, (_unused, index) =>
     cadParabolaParamPoint(value, entity.tStart + ((entity.tEnd - entity.tStart) * index) / count),
   );
+};
+
+/** Perpendicular distance from a point to chord (a, b); degenerate chords read 0. */
+const pointChordDistance = (
+  point: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): number => {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (!(lengthSquared > 0)) return Math.hypot(point.x - a.x, point.y - a.y);
+  const t = ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared;
+  const clamped = Math.max(0, Math.min(1, t));
+  return Math.hypot(point.x - (a.x + dx * clamped), point.y - (a.y + dy * clamped));
 };
 
 describe('parabola persistence and clone', () => {
@@ -171,6 +191,51 @@ describe('parabola renderer tessellation', () => {
     expect(maxDeviation).toBeLessThanOrEqual(CAD_PARABOLA_TESSELLATION_CHORD_TOLERANCE * 1.05);
     expect(points[0]).toEqual(cadParabolaEntityEndpoints(entity).start);
     expect(points.at(-1)).toEqual(cadParabolaEntityEndpoints(entity).end);
+  });
+});
+
+describe('parabola tessellation cap completeness', () => {
+  it('keeps both exact endpoints and the cap when demand exceeds the segment budget', () => {
+    const extreme: CadParabolaEntity = { ...PARABOLA, focalLength: 100, tStart: -10, tEnd: 10 };
+    const endpoints = cadParabolaEntityEndpoints(extreme);
+    const points = cadParabolaTessellatePoints(extreme)!;
+    expect(points.length - 1).toBeLessThanOrEqual(CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS);
+    expect(points.length).toBe(CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS + 1);
+    expect(points[0]).toEqual(endpoints.start);
+    expect(points.at(-1)).toEqual(endpoints.end);
+    expect(points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y))).toBe(true);
+  });
+
+  it('closes the renderer and DXF approximations at P(tEnd) for the capped curve', async () => {
+    const extreme: CadParabolaEntity = { ...PARABOLA, focalLength: 100, tStart: -10, tEnd: 10 };
+    const end = cadParabolaEntityEndpoints(extreme).end;
+    const primitives = buildCadDisplayScene(withParabola(extreme)).primitives.filter(
+      (primitive) => primitive.sourceEntityId === extreme.id,
+    );
+    const lastPrimitive = primitives.at(-1)!;
+    expect(lastPrimitive.kind).toBe('line');
+    if (lastPrimitive.kind === 'line') {
+      expect(lastPrimitive.points.at(-1)).toEqual(end);
+    }
+    const { buildDxfExportModelWithResult } = await import('../src/engine/cad/dxf/dxfExportModel');
+    const result = buildDxfExportModelWithResult({ project: withParabola(extreme) });
+    const polyline = result.output.polylines.find((entry) => entry.vertices.length > 2)!;
+    expect(polyline.vertices.at(-1)).toEqual(end);
+  });
+
+  it('meets chord tolerance for a normal sub-cap entity', () => {
+    const entity: CadParabolaEntity = { ...PARABOLA, focalLength: 2, tStart: -2, tEnd: 2 };
+    const points = cadParabolaTessellatePoints(entity)!;
+    expect(points.length - 1).toBeLessThan(CAD_PARABOLA_TESSELLATION_MAX_SEGMENTS);
+    let maxDeviation = 0;
+    for (const point of sampleMany(entity, 2000)) {
+      let nearest = Number.POSITIVE_INFINITY;
+      for (let index = 0; index < points.length - 1; index += 1) {
+        nearest = Math.min(nearest, pointChordDistance(point, points[index]!, points[index + 1]!));
+      }
+      maxDeviation = Math.max(maxDeviation, nearest);
+    }
+    expect(maxDeviation).toBeLessThanOrEqual(CAD_PARABOLA_TESSELLATION_CHORD_TOLERANCE * 1.05);
   });
 });
 
@@ -268,6 +333,215 @@ describe('parabola exact line intersection', () => {
     expect(cadIntersectLineParabola(short, entity)).toHaveLength(1);
     const beyond: CadLineEntity = { ...line, fromY: 5, toY: 10, fromX: 100, toX: 100 };
     expect(cadIntersectLineParabola(beyond, entity)).toHaveLength(0);
+  });
+});
+
+describe('parabola tangent root law', () => {
+  it('returns exactly one point at a vertex tangent (double root deduped)', () => {
+    const hits = cadParabolaLineIntersection(canonical(PARABOLA), { x: 0, y: -5 }, { x: 0, y: 5 });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.x).toBeCloseTo(0, 9);
+    expect(hits[0]!.y).toBeCloseTo(0, 9);
+  });
+
+  it('returns exactly one point at a non-vertex tangent', () => {
+    const hits = cadParabolaLineIntersection(canonical(PARABOLA), { x: -4, y: 3 }, { x: 6, y: -7 });
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.x).toBeCloseTo(1, 9);
+    expect(hits[0]!.y).toBeCloseTo(-2, 9);
+  });
+
+  it('keeps two distinct points for a secant and none for a miss', () => {
+    const secant = cadParabolaLineIntersection(canonical(PARABOLA), { x: 4, y: -10 }, { x: 4, y: 10 });
+    expect(secant.map((hit) => hit.y).sort((left, right) => left - right)).toEqual([-4, 4]);
+    const miss = cadParabolaLineIntersection(canonical(PARABOLA), { x: -1, y: -10 }, { x: -1, y: 10 });
+    expect(miss).toHaveLength(0);
+  });
+
+  it('keeps two distinct hits for a nanometre-grazing secant (R4 gray-zone secant)', () => {
+    const offset = 1e-9;
+    const start = { x: -4 + offset, y: 3 };
+    const end = { x: 6 + offset, y: -7 };
+    const secant = cadParabolaLineIntersection(canonical(PARABOLA), start, end);
+    expect(secant).toHaveLength(2);
+    // Closed form for f = 1, axis 0 (x = y^2 / 4 meets x = -1 + offset - y,
+    // i.e. (y + 2)^2 = 4 * offset): the penetration is ~1 nm yet the roots
+    // sit ~0.18 mm apart, so they must never collapse.
+    const expectedY = [-2 - 2 * Math.sqrt(offset), -2 + 2 * Math.sqrt(offset)];
+    const ordered = [...secant].sort((left, right) => left.y - right.y);
+    ordered.forEach((hit, index) => {
+      const y = expectedY[index]!;
+      expect(hit.y).toBeCloseTo(y, 9);
+      expect(hit.x).toBeCloseTo((y * y) / 4, 9);
+    });
+    expect(
+      Math.hypot(ordered[1]!.x - ordered[0]!.x, ordered[1]!.y - ordered[0]!.y),
+    ).toBeGreaterThan(1e-4);
+    // COGO and OSNAP inherit the two-hit law through the shared seam.
+    const entity = withParabola().entities[0] as CadParabolaEntity;
+    const line: CadLineEntity = {
+      id: 'line:graze-secant', type: 'line', layerId: 'observation-lines', visible: true, locked: false,
+      fromStationId: 'A', toStationId: 'B', fromX: start.x, fromY: start.y, toX: end.x, toY: end.y,
+      sourceObservationIds: [],
+    };
+    expect(cadIntersectLineParabola(line, entity)).toHaveLength(2);
+    expect(buildExactIntersectionCandidates({
+      segments: [{
+        segmentId: 'line:graze-secant#0', sourceEntityId: 'line:graze-secant',
+        start, end, startLabel: 'A', endLabel: 'B', label: 'A-B',
+      }],
+      arcs: [],
+      parabolas: [PARABOLA],
+      worldPoint: { x: 1, y: -2 },
+    })).toHaveLength(2);
+  });
+
+  it('returns zero for the mirrored nanometre miss (R4 gray-zone miss)', () => {
+    const offset = 1e-9;
+    const start = { x: -4 - offset, y: 3 };
+    const end = { x: 6 - offset, y: -7 };
+    expect(cadParabolaLineIntersection(canonical(PARABOLA), start, end)).toHaveLength(0);
+    // COGO and OSNAP inherit the miss through the shared seam.
+    const entity = withParabola().entities[0] as CadParabolaEntity;
+    const line: CadLineEntity = {
+      id: 'line:graze-miss', type: 'line', layerId: 'observation-lines', visible: true, locked: false,
+      fromStationId: 'A', toStationId: 'B', fromX: start.x, fromY: start.y, toX: end.x, toY: end.y,
+      sourceObservationIds: [],
+    };
+    expect(cadIntersectLineParabola(line, entity)).toHaveLength(0);
+    expect(buildExactIntersectionCandidates({
+      segments: [{
+        segmentId: 'line:graze-miss#0', sourceEntityId: 'line:graze-miss',
+        start, end, startLabel: 'A', endLabel: 'B', label: 'A-B',
+      }],
+      arcs: [],
+      parabolas: [PARABOLA],
+      worldPoint: { x: 1, y: -2 },
+    })).toHaveLength(0);
+  });
+
+  it('dedupes a numerically-tangent line on a rotated parabola (roundoff discriminant)', () => {
+    const rotated: CadParabolaEntity = {
+      ...PARABOLA, vertexX: 5, vertexY: -2, axisAngleDeg: 37, focalLength: 2, tStart: -2, tEnd: 2,
+    };
+    const value = canonical(rotated);
+    const t0 = 0.7;
+    const point = cadParabolaParamPoint(value, t0);
+    const { aX, aY, bX, bY } = cadParabolaAxisBasis(rotated.axisAngleDeg);
+    const tangent = { x: bX + aX * t0, y: bY + aY * t0 };
+    const length = Math.hypot(tangent.x, tangent.y);
+    const unit = { x: tangent.x / length, y: tangent.y / length };
+    const hits = cadParabolaLineIntersection(
+      value,
+      { x: point.x - unit.x * 5, y: point.y - unit.y * 5 },
+      { x: point.x + unit.x * 5, y: point.y + unit.y * 5 },
+    );
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.x).toBeCloseTo(point.x, 6);
+    expect(hits[0]!.y).toBeCloseTo(point.y, 6);
+  });
+
+  it('propagates the tangent law through the COGO line-entity wrapper', () => {
+    const entity = withParabola().entities[0] as CadParabolaEntity;
+    const tangent: CadLineEntity = {
+      id: 'line:tangent', type: 'line', layerId: 'observation-lines', visible: true, locked: false,
+      fromStationId: 'A', toStationId: 'B', fromX: 0, fromY: -5, toX: 0, toY: 5, sourceObservationIds: [],
+    };
+    expect(cadIntersectLineParabola(tangent, entity)).toHaveLength(1);
+  });
+});
+
+describe('parabola exact segment intersection candidates (OSNAP wiring)', () => {
+  const segmentRef = (
+    start: { x: number; y: number },
+    end: { x: number; y: number },
+  ): CadSegmentRef => ({
+    segmentId: 'line:probe#0',
+    sourceEntityId: 'line:probe',
+    start,
+    end,
+    startLabel: 'A',
+    endLabel: 'B',
+    label: 'A-B',
+  });
+
+  const exactCandidates = (segment: CadSegmentRef) =>
+    buildExactIntersectionCandidates({
+      segments: [segment],
+      arcs: [],
+      parabolas: [PARABOLA],
+      worldPoint: { x: 0, y: 0 },
+    });
+
+  it('emits two exact candidates for a secant with both-entity attribution', () => {
+    const candidates = exactCandidates(segmentRef({ x: 4, y: -10 }, { x: 4, y: 10 }));
+    expect(candidates).toHaveLength(2);
+    expect(candidates.map((candidate) => candidate.y).sort((left, right) => left - right)).toEqual([-4, 4]);
+    expect(candidates.every((candidate) => candidate.kind === 'intersection')).toBe(true);
+    expect(candidates.every((candidate) => candidate.sourceEntityId === `line:probe|${PARABOLA.id}`)).toBe(true);
+    expect(candidates.every((candidate) => candidate.label === 'A-B x Parabola')).toBe(true);
+    expect(candidates.every((candidate) => candidate.sourceSegmentId == null)).toBe(true);
+  });
+
+  it('emits exactly one candidate for vertex and off-vertex tangents', () => {
+    expect(exactCandidates(segmentRef({ x: 0, y: -5 }, { x: 0, y: 5 }))).toHaveLength(1);
+    expect(exactCandidates(segmentRef({ x: -4, y: 3 }, { x: 6, y: -7 }))).toHaveLength(1);
+  });
+
+  it('emits none for a miss and omits crossings outside the finite t-range', () => {
+    expect(exactCandidates(segmentRef({ x: -1, y: -10 }, { x: -1, y: 10 }))).toHaveLength(0);
+    // x = 16 meets the infinite parabola at t = +/-4, outside [-3, 3].
+    expect(exactCandidates(segmentRef({ x: 16, y: -10 }, { x: 16, y: 10 }))).toHaveLength(0);
+  });
+
+  it('does not fabricate circle/arc/parabola-pair intersections', () => {
+    const circle = { sourceEntityId: 'circle:one', center: { x: 0, y: 0 }, radius: 1, label: 'circle' };
+    expect(buildExactIntersectionCandidates({
+      segments: [], arcs: [], circles: [circle], parabolas: [PARABOLA], worldPoint: { x: 0, y: 0 },
+    })).toHaveLength(0);
+    const arc = {
+      sourceEntityId: 'arc:one', center: { x: 0, y: 0 }, radius: 1, startAngleDeg: 0, endAngleDeg: 180,
+      startPoint: { x: 1, y: 0 }, endPoint: { x: -1, y: 0 }, label: 'arc',
+    };
+    expect(buildExactIntersectionCandidates({
+      segments: [], arcs: [arc], parabolas: [PARABOLA], worldPoint: { x: 0, y: 0 },
+    })).toHaveLength(0);
+    expect(buildExactIntersectionCandidates({
+      segments: [], arcs: [], parabolas: [PARABOLA, { ...PARABOLA, id: 'cad-parabola:other' }], worldPoint: { x: 0, y: 0 },
+    })).toHaveLength(0);
+  });
+
+  it('wires straight CadPolylineEntity courses into the exact intersection pass', () => {
+    const polyline: CadPolylineEntity = {
+      id: 'polyline:secant', type: 'polyline', layerId: 'general', visible: true, locked: false,
+      vertices: [{ x: 4, y: -10 }, { x: 4, y: 10 }], vertexLabels: ['A', 'B'], closed: false,
+    };
+    const project = replaceCadProjectEntities(
+      createBlankCadProject({ name: 'parabola-polyline', units: 'm' }),
+      [PARABOLA, polyline],
+    );
+    const candidates = buildCadSpatialIndex(project).querySnapCandidates({ x: 4, y: 4 }, 1, ['intersection']);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]!.sourceEntityId).toBe(`${polyline.id}|${PARABOLA.id}`);
+    expect(candidates[0]!.x).toBeCloseTo(4, 9);
+    expect(candidates[0]!.y).toBeCloseTo(4, 9);
+  });
+
+  it('keeps a bulged polyline arc course out of the segment list (never chorded)', () => {
+    const polyline: CadPolylineEntity = {
+      id: 'polyline:arc', type: 'polyline', layerId: 'general', visible: true, locked: false,
+      vertices: [{ x: 4, y: -10 }, { x: 4, y: 10 }], vertexLabels: ['A', 'B'], closed: false,
+      segmentGeometry: [{ kind: 'arc', bulge: 1 }],
+    };
+    const project = replaceCadProjectEntities(
+      createBlankCadProject({ name: 'parabola-arc', units: 'm' }),
+      [PARABOLA, polyline],
+    );
+    // Chord x = 4 would cross the parabola at (4, +/-4); the true
+    // semicircular arc bows to x >= 4 and must not fabricate that hit.
+    expect(
+      buildCadSpatialIndex(project).querySnapCandidates({ x: 4, y: 4 }, 1, ['intersection']),
+    ).toHaveLength(0);
   });
 });
 
