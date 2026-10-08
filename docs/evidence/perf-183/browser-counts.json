@@ -1,0 +1,12 @@
+{
+  "flowA": {
+    "entities": 2,
+    "rendered": 1024,
+    "staticChildren": 1024
+  },
+  "flowB": {
+    "rendered": 1024,
+    "zoomedIn": 0,
+    "restored": 1024
+  }
+}
