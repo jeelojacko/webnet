@@ -386,6 +386,9 @@ export const useSurveyCadWorkspace = (
     activeSnap,
     nearbySnaps,
     pointerWorldPoint,
+    pointerWorldPointRef,
+    subscribePointerWorldPoint,
+    syncReactivePointerFromRef,
     snapPreferences,
     updatePointerWorldPoint: updatePointerWorldPointInternal,
     cycleActiveSnap,
@@ -442,6 +445,18 @@ export const useSurveyCadWorkspace = (
     if (commandState.activeCommandKey === 'TRIM' || commandState.activeCommandKey === 'EXTEND' || commandState.activeCommandKey === 'FILLET') return;
     setCommandHoverTargetState(null);
   }, [commandState.activeCommandKey]);
+  // PERF-183.1: idle moves only update the imperative pointer ref; seed the
+  // reactive preview pointer once per command transition so a new command's
+  // first preview read uses the live cursor instead of a previous command's
+  // committed position. Never runs on plain pointer moves.
+  useEffect(() => {
+    if (!commandState.commandExpectsPointPick) return;
+    syncReactivePointerFromRef();
+  }, [
+    commandState.activeCommandKey,
+    commandState.commandExpectsPointPick,
+    syncReactivePointerFromRef,
+  ]);
   const updatePointerWorldPoint = (
     worldPoint: { x: number; y: number } | null,
     toleranceWorldOverride?: number,
@@ -449,6 +464,7 @@ export const useSurveyCadWorkspace = (
       visibleBounds?: CadBounds | null;
       lockConstruction?: boolean;
       restrictedGripHandles?: readonly CadGripHandle[];
+      reactivePreview?: boolean;
     },
   ) => {
     updatePointerWorldPointInternal(worldPoint, toleranceWorldOverride, {
@@ -606,6 +622,8 @@ export const useSurveyCadWorkspace = (
     activeSnap,
     nearbySnaps,
     pointerWorldPoint,
+    pointerWorldPointRef,
+    subscribePointerWorldPoint,
     snapConstructionContext,
     snapPreferences,
     historyDepth: history.undoStack.length,

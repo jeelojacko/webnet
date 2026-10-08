@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import {
   SURVEY_CAD_MAX_ZOOM,
@@ -19,7 +19,9 @@ import {
   SnapGuideLayer,
   TransientPreviewLayer,
 } from './SurveyCadPreviewLayers';
-import { renderPrimitive } from './SurveyCadPreviewPrimitive';
+import SurveyCadPreviewStaticPrimitives, {
+  type SurveyCadPrimitiveDispatch,
+} from './SurveyCadPreviewStaticPrimitives';
 import { renderSurfaceLayers, renderVolumeLayers, renderAnalysisLayers, renderGradingLayers, renderGroupGradingLayers } from './SurveyCadPreviewSurface';
 import { renderProfileViewLayers } from './SurveyCadPreviewProfiles';
 import { renderSampleLineLayers, renderSectionViewLayers } from './SurveyCadPreviewSections';
@@ -81,6 +83,28 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   visibleWorldBounds,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const selectedEntityIdSet = useMemo(() => new Set(selectedEntityIds), [selectedEntityIds]);
+  // Latest-ref dispatch: the memoized static layer never re-renders for a
+  // callback identity change; event handlers read this at call time.
+  const staticDispatchRef = useRef<SurveyCadPrimitiveDispatch>({
+    onEntityClick: () => undefined,
+  });
+  useEffect(() => {
+    staticDispatchRef.current = {
+      onEntityClick: (event, primitive, sourceSegmentId, appendToSelection) => {
+        if (commandPointInputActive) {
+          handlePrimitiveCommandClick(event, primitive, sourceSegmentId);
+          return;
+        }
+        flushSync(() => {
+          onSelectEntity(primitive.sourceEntityId, appendToSelection);
+        });
+      },
+      onEntityHover: handlePrimitiveCommandHover,
+      onEntityLeave: () => onCommandHoverTargetChange(null),
+      onPrimitiveClickIntercept,
+    };
+  });
   // Latest-props ref: the native wheel listener below is attached once
   // (React delivers wheel/touch listeners as passive, so preventDefault
   // inside onWheel logs "Unable to preventDefault inside passive event
@@ -284,6 +308,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         visibleBounds: visibleWorldBounds,
         restrictedGripHandles:
           !commandPointInputActive && activeGripDragIdRef.current == null ? gripHandles : [],
+        reactivePreview: commandPointInputActive,
       });
       if (activeGripDragIdRef.current != null) {
         updateGripDragInteraction(rawWorldPoint, event.shiftKey);
@@ -356,27 +381,14 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       }}
     />
     <g>
-      {scene.primitives.map((primitive) =>
-        renderPrimitive({
-          primitive,
-          selectedEntityIds,
-          entityOpacityOverrides: commandEntityOpacityOverrides,
-          project,
-          scale,
-          onEntityClick: (event, entityId, sourceSegmentId, appendToSelection) => {
-            if (commandPointInputActive) {
-              handlePrimitiveCommandClick(event, primitive, sourceSegmentId);
-              return;
-            }
-            flushSync(() => {
-              onSelectEntity(entityId, appendToSelection);
-            });
-          },
-          onEntityHover: handlePrimitiveCommandHover,
-          onEntityLeave: () => onCommandHoverTargetChange(null),
-          onPrimitiveClickIntercept,
-        }),
-      )}
+      <SurveyCadPreviewStaticPrimitives
+        primitives={scene.primitives}
+        project={project}
+        scale={scale}
+        selectedEntityIdSet={selectedEntityIdSet}
+        entityOpacityOverrides={commandEntityOpacityOverrides}
+        dispatchRef={staticDispatchRef}
+      />
       <TransientPreviewLayer
         primitives={transientPreviewPrimitives}
         project={project}

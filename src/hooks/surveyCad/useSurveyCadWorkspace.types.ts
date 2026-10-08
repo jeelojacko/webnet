@@ -145,6 +145,12 @@ export interface UseSurveyCadWorkspaceResult {
   nearbySnaps: readonly CadSnapCandidate[];
   /** Raw pointer in drawing units (null when outside the viewport). Shell cursor readout. */
   pointerWorldPoint: { x: number; y: number } | null;
+  /** Always-fresh pointer ref (PERF-183.1); avoids per-move root commits. */
+  pointerWorldPointRef: { current: { x: number; y: number } | null };
+  /** Imperative pointer channel for the shell cursor readout. */
+  subscribePointerWorldPoint: (
+    _listener: (_point: { x: number; y: number } | null) => void,
+  ) => () => void;
   snapConstructionContext: CadSnapConstructionContext;
   snapPreferences: CadSnapPreferences;
   historyDepth: number;
@@ -392,6 +398,8 @@ export interface UseSurveyCadWorkspaceResult {
       visibleBounds?: CadBounds | null;
       lockConstruction?: boolean;
       restrictedGripHandles?: readonly CadGripHandle[];
+      /** PERF-183.1 — commit narrow pointer state for a live command preview. */
+      reactivePreview?: boolean;
     },
   ) => void;
   /** Live viewport snap tolerance (updated on zoom/pan and pointer moves). */

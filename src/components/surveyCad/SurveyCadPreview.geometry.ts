@@ -92,6 +92,13 @@ export const screenPointFromClientPoint = (
   };
 };
 
+/**
+ * Conservative per-glyph advance cap for the screen-space text estimate. Real
+ * SVG glyphs advance at most ~1em in mainstream faces, so a full em per
+ * character is the narrowest safe upper bound for the culling box.
+ */
+const TEXT_WIDTH_EM_FACTOR = 1;
+
 export const textPrimitiveScreenBox = (
   primitive: Extract<CadDisplayPrimitive, { kind: 'text' }>,
   project: ProjectPoint,
@@ -109,7 +116,13 @@ export const textPrimitiveScreenBox = (
     (current, line) => Math.max(current, line.length),
     0,
   );
-  const width = Math.max(24, longestLine * primitive.fontSize * 0.55);
+  // PERF-183.1 correction: the renderer draws real SVG glyphs, and wide glyphs
+  // ('W', CJK) advance near a full em. The old 0.55-per-glyph estimate
+  // under-sized the label box, so the cull pass dropped anchored text whose
+  // tail still reached inside the viewport. Use a full-em upper bound per
+  // glyph; the vertical/fontSize logic is unchanged, and the viewport cull
+  // still adds its own padding.
+  const width = Math.max(24, longestLine * primitive.fontSize * TEXT_WIDTH_EM_FACTOR);
   const height = Math.max(primitive.fontSize, lines.length * primitive.fontSize * 1.2);
   const anchorOffset =
     primitive.textAnchor === 'middle' ? width / 2 : primitive.textAnchor === 'end' ? width : 0;
@@ -124,6 +137,53 @@ export const textPrimitiveScreenBox = (
     height,
     displayX,
     displayY,
+  };
+};
+
+/**
+ * PERF-183.1 — rotate a screen point about a fixed anchor. SVG `rotate(a)` is
+ * clockwise for positive degrees in a y-down frame, matching the primitive
+ * renderers. Used only to build conservative bounds; sign never changes the
+ * axis-aligned extents.
+ */
+const rotateScreenPointAbout = (
+  x: number,
+  y: number,
+  anchorX: number,
+  anchorY: number,
+  angleDeg: number,
+): { x: number; y: number } => {
+  const radians = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = x - anchorX;
+  const dy = y - anchorY;
+  return {
+    x: anchorX + dx * cos - dy * sin,
+    y: anchorY + dx * sin + dy * cos,
+  };
+};
+
+const rotatedBoxBounds = (
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  anchorX: number,
+  anchorY: number,
+  angleDeg: number,
+): { minX: number; minY: number; maxX: number; maxY: number } => {
+  const corners = [
+    rotateScreenPointAbout(left, top, anchorX, anchorY, angleDeg),
+    rotateScreenPointAbout(right, top, anchorX, anchorY, angleDeg),
+    rotateScreenPointAbout(right, bottom, anchorX, anchorY, angleDeg),
+    rotateScreenPointAbout(left, bottom, anchorX, anchorY, angleDeg),
+  ];
+  return {
+    minX: Math.min(corners[0].x, corners[1].x, corners[2].x, corners[3].x),
+    minY: Math.min(corners[0].y, corners[1].y, corners[2].y, corners[3].y),
+    maxX: Math.max(corners[0].x, corners[1].x, corners[2].x, corners[3].x),
+    maxY: Math.max(corners[0].y, corners[1].y, corners[2].y, corners[3].y),
   };
 };
 
@@ -174,22 +234,43 @@ export const primitiveBounds = (
     }
     case 'text': {
       const textBox = textPrimitiveScreenBox(primitive, project);
-      return {
-        minX: textBox.x,
-        minY: textBox.y,
-        maxX: textBox.x + textBox.width,
-        maxY: textBox.y + textBox.height,
-      };
+      if (primitive.rotationDeg == null || primitive.rotationDeg === 0) {
+        return {
+          minX: textBox.x,
+          minY: textBox.y,
+          maxX: textBox.x + textBox.width,
+          maxY: textBox.y + textBox.height,
+        };
+      }
+      // Text and its pick target render rotated about the text anchor, so bound
+      // the four rotated hit-rect corners. Non-finite rotation/size fails open
+      // through the finite check in isPrimitiveOutsideViewport.
+      return rotatedBoxBounds(
+        textBox.x - 4,
+        textBox.y - 3,
+        textBox.x + textBox.width + 4,
+        textBox.y + textBox.height + 3,
+        textBox.displayX,
+        textBox.displayY,
+        primitive.rotationDeg,
+      );
     }
     case 'ellipse': {
       const center = project(primitive.center.x, primitive.center.y);
       const radiusX = Math.max(primitive.semiMajor * scale, 1.2);
       const radiusY = Math.max(primitive.semiMinor * scale, 0.9);
+      // The render rotates the ellipse, so the AABB half-extents must follow:
+      //   hx = hypot(rx·cosθ, ry·sinθ), hy = hypot(rx·sinθ, ry·cosθ)
+      const thetaRad = (primitive.thetaDeg * Math.PI) / 180;
+      const cos = Math.cos(thetaRad);
+      const sin = Math.sin(thetaRad);
+      const halfX = Math.hypot(radiusX * cos, radiusY * sin);
+      const halfY = Math.hypot(radiusX * sin, radiusY * cos);
       return {
-        minX: center.x - radiusX,
-        minY: center.y - radiusY,
-        maxX: center.x + radiusX,
-        maxY: center.y + radiusY,
+        minX: center.x - halfX,
+        minY: center.y - halfY,
+        maxX: center.x + halfX,
+        maxY: center.y + halfY,
       };
     }
     case 'band': {
@@ -207,6 +288,56 @@ export const primitiveBounds = (
       return { minX, minY, maxX, maxY };
     }
   }
+};
+
+const CAD_PREVIEW_BOUNDS_CULL_PADDING_PX = 24;
+
+const boundsAreFinite = (bounds: {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}): boolean =>
+  Number.isFinite(bounds.minX) &&
+  Number.isFinite(bounds.minY) &&
+  Number.isFinite(bounds.maxX) &&
+  Number.isFinite(bounds.maxY);
+
+/**
+ * PERF-183.1 (render-only): padding for the widest screen-space decoration
+ * that rides a primitive — the invisible pick stroke (`max(16, strokeWidth+14)`),
+ * selection highlight, and marker hit halo. Geometry is never deleted; culling
+ * only skips element creation for off-viewport primitives.
+ */
+const cullPaddingPx = (primitive: CadDisplayPrimitive, basePaddingPx: number): number => {
+  if (primitive.kind === 'point' || primitive.kind === 'text' || primitive.kind === 'band') {
+    return basePaddingPx;
+  }
+  return Math.max(basePaddingPx, primitive.strokeWidth / 2 + 8);
+};
+
+/**
+ * True when a primitive's conservative screen bounds fall entirely outside the
+ * padded preview rect, so its SVG elements can be skipped. Fails open (never
+ * culls) for non-finite bounds and unknown/degenerate shapes, which keeps
+ * bands, parcel labels, and malformed geometry visible. Selection/snap/index
+ * continue to operate on the full primitive list.
+ */
+export const isPrimitiveOutsideViewport = (
+  primitive: CadDisplayPrimitive,
+  project: ProjectPoint,
+  scale: number,
+  basePaddingPx: number = CAD_PREVIEW_BOUNDS_CULL_PADDING_PX,
+): boolean => {
+  const bounds = primitiveBounds(primitive, project, scale);
+  if (!boundsAreFinite(bounds)) return false;
+  const pad = cullPaddingPx(primitive, basePaddingPx);
+  return (
+    bounds.maxX < -pad ||
+    bounds.minX > SURVEY_CAD_PREVIEW_WIDTH + pad ||
+    bounds.maxY < -pad ||
+    bounds.minY > SURVEY_CAD_PREVIEW_HEIGHT + pad
+  );
 };
 
 export const intersectsSelectionBox = (
