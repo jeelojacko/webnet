@@ -31,13 +31,13 @@ const screenDashOf = (
 
 type RenderPrimitiveOptions = {
   primitive: CadDisplayPrimitive;
-  selectedEntityIds: readonly string[];
+  selectedEntityIdSet: ReadonlySet<string>;
   entityOpacityOverrides: Readonly<Record<string, number>>;
   project: ProjectPoint;
   scale: number;
   onEntityClick: (
     _event: React.MouseEvent<SVGElement>,
-    _entityId: string,
+    _primitive: CadDisplayPrimitive,
     _sourceSegmentId?: string,
     _appendToSelection?: boolean,
   ) => void;
@@ -55,7 +55,7 @@ type RenderPrimitiveOptions = {
 
 export const renderPrimitive = ({
   primitive,
-  selectedEntityIds,
+  selectedEntityIdSet,
   entityOpacityOverrides,
   project,
   scale,
@@ -64,7 +64,7 @@ export const renderPrimitive = ({
   onEntityLeave,
   onPrimitiveClickIntercept,
 }: RenderPrimitiveOptions) => {
-  const isSelected = selectedEntityIds.includes(primitive.sourceEntityId);
+  const isSelected = selectedEntityIdSet.has(primitive.sourceEntityId);
   const commonProps = {
     onClick: (event: React.MouseEvent<SVGElement>) => {
       if (onPrimitiveClickIntercept?.(primitive.sourceEntityId, primitive.sourceSegmentId)) {
@@ -72,7 +72,7 @@ export const renderPrimitive = ({
         event.stopPropagation();
         return;
       }
-      onEntityClick(event, primitive.sourceEntityId, primitive.sourceSegmentId, event.shiftKey);
+      onEntityClick(event, primitive, primitive.sourceSegmentId, event.shiftKey);
     },
     onMouseMove: (event: React.MouseEvent<SVGElement>) =>
       onEntityHover?.(event, primitive, primitive.sourceSegmentId),

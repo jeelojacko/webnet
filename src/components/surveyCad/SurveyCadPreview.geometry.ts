@@ -209,6 +209,56 @@ export const primitiveBounds = (
   }
 };
 
+const CAD_PREVIEW_BOUNDS_CULL_PADDING_PX = 24;
+
+const boundsAreFinite = (bounds: {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}): boolean =>
+  Number.isFinite(bounds.minX) &&
+  Number.isFinite(bounds.minY) &&
+  Number.isFinite(bounds.maxX) &&
+  Number.isFinite(bounds.maxY);
+
+/**
+ * PERF-183.1 (render-only): padding for the widest screen-space decoration
+ * that rides a primitive — the invisible pick stroke (`max(16, strokeWidth+14)`),
+ * selection highlight, and marker hit halo. Geometry is never deleted; culling
+ * only skips element creation for off-viewport primitives.
+ */
+const cullPaddingPx = (primitive: CadDisplayPrimitive, basePaddingPx: number): number => {
+  if (primitive.kind === 'point' || primitive.kind === 'text' || primitive.kind === 'band') {
+    return basePaddingPx;
+  }
+  return Math.max(basePaddingPx, primitive.strokeWidth / 2 + 8);
+};
+
+/**
+ * True when a primitive's conservative screen bounds fall entirely outside the
+ * padded preview rect, so its SVG elements can be skipped. Fails open (never
+ * culls) for non-finite bounds and unknown/degenerate shapes, which keeps
+ * bands, parcel labels, and malformed geometry visible. Selection/snap/index
+ * continue to operate on the full primitive list.
+ */
+export const isPrimitiveOutsideViewport = (
+  primitive: CadDisplayPrimitive,
+  project: ProjectPoint,
+  scale: number,
+  basePaddingPx: number = CAD_PREVIEW_BOUNDS_CULL_PADDING_PX,
+): boolean => {
+  const bounds = primitiveBounds(primitive, project, scale);
+  if (!boundsAreFinite(bounds)) return false;
+  const pad = cullPaddingPx(primitive, basePaddingPx);
+  return (
+    bounds.maxX < -pad ||
+    bounds.minX > SURVEY_CAD_PREVIEW_WIDTH + pad ||
+    bounds.maxY < -pad ||
+    bounds.minY > SURVEY_CAD_PREVIEW_HEIGHT + pad
+  );
+};
+
 export const intersectsSelectionBox = (
   primitiveBox: { minX: number; minY: number; maxX: number; maxY: number },
   selectionBox: ScreenBox,

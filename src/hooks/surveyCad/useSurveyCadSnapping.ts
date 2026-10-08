@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildCadSpatialIndex } from '../../engine/cad/cadSpatialIndex';
+import {
+  cadSnapCandidateEqual,
+  cadSnapListEqual,
+  cadSnapLockEqual,
+} from './cadSnapEquality';
 import { getCadEntitySubpartDisplayLabel } from '../../engine/cad/cadEntityNames';
 import type {
   CadBounds,
@@ -60,7 +65,14 @@ const toleranceFromBounds = (project: CadProject): number => {
 interface UseSurveyCadSnappingResult {
   activeSnap: CadSnapCandidate | null;
   nearbySnaps: readonly CadSnapCandidate[];
+  /** Reactive pointer state committed only while a command needs a live preview. */
   pointerWorldPoint: { x: number; y: number } | null;
+  /** Always-fresh pointer (updated imperatively on every move, never stale). */
+  pointerWorldPointRef: { current: { x: number; y: number } | null };
+  /** Imperative cursor channel for leaf consumers (shell readout) without root commits. */
+  subscribePointerWorldPoint: (
+    _listener: (_point: { x: number; y: number } | null) => void,
+  ) => () => void;
   snapPreferences: CadSnapPreferences;
   updatePointerWorldPoint: (
     _worldPoint: { x: number; y: number } | null,
@@ -69,6 +81,8 @@ interface UseSurveyCadSnappingResult {
       lockConstruction?: boolean;
       visibleBounds?: CadBounds | null;
       restrictedGripHandles?: readonly CadGripHandle[];
+      /** Commit narrow pointer state for live command previews. */
+      reactivePreview?: boolean;
     },
   ) => void;
   cycleActiveSnap: () => void;
@@ -105,25 +119,51 @@ export const useSurveyCadSnapping = (
   const [pointerWorldPoint, setPointerWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [snapPreferences, setSnapPreferences] = useState<CadSnapPreferences>(DEFAULT_SNAP_PREFERENCES);
   const [lockedConstructionSnap, setLockedConstructionSnap] = useState<CadSnapLock | null>(null);
+  const pointerWorldPointRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerWorldPointListenersRef = useRef(
+    new Set<(_point: { x: number; y: number } | null) => void>(),
+  );
+  const notifyPointerWorldPoint = useCallback(
+    (worldPoint: { x: number; y: number } | null) => {
+      pointerWorldPointRef.current = worldPoint;
+      pointerWorldPointListenersRef.current.forEach((listener) => listener(worldPoint));
+    },
+    [],
+  );
+  const subscribePointerWorldPoint = useCallback(
+    (listener: (_point: { x: number; y: number } | null) => void) => {
+      pointerWorldPointListenersRef.current.add(listener);
+      return () => {
+        pointerWorldPointListenersRef.current.delete(listener);
+      };
+    },
+    [],
+  );
   const toleranceWorld = useMemo(() => toleranceFromBounds(project), [project]);
   const allowedKinds = useMemo(
     () => SNAP_KIND_ORDER.filter((kind) => snapPreferences[kind]),
     [snapPreferences],
   );
   useEffect(() => {
-    setActiveSnap(null);
-    setNearbySnaps([]);
-    setPointerWorldPoint(null);
-    setLockedConstructionSnap(null);
-  }, [project, constructionContext.basePoint?.x, constructionContext.basePoint?.y]);
+    notifyPointerWorldPoint(null);
+    setActiveSnap((current) => (current == null ? current : null));
+    setNearbySnaps((current) => (cadSnapListEqual(current, []) ? current : []));
+    setPointerWorldPoint((current) => (current == null ? current : null));
+    setLockedConstructionSnap((current) => (current == null ? current : null));
+  }, [project, constructionContext.basePoint?.x, constructionContext.basePoint?.y, notifyPointerWorldPoint]);
 
   return {
     activeSnap,
     nearbySnaps,
     pointerWorldPoint,
+    pointerWorldPointRef,
+    subscribePointerWorldPoint,
     snapPreferences,
     updatePointerWorldPoint: (worldPoint, dynamicToleranceWorld, options) => {
-      setPointerWorldPoint(worldPoint);
+      notifyPointerWorldPoint(worldPoint);
+      if (options?.reactivePreview || worldPoint == null) {
+        setPointerWorldPoint(worldPoint);
+      }
       if (!worldPoint) {
         setActiveSnap(null);
         setNearbySnaps([]);
@@ -191,10 +231,15 @@ export const useSurveyCadSnapping = (
             if (Math.abs(left.distance - right.distance) > 1e-9) return left.distance - right.distance;
             return left.id.localeCompare(right.id, undefined, { numeric: true });
           });
-        setNearbySnaps(nextNearbySnaps);
-        setActiveSnap(nextNearbySnaps[0] ?? null);
+        const nextActive = nextNearbySnaps[0] ?? null;
+        setNearbySnaps((current) =>
+          cadSnapListEqual(current, nextNearbySnaps) ? current : nextNearbySnaps,
+        );
+        setActiveSnap((current) =>
+          cadSnapCandidateEqual(current, nextActive) ? current : nextActive,
+        );
         if (!options?.lockConstruction) {
-          setLockedConstructionSnap(null);
+          setLockedConstructionSnap((current) => (current == null ? current : null));
         }
         return;
       }
@@ -217,7 +262,9 @@ export const useSurveyCadSnapping = (
             viewportGenerationRef?.current ?? 0,
           ),
         );
-      setNearbySnaps(nextNearbySnaps);
+      setNearbySnaps((current) =>
+        cadSnapListEqual(current, nextNearbySnaps) ? current : nextNearbySnaps,
+      );
       const nextSnapRaw = spatialIndex.queryNearestSnap(
         worldPoint,
         snapTolerance,
@@ -235,7 +282,7 @@ export const useSurveyCadSnapping = (
             viewportGenerationRef?.current ?? 0,
           )
         : null;
-      setActiveSnap(nextSnap);
+      setActiveSnap((current) => (cadSnapCandidateEqual(current, nextSnap) ? current : nextSnap));
       if (options?.lockConstruction) {
         const nextLock =
           lockedConstructionSnap ??
@@ -247,10 +294,12 @@ export const useSurveyCadSnapping = (
                 guidePoint: nextSnap.lockGuidePoint ?? { x: nextSnap.x, y: nextSnap.y },
               }
             : null);
-        setLockedConstructionSnap(nextLock);
+        setLockedConstructionSnap((current) =>
+          cadSnapLockEqual(current, nextLock) ? current : nextLock,
+        );
         return;
       }
-      setLockedConstructionSnap(null);
+      setLockedConstructionSnap((current) => (current == null ? current : null));
     },
     cycleActiveSnap: () => {
       setActiveSnap((current) => {

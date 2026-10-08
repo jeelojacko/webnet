@@ -72,6 +72,8 @@ export interface SurveyCadPreviewProps {
       lockConstruction?: boolean;
       visibleBounds?: CadBounds | null;
       restrictedGripHandles?: readonly CadGripHandle[];
+      /** PERF-183.1 — commit narrow pointer state for a live command preview. */
+      reactivePreview?: boolean;
     },
   ) => void;
   /**

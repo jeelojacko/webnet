@@ -993,6 +993,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     isGripEditing,
     canCycleActiveSnap,
     nearbySnaps,
+    activeSnap: cursorActiveSnap,
+    pointerWorldPointRef: cursorPointerWorldPointRef,
+    subscribePointerWorldPoint: subscribeCursorPointerWorldPoint,
     snapConstructionContext,
     appendCommandInputValue,
     backspaceCommandInputValue,
@@ -1771,16 +1774,29 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   useEffect(() => {
     if (!shellLink) return;
-    const snap = cadWorkspace.activeSnap;
-    const raw = cadWorkspace.pointerWorldPoint;
-    shellLink.publishCursor(
-      snap
-        ? { x: snap.x, y: snap.y, label: snap.label }
-        : raw
-          ? { x: raw.x, y: raw.y, label: `${raw.x.toFixed(3)},${raw.y.toFixed(3)}` }
-          : null,
-    );
-  }, [shellLink, cadWorkspace.activeSnap, cadWorkspace.pointerWorldPoint]);
+    // PERF-183.1 — cursor readout rides the imperative pointer channel so
+    // idle pointer moves never commit root React state. Snap changes still
+    // re-run this effect through the `activeSnap` dependency.
+    const publishCursor = (): void => {
+      const snap = cursorActiveSnap;
+      const raw = cursorPointerWorldPointRef.current;
+      shellLink.publishCursor(
+        snap
+          ? { x: snap.x, y: snap.y, label: snap.label }
+          : raw
+            ? { x: raw.x, y: raw.y, label: `${raw.x.toFixed(3)},${raw.y.toFixed(3)}` }
+            : null,
+      );
+    };
+    const unsubscribe = subscribeCursorPointerWorldPoint(publishCursor);
+    publishCursor();
+    return unsubscribe;
+  }, [
+    shellLink,
+    cursorActiveSnap,
+    cursorPointerWorldPointRef,
+    subscribeCursorPointerWorldPoint,
+  ]);
 
   /**
    * Phase 18G — production rebuild through the build service (single

@@ -22,6 +22,10 @@ import {
 } from './SurveyCadPreviewOverlays';
 import type { DragState, SurveyCadPreviewProps } from './SurveyCadPreview.types';
 
+// Stable identity so an omitted override prop never invalidates the memoized
+// static primitive layer on unrelated re-renders.
+const EMPTY_OPACITY_OVERRIDES: Readonly<Record<string, number>> = {};
+
 const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   scene,
   viewBounds,
@@ -42,7 +46,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   commandInputValue,
   commandInputPlaceholder,
   commandInputEnabled,
-  commandEntityOpacityOverrides = {},
+  commandEntityOpacityOverrides = EMPTY_OPACITY_OVERRIDES,
   viewport,
   commandActive,
   commandPointInputActive,
@@ -134,6 +138,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         lockConstruction: shiftKey,
         visibleBounds: visibleWorldBounds,
         restrictedGripHandles: [],
+        reactivePreview: true,
       });
       onUpdateGripEdit(rawWorldPoint);
     },

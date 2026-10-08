@@ -386,6 +386,8 @@ export const useSurveyCadWorkspace = (
     activeSnap,
     nearbySnaps,
     pointerWorldPoint,
+    pointerWorldPointRef,
+    subscribePointerWorldPoint,
     snapPreferences,
     updatePointerWorldPoint: updatePointerWorldPointInternal,
     cycleActiveSnap,
@@ -449,6 +451,7 @@ export const useSurveyCadWorkspace = (
       visibleBounds?: CadBounds | null;
       lockConstruction?: boolean;
       restrictedGripHandles?: readonly CadGripHandle[];
+      reactivePreview?: boolean;
     },
   ) => {
     updatePointerWorldPointInternal(worldPoint, toleranceWorldOverride, {
@@ -606,6 +609,8 @@ export const useSurveyCadWorkspace = (
     activeSnap,
     nearbySnaps,
     pointerWorldPoint,
+    pointerWorldPointRef,
+    subscribePointerWorldPoint,
     snapConstructionContext,
     snapPreferences,
     historyDepth: history.undoStack.length,
