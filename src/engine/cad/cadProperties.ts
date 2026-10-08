@@ -561,10 +561,14 @@ const vertexRows = (
   entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 'parcel' }>,
 ): CadEntityPropertyRow[] =>
   entity.vertices.flatMap((vertex, index) => {
-    // Display-only fallback: a blank stored label (legacy files and every
-    // C3-inserted non-survey vertex) renders the ordinal `V{i+1}`. The token
-    // is never persisted and never becomes a survey-point or breakline ref.
-    const label = entity.vertexLabels[index] || `V${index + 1}`;
+    // Display-only fallback (polyline only): a blank stored polyline label
+    // (legacy files and every C3-inserted non-survey vertex) renders the
+    // ordinal `V{i+1}`. The token is never persisted and never becomes a
+    // survey-point or breakline ref. Polygon/parcel keep nullish-only
+    // behavior so a stored '' renders a blank prefix, as before C3.
+    const storedLabel = entity.vertexLabels[index];
+    const label =
+      entity.type === 'polyline' ? storedLabel || `V${index + 1}` : (storedLabel ?? `V${index + 1}`);
     return [
       row(
         `vertex:${index}:x`,
