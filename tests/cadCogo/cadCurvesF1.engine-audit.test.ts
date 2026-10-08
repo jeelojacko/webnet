@@ -79,6 +79,54 @@ describe('CAD Curves F1 SUBDIVIDE chord law', () => {
   });
 });
 
+describe('CAD Curves F1 SUBDIVIDE point cap', () => {
+  // Clockwise: signed sweep is negative, so a magnitude-based cap must fire.
+  const clockwiseArc = {
+    centerX: 0,
+    centerY: 0,
+    radius: 100,
+    startAngleDeg: 90,
+    endAngleDeg: 0,
+  };
+  const counterClockwiseArc = quarterArc;
+  // stepDeg ~= 0.0057 deg over a 90 deg sweep => ~15700 requested steps.
+  const tinyStep = 0.01;
+
+  it('refuses a clockwise arc-length subdivision with a tiny step', () => {
+    expect(cadSignedSweepDeg(clockwiseArc.startAngleDeg, clockwiseArc.endAngleDeg)).toBeLessThan(0);
+    expect(
+      cadArcSubdivisionPoints({ arc: clockwiseArc, mode: 'arc', value: tinyStep }),
+    ).toEqual([]);
+  });
+
+  it('refuses a clockwise chord subdivision with a tiny step', () => {
+    expect(
+      cadArcSubdivisionPoints({ arc: clockwiseArc, mode: 'chord', value: tinyStep }),
+    ).toEqual([]);
+  });
+
+  it('still refuses counter-clockwise tiny-step subdivisions in both modes', () => {
+    expect(
+      cadArcSubdivisionPoints({ arc: counterClockwiseArc, mode: 'arc', value: tinyStep }),
+    ).toEqual([]);
+    expect(
+      cadArcSubdivisionPoints({ arc: counterClockwiseArc, mode: 'chord', value: tinyStep }),
+    ).toEqual([]);
+  });
+
+  it('leaves normal clockwise outputs unaffected below the cap', () => {
+    const points = cadArcSubdivisionPoints({ arc: clockwiseArc, mode: 'arc', value: 30 });
+    expect(points).toHaveLength(Math.floor(((Math.PI * 100) / 2 - 1e-9) / 30));
+    // Steps advance clockwise (decreasing angle), staying strictly before the end.
+    points.forEach((point) => {
+      expect(point.y).toBeLessThanOrEqual(100 + 1e-9);
+    });
+    expect(cadArcSubdivisionPoints({ arc: clockwiseArc, mode: 'chord', value: 20 })).toHaveLength(
+      cadArcSubdivisionPoints({ arc: counterClockwiseArc, mode: 'chord', value: 20 }).length,
+    );
+  });
+});
+
 describe('CAD Curves F1 OFFSET side law', () => {
   it('CCW arc: left reduces radius, right increases it', () => {
     const ccw = { centerX: 0, centerY: 0, radius: 50, startAngleDeg: 0, endAngleDeg: 90 };

@@ -145,7 +145,7 @@ const subdivideEqualAngleSteps = (
   stepDeg: number,
 ): CadWorldPoint[] => {
   if (!Number.isFinite(stepDeg) || stepDeg <= 0) return [];
-  if (totalSweepDeg / stepDeg > CAD_CURVE_SUBDIVIDE_MAX_POINTS) return [];
+  if (Math.abs(totalSweepDeg) / stepDeg > CAD_CURVE_SUBDIVIDE_MAX_POINTS) return [];
   const sign = totalSweepDeg >= 0 ? 1 : -1;
   const points: CadWorldPoint[] = [];
   for (let step = 1; step * stepDeg < Math.abs(totalSweepDeg) - 1e-9; step += 1) {
