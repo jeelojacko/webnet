@@ -73,6 +73,12 @@ interface UseSurveyCadSnappingResult {
   subscribePointerWorldPoint: (
     _listener: (_point: { x: number; y: number } | null) => void,
   ) => () => void;
+  /**
+   * PERF-183.1: seed the reactive preview pointer from the always-fresh ref.
+   * Called once at a command transition so a new command's first preview read
+   * uses the live cursor instead of the previous command's committed position.
+   */
+  syncReactivePointerFromRef: () => void;
   snapPreferences: CadSnapPreferences;
   updatePointerWorldPoint: (
     _worldPoint: { x: number; y: number } | null,
@@ -152,12 +158,24 @@ export const useSurveyCadSnapping = (
     setLockedConstructionSnap((current) => (current == null ? current : null));
   }, [project, constructionContext.basePoint?.x, constructionContext.basePoint?.y, notifyPointerWorldPoint]);
 
+  const syncReactivePointerFromRef = useCallback(() => {
+    const point = pointerWorldPointRef.current;
+    setPointerWorldPoint((current) => {
+      if (current === point) return current;
+      if (current != null && point != null && current.x === point.x && current.y === point.y) {
+        return current;
+      }
+      return point;
+    });
+  }, []);
+
   return {
     activeSnap,
     nearbySnaps,
     pointerWorldPoint,
     pointerWorldPointRef,
     subscribePointerWorldPoint,
+    syncReactivePointerFromRef,
     snapPreferences,
     updatePointerWorldPoint: (worldPoint, dynamicToleranceWorld, options) => {
       notifyPointerWorldPoint(worldPoint);
