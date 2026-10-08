@@ -356,17 +356,24 @@ describe('contour service ownership', () => {
     const revB = computeContourGeometryRevision(toContourGeometrySpec(SPEC_B));
     h.service.requestContours('s1', SPEC_A);
     expect(h.service.buildingContourIds().has('s1')).toBe(true);
+    // Revision-aware pending identity: the auto-derive gate reads this to
+    // decide whether a pending request already covers the current spec.
+    expect(h.service.pendingContourRequest('s1')).toEqual({ revision: h.revision, geometryRevision: revA });
     h.service.requestContours('s1', SPEC_B);
     expect(h.transport.derivations).toHaveLength(2);
-    // Late A arrives after supersession: discarded, never cached.
+    expect(h.service.pendingContourRequest('s1')).toEqual({ revision: h.revision, geometryRevision: revB });
+    // Late A arrives after supersession: discarded, never cached, and it must
+    // not clear or replace B's pending entry.
     h.transport.derivations[0]!.resolve(fakeSet('s1', h.revision, revA));
     await flush(10);
     expect(h.contourCache.get('s1', h.revision, revA)).toBeUndefined();
     expect(h.service.buildingContourIds().has('s1')).toBe(true);
+    expect(h.service.pendingContourRequest('s1')).toEqual({ revision: h.revision, geometryRevision: revB });
     h.transport.derivations[1]!.resolve(fakeSet('s1', h.revision, revB));
     await flush(10);
     expect(h.contourCache.get('s1', h.revision, revB)).toBeDefined();
     expect(h.service.buildingContourIds().size).toBe(0);
+    expect(h.service.pendingContourRequest('s1')).toBeNull();
     expect(h.service.statusOf('s1', revB)).toEqual({ status: 'CURRENT', stale: false });
   });
 
@@ -432,5 +439,17 @@ describe('contour service ownership', () => {
       await flush(10);
     }
     expect(h.contourCache.retained('s1').length).toBeLessThanOrEqual(2);
+  });
+
+  it('skips an already-current (revision, geometry) set (auto-effect cache gate)', async () => {
+    const h = serviceHarness();
+    const revA = computeContourGeometryRevision(toContourGeometrySpec(SPEC_A));
+    h.service.requestContours('s1', SPEC_A);
+    h.transport.derivations[0]!.resolve(fakeSet('s1', h.revision, revA));
+    await flush(10);
+    const message = h.service.requestContours('s1', SPEC_A);
+    expect(message).toContain('already current');
+    expect(h.transport.derivations).toHaveLength(1);
+    expect(h.service.statusOf('s1', revA)).toEqual({ status: 'CURRENT', stale: false });
   });
 });

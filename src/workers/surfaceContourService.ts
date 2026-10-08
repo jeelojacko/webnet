@@ -93,6 +93,24 @@ export class SurfaceContourService {
     return new Set(this.pending.keys());
   }
 
+  /**
+   * In-flight request identity for a surface (null when idle). The
+   * auto-derive sweep is revision-aware: it skips a surface only when the
+   * in-flight request already matches the current (source revision, geometry
+   * revision). When the style/geometry changes under a pending request (e.g.
+   * interval A → B), the sweep falls through and `requestContours` supersedes
+   * the stale request (latest-wins) instead of stranding B until an unrelated
+   * project edit or TIN build.
+   */
+  pendingContourRequest(
+    surfaceId: string,
+  ): { revision: string; geometryRevision: string } | null {
+    const entry = this.pending.get(surfaceId);
+    return entry
+      ? { revision: entry.revision, geometryRevision: entry.geometryRevision }
+      : null;
+  }
+
   contourDiagnostics(): ReadonlyMap<string, SurfaceContourSessionDiagnostic> {
     return new Map(this.diagnostics);
   }

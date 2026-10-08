@@ -6,6 +6,7 @@ import type {
   CadDrawingDocument,
   CadParcelLayoutUiState,
   CadSampleLineGroup,
+  CadSurface,
   CadSurveyPointEntity,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
@@ -121,7 +122,7 @@ import {
   type CadSurfaceComposeMode,
 } from '../cad-app/shell/cadSurfaceCompose';
 import { SurfaceComposeService } from '../workers/surfaceComposeService';
-import { backfillCadSurfaceStyles } from '../engine/cad/cadSurfaceStyles';
+import { findCadSurfaceStyle, indexCadSurfaceStylesById } from '../engine/cad/cadSurfaceStyles';
 import { contourLevelSpecFromStyle } from '../engine/cad/cadSurfaceContourView';
 import {
   computeContourGeometryRevision,
@@ -592,9 +593,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           const project = activeProjectForBuildsRef.current;
           const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
           if (!surface) return false;
-          const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
-            (entry) => entry.id === surface.styleId,
-          );
+          const style = findCadSurfaceStyle(project.surfaceStyles, surface.styleId);
           return style != null && contourLevelSpecFromStyle(style) != null;
         },
         notify: (message) => setFileStatusText(message),
@@ -607,44 +606,82 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   // parent TIN is CURRENT gets a cached set for the style's geometry
   // revision. Guarded (cached/pending/current-TIN checks) so the effect
   // converges instead of re-requesting. Fires on project edits (style or
-  // definition), TIN completions (build version), and contour state
-  // changes (completion/diagnostic). Never touches the TIN.
+  // definition) and TIN completions (the build epoch). Never touches the TIN.
+  // The epoch bundles the project revision and the mesh-build version so the
+  // dependency is explicit and identity-stable across unrelated renders — no
+  // fresh-each-render dependency, no bare ref read, no missing cache epoch.
+  // The contour service identity already covers a drawing switch (one service
+  // per drawing).
+  const contourAutoDeriveInput = useMemo(
+    () => ({ project: cadProject, buildVersion: surfaceBuildVersion }),
+    [cadProject, surfaceBuildVersion],
+  );
   useEffect(() => {
-    const project = activeProjectForBuildsRef.current;
+    const project = contourAutoDeriveInput.project;
+    // One style clone per sweep (never one per surface). First-wins on
+    // duplicate ids, matching the prior `.find()` read path.
+    const styleById = indexCadSurfaceStylesById(project.surfaceStyles);
     for (const surface of project.surfaces ?? []) {
-      const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
-        (entry) => entry.id === surface.styleId,
-      );
+      const style = styleById.get(surface.styleId ?? '');
       if (!style) continue;
       const spec = contourLevelSpecFromStyle(style);
       if (!spec) continue;
       // Session CURRENT = fresh TIN cache hit (cachedRevision is never
-      // written in-session; see resolveSurfaceDisplayStatus).
-      const revision = computeCadSurfaceSourceRevision(project, surface);
+      // written in-session; see resolveSurfaceDisplayStatus). A fresh source
+      // revision without a rebuilt TIN misses here and never promotes stale
+      // contours.
+      const revision = surfaceContentRevision(project, surface);
       if (!surfaceCache.get(surface.id, revision)) continue;
       const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
       if (contourCache.get(surface.id, revision, geometryRevision)) continue;
-      if (contourService.buildingContourIds().has(surface.id)) continue;
+      // Revision-aware pending gate: skip only when the in-flight request
+      // already matches the current (source revision, geometry revision). If
+      // the style or geometry changed under a pending request (interval A →
+      // B), fall through so `requestContours` supersedes A with B
+      // (latest-wins). A bare `buildingContourIds().has(...)` skip would
+      // strand B until an unrelated project edit or TIN build, because a
+      // stale A never applies and completion only bumps `contourVersion`
+      // (intentionally not an effect dependency).
+      const pending = contourService.pendingContourRequest(surface.id);
+      if (
+        pending != null &&
+        pending.revision === revision &&
+        pending.geometryRevision === geometryRevision
+      ) {
+        continue;
+      }
       contourService.requestContours(surface.id, spec);
     }
-  });
+    // `contourVersion` is intentionally NOT a dependency: completion /
+    // diagnostic transitions must not re-trigger the sweep (that is where the
+    // old no-dependency effect could loop when the transport was unavailable).
+    // Every surface is covered in one pass, and the request/cache/pending
+    // gates converge without it.
+  }, [contourAutoDeriveInput, contourService, surfaceCache, contourCache]);
   // Scene input: current-geometry set when the TIN is fresh, newest
   // retained set as stale display otherwise (mirrors the stale-mesh
   // contract). Null = no contour display (definition-only, legacy style,
   // or nothing derived yet). Version tag re-renders on derivation state
   // changes.
   const surfaceContourInputs = useMemo(() => {
+    const project = cadProject;
+    // One style clone + surface index per project revision (never per surface
+    // per scene build). Both indexes are first-wins, matching the prior
+    // `.find()` read paths (surface ids should be unique; the guard keeps the
+    // contract identical if a duplicate ever loads).
+    const styleById = indexCadSurfaceStylesById(project.surfaceStyles);
+    const surfaceById = new Map<string, CadSurface>();
+    for (const surface of project.surfaces ?? []) {
+      if (!surfaceById.has(surface.id)) surfaceById.set(surface.id, surface);
+    }
     const getContours = (surfaceId: string): SurfaceContourDisplayInput | null => {
-      const project = activeProjectForBuildsRef.current;
-      const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
+      const surface = surfaceById.get(surfaceId);
       if (!surface) return null;
-      const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
-        (entry) => entry.id === surface.styleId,
-      );
+      const style = styleById.get(surface.styleId ?? '');
       if (!style) return null;
       const spec = contourLevelSpecFromStyle(style);
       if (!spec) return null;
-      const revision = computeCadSurfaceSourceRevision(project, surface);
+      const revision = surfaceContentRevision(project, surface);
       if (surfaceCache.get(surfaceId, revision)) {
         const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
         const set = contourCache.get(surfaceId, revision, geometryRevision);
@@ -655,7 +692,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return stale ? { set: stale } : null;
     };
     return { version: contourVersion, getContours };
-  }, [contourVersion, surfaceCache, contourCache]);
+  }, [contourVersion, surfaceCache, contourCache, cadProject]);
   // Phase 18I — volume derivation control plane (one per drawing
   // session, mirrors SurfaceBuildService ownership). Manual calculation
   // only: source rebuilds never auto-start volume work; notifyMeshBuilt
