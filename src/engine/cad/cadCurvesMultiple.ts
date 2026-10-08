@@ -106,6 +106,11 @@ export const buildCadCurveChain = (
     othersSum += delta;
   }
   const floatingDelta = rays.signedTurnDeg - othersSum;
+  // The floating curve must turn the same way as the chain; an opposite-sign
+  // (or zero) residual is an impossible fit, not a valid arc.
+  if (floatingDelta * rays.signedTurnDeg <= 0) {
+    return { ok: false, code: 'CURVES_CANNOT_FIT' };
+  }
   if (!isValidCadCurveDeltaDeg(Math.abs(floatingDelta))) {
     return { ok: false, code: 'CURVES_CANNOT_FIT' };
   }

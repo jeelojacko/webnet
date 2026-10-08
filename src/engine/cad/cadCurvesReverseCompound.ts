@@ -41,7 +41,10 @@ export interface CadCurveReverseCompoundRequest {
   radius: number;
   /** Extent metric used to derive the new delta from `radius`. */
   extent: { mode: CadCurveMetricMode; value: number };
-  /** Optional point-mode endpoint (then `extent` is ignored). */
+  /** Explicit delta (legacy `L/Rradius,delta` compatibility); when set it
+   *  overrides `extent` so the call reproduces the direct build bit-for-bit. */
+  deltaDeg?: number;
+  /** Optional point-mode endpoint (then `extent`/`deltaDeg` are ignored). */
   pointEnd?: CadWorldPoint;
 }
 
@@ -85,11 +88,14 @@ export const buildCadCurveReverseOrCompound = (
     };
   }
 
-  const metrics = solveCadCurveMetricsFromRadius({
-    radius: request.radius,
-    mode: request.extent.mode,
-    value: request.extent.value,
-  });
+  const metrics =
+    request.deltaDeg != null
+      ? buildCadCurveMetricsSummaryFromRadiusDeltaDeg(request.radius, request.deltaDeg)
+      : solveCadCurveMetricsFromRadius({
+          radius: request.radius,
+          mode: request.extent.mode,
+          value: request.extent.value,
+        });
   if (!metrics) return null;
 
   const arc =

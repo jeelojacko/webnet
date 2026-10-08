@@ -66,6 +66,15 @@ import {
   tangentCurveCommand,
 } from './cadTransactionsCurveCommands';
 import {
+  curveBetweenTwoLinesCommand,
+  curveOnTwoLinesCommand,
+  curveThroughPointCommand,
+} from './cadTransactionsCurveBetweenCommands';
+import { multipleCurvesCommand } from './cadTransactionsCurveMultipleCommand';
+import { curveFromEndCommand } from './cadTransactionsCurveFromEndCommand';
+import { reverseCompoundCurveCommand } from './cadTransactionsCurveReverseCompoundCommand';
+import { subdivideCurveCommand } from './cadTransactionsCurveSubdivideCommand';
+import {
   bestFitArcCommand,
   bestFitLineCommand,
   bestFitParabolaCommand,
@@ -168,6 +177,16 @@ export type {
   CadTransaction,
   CadWorkspaceSnapshot,
 } from './cadTransactions.types';
+export type {
+  CadCurveBetweenLinesCommand,
+  CadCurveF1Metric,
+  CadCurveFromEndCommand,
+  CadCurveOnLinesCommand,
+  CadCurveThroughPointCommand,
+  CadMultipleCurvesCommand,
+  CadReverseCompoundCurveCommand,
+  CadSubdivideCurveCommand,
+} from './cadTransactionsCurveF1Types';
 import type {
   CadLayer,
   CadProject,
@@ -561,6 +580,14 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
+  // CAD Curves F1 — six atomic curve commands + atomic subdivision.
+  CURVE_BETWEEN_TWO_LINES_CREATE: curveBetweenTwoLinesCommand as CadCommandDefinition<CadCommand>,
+  CURVE_ON_TWO_LINES_CREATE: curveOnTwoLinesCommand as CadCommandDefinition<CadCommand>,
+  CURVE_THROUGH_POINT_CREATE: curveThroughPointCommand as CadCommandDefinition<CadCommand>,
+  MULTIPLE_CURVES_CREATE: multipleCurvesCommand as CadCommandDefinition<CadCommand>,
+  CURVE_FROM_END_CREATE: curveFromEndCommand as CadCommandDefinition<CadCommand>,
+  REVERSE_COMPOUND_CURVE_CREATE: reverseCompoundCurveCommand as CadCommandDefinition<CadCommand>,
+  SUBDIVIDE_CURVE_CREATE: subdivideCurveCommand as CadCommandDefinition<CadCommand>,
   BEST_FIT_LINE: bestFitLineCommand as CadCommandDefinition<CadCommand>,
   BEST_FIT_ARC: bestFitArcCommand as CadCommandDefinition<CadCommand>,
   BEST_FIT_PARABOLA: bestFitParabolaCommand as CadCommandDefinition<CadCommand>,
