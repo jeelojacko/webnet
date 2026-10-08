@@ -36,6 +36,12 @@ export const PlotPreviewDialog = ({
   const { preview } = result;
   const svg = serializeExportSceneToSvg(preview.scene);
   const warningCodes = [...new Set(preview.warnings.map((warning) => warning.code))];
+  // SEC-182 defense in depth: the same exported SVG bytes are rendered as an
+  // inert `<img>` data URI instead of active markup via
+  // dangerouslySetInnerHTML. SVG loaded as an image cannot run scripts or
+  // event handlers, and external resources are not fetched, while the visual
+  // result stays byte-for-byte the export payload.
+  const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 
   return (
     <section
@@ -59,11 +65,12 @@ export const PlotPreviewDialog = ({
       {preview.omittedEntityIds.length > 0 && (
         <p className="text-[11px] opacity-70">{`Omitted: ${preview.omittedEntityIds.length} · Approximated: ${preview.approximatedEntityIds.length}`}</p>
       )}
-      <div
+      <img
         aria-label="Plot preview scene"
         data-plot-preview-sheet={preview.sheetId}
         className="bg-white"
-        dangerouslySetInnerHTML={{ __html: svg }}
+        alt={`Plot preview of ${preview.sheetName}`}
+        src={svgDataUrl}
       />
       <p className="mt-1 text-[11px] opacity-70">
         Identical scene to the SVG/PDF export path (same filters and clips). Grid North only.

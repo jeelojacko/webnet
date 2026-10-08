@@ -1,6 +1,7 @@
 import type { ExportItem, ExportSheetScene } from './cadExportScene';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import { emptyExportResult, finalizeExportResult, type ExportResult } from './exportResult';
+import { escapeXml, safeSvgDashArray, safeSvgPaint, SVG_PAINT_FALLBACK, toSafeSvgFragmentId } from './cadSvgSafety';
 
 // Deterministic scene→SVG. No timestamps, no random ids: clip ids derive
 // from stable viewport ids, so identical input yields byte-identical output.
@@ -10,8 +11,15 @@ const fmt = (value: number): string => {
   return String(Object.is(rounded, -0) ? 0 : rounded);
 };
 
-const escapeXml = (text: string): string =>
-  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// Every dynamic string crosses the SEC-182 safety boundary here:
+// fragment ids are codec-normalized, colors pass the paint contract, and
+// text/other attributes are XML-escaped exactly once.
+const clipRef = (clipId: string | undefined): string => {
+  if (!clipId) return '';
+  return ` clip-path="url(#${toSafeSvgFragmentId(clipId)})"`;
+};
+
+const fillAttr = (fill: string | undefined): string => ` fill="${escapeXml(safeSvgPaint(fill, 'none'))}"`;
 
 const anchorOf = (anchor: 'start' | 'middle' | 'end' | undefined): string => ` text-anchor="${anchor ?? 'start'}"`;
 
@@ -26,10 +34,13 @@ const opacityAttr = (item: ExportItem): string =>
 
 const strokeAttrs = (item: ExportItem): string => {
   let out = '';
-  if (item.stroke != null) out += ` stroke="${escapeXml(item.stroke)}"`;
+  if (item.stroke != null) out += ` stroke="${escapeXml(safeSvgPaint(item.stroke, SVG_PAINT_FALLBACK))}"`;
   if (item.kind === 'line' || item.kind === 'polyline' || item.kind === 'circle' || item.kind === 'ellipse') {
     if (item.widthMm != null) out += ` stroke-width="${fmt(item.widthMm)}"`;
-    if (item.dash != null) out += ` stroke-dasharray="${escapeXml(item.dash)}"`;
+    if (item.dash != null) {
+      const dash = safeSvgDashArray(item.dash);
+      if (dash != null) out += ` stroke-dasharray="${escapeXml(dash)}"`;
+    }
   }
   return out;
 };
@@ -37,23 +48,23 @@ const strokeAttrs = (item: ExportItem): string => {
 const serializeItem = (item: ExportItem): string => {
   switch (item.kind) {
     case 'line':
-      return `<line x1="${fmt(item.x1)}" y1="${fmt(item.y1)}" x2="${fmt(item.x2)}" y2="${fmt(item.y2)}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<line x1="${fmt(item.x1)}" y1="${fmt(item.y1)}" x2="${fmt(item.x2)}" y2="${fmt(item.y2)}"${strokeAttrs(item)}${opacityAttr(item)}${clipRef(item.clipId)}/>`;
     case 'polyline': {
       const points = item.points.map((p) => `${fmt(p.x)},${fmt(p.y)}`).join(' ');
       const tag = item.close ? 'polygon' : 'polyline';
-      return `<${tag} points="${points}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<${tag} points="${points}"${fillAttr(item.fill)}${strokeAttrs(item)}${opacityAttr(item)}${clipRef(item.clipId)}/>`;
     }
     case 'rect':
-      return `<rect x="${fmt(item.x)}" y="${fmt(item.y)}" width="${fmt(item.width)}" height="${fmt(item.height)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<rect x="${fmt(item.x)}" y="${fmt(item.y)}" width="${fmt(item.width)}" height="${fmt(item.height)}"${fillAttr(item.fill)}${strokeAttrs(item)}${opacityAttr(item)}${clipRef(item.clipId)}/>`;
     case 'circle':
-      return `<circle cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" r="${fmt(item.r)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<circle cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" r="${fmt(item.r)}"${fillAttr(item.fill)}${strokeAttrs(item)}${opacityAttr(item)}${clipRef(item.clipId)}/>`;
     case 'ellipse':
-      return `<ellipse cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" rx="${fmt(item.rx)}" ry="${fmt(item.ry)}" transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.cx)} ${fmt(item.cy)})" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<ellipse cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" rx="${fmt(item.rx)}" ry="${fmt(item.ry)}" transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.cx)} ${fmt(item.cy)})" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${clipRef(item.clipId)}/>`;
     case 'arc':
-      return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${clipRef(item.clipId)}/>`;
     case 'text': {
-      const clip = item.clipId ? ` clip-path="url(#${item.clipId})"` : '';
-      const fill = item.stroke != null ? ` fill="${escapeXml(item.stroke)}"` : '';
+      const clip = clipRef(item.clipId);
+      const fill = item.stroke != null ? ` fill="${escapeXml(safeSvgPaint(item.stroke, SVG_PAINT_FALLBACK))}"` : '';
       // One <text> per line; single-line items stay byte-identical. Annotation
       // mtext/survey-label rows arrive as embedded newlines when the scene
       // hands them over whole; vertical step follows the text height.
@@ -79,7 +90,7 @@ export const serializeExportSceneToSvg = (scene: ExportSheetScene): string => {
     lines.push('<defs>');
     scene.clips.forEach((clip) => {
       lines.push(
-        `<clipPath id="${clip.id}"><rect x="${fmt(clip.xMm)}" y="${fmt(clip.yMm)}" width="${fmt(clip.widthMm)}" height="${fmt(clip.heightMm)}"/></clipPath>`,
+        `<clipPath id="${escapeXml(toSafeSvgFragmentId(clip.id))}"><rect x="${fmt(clip.xMm)}" y="${fmt(clip.yMm)}" width="${fmt(clip.widthMm)}" height="${fmt(clip.heightMm)}"/></clipPath>`,
       );
     });
     lines.push('</defs>');
