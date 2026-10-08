@@ -234,9 +234,15 @@ describe('19B sheet dialogs', () => {
     expect(preview.preview.scene.items.some((item) => item.sourceEntityId === 'line-hidden')).toBe(false);
 
     const { container, root } = await mount(h(PlotPreviewDialog, { drawing, sheetId, onClose: () => {} }));
-    const rootElement = container.querySelector(`[data-plot-preview-sheet="${sheetId}"]`);
-    expect(rootElement).not.toBeNull();
-    expect(rootElement?.innerHTML ?? '').toContain('<svg');
+    // SEC-182 defense in depth: the preview renders the exact export bytes as
+    // an inert image, never as executed inline SVG.
+    const rootElement = container.querySelector(`img[data-plot-preview-sheet="${sheetId}"]`);
+    expect(rootElement).toBeInstanceOf(HTMLImageElement);
+    const dataUrlPrefix = 'data:image/svg+xml;charset=utf-8,';
+    const src = rootElement?.getAttribute('src') ?? '';
+    expect(src.startsWith(dataUrlPrefix)).toBe(true);
+    expect(decodeURIComponent(src.slice(dataUrlPrefix.length))).toBe(exported.preview.payload);
+    expect(container.querySelector('svg')).toBeNull();
     await act(async () => root.unmount());
     container.remove();
   });
