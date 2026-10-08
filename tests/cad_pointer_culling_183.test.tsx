@@ -138,6 +138,60 @@ describe('PERF-183.1 viewport culling (render-only, fail-open)', () => {
     ).toBe(false);
   });
 
+  it('keeps a tall rotated ellipse whose unrotated box would miss the viewport', () => {
+    // rx=2, ry=40 rotated 90°: the real horizontal half-extent is 40, but the
+    // unrotated box only spans ±2 around the center, so an unrotated test would
+    // wrongly cull an ellipse that still crosses the right viewport edge.
+    const tallRotated: CadDisplayPrimitive = {
+      ...base,
+      kind: 'ellipse',
+      id: 'e:tall',
+      sourceEntityId: 'ellipse:tall',
+      center: { x: 930, y: 260 },
+      semiMajor: 2,
+      semiMinor: 40,
+      thetaDeg: 90,
+      strokeWidth: 1,
+    };
+    expect(isPrimitiveOutsideViewport(tallRotated, identityProject, 1)).toBe(false);
+
+    // Same shape far away stays culled under the conservative bound.
+    const farRotated: CadDisplayPrimitive = { ...tallRotated, id: 'e:far', center: { x: 2000, y: 260 } };
+    expect(isPrimitiveOutsideViewport(farRotated, identityProject, 1)).toBe(true);
+
+    // Unknown/degenerate rotation fails open instead of dropping geometry.
+    const nanRotation: CadDisplayPrimitive = { ...tallRotated, id: 'e:nan', thetaDeg: Number.NaN };
+    expect(isPrimitiveOutsideViewport(nanRotation, identityProject, 1)).toBe(false);
+  });
+
+  it('keeps rotated text that sits off the top edge but swings into view', () => {
+    // Anchor above the viewport; -90° rotation swings the long box down into
+    // the visible region. The unrotated box is entirely above the padded rect.
+    const rotatedText: CadDisplayPrimitive = {
+      ...base,
+      kind: 'text',
+      id: 't:rot',
+      sourceEntityId: 'text:rot',
+      point: { x: 450, y: -60 },
+      text: 'x'.repeat(18),
+      fontSize: 20,
+      textAnchor: 'end',
+      rotationDeg: -90,
+    };
+    expect(isPrimitiveOutsideViewport(rotatedText, identityProject, 1)).toBe(false);
+
+    const farRotated: CadDisplayPrimitive = { ...rotatedText, id: 't:far', point: { x: 2000, y: 2000 } };
+    expect(isPrimitiveOutsideViewport(farRotated, identityProject, 1)).toBe(true);
+
+    // The same unrotated glyph stays culled when genuinely above the viewport.
+    const unrotatedOffscreen: CadDisplayPrimitive = { ...rotatedText, id: 't:off', rotationDeg: undefined };
+    expect(isPrimitiveOutsideViewport(unrotatedOffscreen, identityProject, 1)).toBe(true);
+
+    // Unknown rotation fails open rather than dropping the label.
+    const nanRotation: CadDisplayPrimitive = { ...rotatedText, id: 't:nan', rotationDeg: Number.NaN };
+    expect(isPrimitiveOutsideViewport(nanRotation, identityProject, 1)).toBe(false);
+  });
+
   it('restores a dropped primitive after a pan/zoom (project) change', () => {
     const primitive = line(1000, 260, 1100, 260);
     const panned = (x: number, y: number): { x: number; y: number } => ({ x: x, y: y });

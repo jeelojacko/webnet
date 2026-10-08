@@ -127,6 +127,53 @@ export const textPrimitiveScreenBox = (
   };
 };
 
+/**
+ * PERF-183.1 — rotate a screen point about a fixed anchor. SVG `rotate(a)` is
+ * clockwise for positive degrees in a y-down frame, matching the primitive
+ * renderers. Used only to build conservative bounds; sign never changes the
+ * axis-aligned extents.
+ */
+const rotateScreenPointAbout = (
+  x: number,
+  y: number,
+  anchorX: number,
+  anchorY: number,
+  angleDeg: number,
+): { x: number; y: number } => {
+  const radians = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = x - anchorX;
+  const dy = y - anchorY;
+  return {
+    x: anchorX + dx * cos - dy * sin,
+    y: anchorY + dx * sin + dy * cos,
+  };
+};
+
+const rotatedBoxBounds = (
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  anchorX: number,
+  anchorY: number,
+  angleDeg: number,
+): { minX: number; minY: number; maxX: number; maxY: number } => {
+  const corners = [
+    rotateScreenPointAbout(left, top, anchorX, anchorY, angleDeg),
+    rotateScreenPointAbout(right, top, anchorX, anchorY, angleDeg),
+    rotateScreenPointAbout(right, bottom, anchorX, anchorY, angleDeg),
+    rotateScreenPointAbout(left, bottom, anchorX, anchorY, angleDeg),
+  ];
+  return {
+    minX: Math.min(corners[0].x, corners[1].x, corners[2].x, corners[3].x),
+    minY: Math.min(corners[0].y, corners[1].y, corners[2].y, corners[3].y),
+    maxX: Math.max(corners[0].x, corners[1].x, corners[2].x, corners[3].x),
+    maxY: Math.max(corners[0].y, corners[1].y, corners[2].y, corners[3].y),
+  };
+};
+
 export const primitiveBounds = (
   primitive: CadDisplayPrimitive,
   project: ProjectPoint,
@@ -174,22 +221,43 @@ export const primitiveBounds = (
     }
     case 'text': {
       const textBox = textPrimitiveScreenBox(primitive, project);
-      return {
-        minX: textBox.x,
-        minY: textBox.y,
-        maxX: textBox.x + textBox.width,
-        maxY: textBox.y + textBox.height,
-      };
+      if (primitive.rotationDeg == null || primitive.rotationDeg === 0) {
+        return {
+          minX: textBox.x,
+          minY: textBox.y,
+          maxX: textBox.x + textBox.width,
+          maxY: textBox.y + textBox.height,
+        };
+      }
+      // Text and its pick target render rotated about the text anchor, so bound
+      // the four rotated hit-rect corners. Non-finite rotation/size fails open
+      // through the finite check in isPrimitiveOutsideViewport.
+      return rotatedBoxBounds(
+        textBox.x - 4,
+        textBox.y - 3,
+        textBox.x + textBox.width + 4,
+        textBox.y + textBox.height + 3,
+        textBox.displayX,
+        textBox.displayY,
+        primitive.rotationDeg,
+      );
     }
     case 'ellipse': {
       const center = project(primitive.center.x, primitive.center.y);
       const radiusX = Math.max(primitive.semiMajor * scale, 1.2);
       const radiusY = Math.max(primitive.semiMinor * scale, 0.9);
+      // The render rotates the ellipse, so the AABB half-extents must follow:
+      //   hx = hypot(rx·cosθ, ry·sinθ), hy = hypot(rx·sinθ, ry·cosθ)
+      const thetaRad = (primitive.thetaDeg * Math.PI) / 180;
+      const cos = Math.cos(thetaRad);
+      const sin = Math.sin(thetaRad);
+      const halfX = Math.hypot(radiusX * cos, radiusY * sin);
+      const halfY = Math.hypot(radiusX * sin, radiusY * cos);
       return {
-        minX: center.x - radiusX,
-        minY: center.y - radiusY,
-        maxX: center.x + radiusX,
-        maxY: center.y + radiusY,
+        minX: center.x - halfX,
+        minY: center.y - halfY,
+        maxX: center.x + halfX,
+        maxY: center.y + halfY,
       };
     }
     case 'band': {
