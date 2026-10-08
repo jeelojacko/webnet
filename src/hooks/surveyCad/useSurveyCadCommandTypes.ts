@@ -1,6 +1,8 @@
 import type { CadBatchCogoDraft } from '../../engine/cad/cadBatchCogo';
 import type { CadLineSegmentInput, CadLineSide } from '../../engine/cad/cadLineTypes';
 import type { RegularPolygonMode } from '../../engine/cad/cadGeometryShapeBuilders';
+import type { CadCurveMetricMode } from '../../engine/cad/cadCurveMetricsSolver';
+import type { CadCurveF1ExtentMode } from './useSurveyCadCurveF1Session';
 import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type { CadTangentSource } from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import type {
@@ -114,6 +116,12 @@ export type ActiveCommandKey =
   | 'ALIGNMENT_OFFSET_POINT'
   | 'ALIGNMENT_INTERVAL_POINTS'
   | 'CURVE_SOLVER'
+  | 'CURVE_BETWEEN_TWO_LINES'
+  | 'CURVE_ON_TWO_LINES'
+  | 'CURVE_THROUGH_POINT'
+  | 'MULTIPLE_CURVES'
+  | 'CURVE_FROM_END'
+  | 'REVERSE_OR_COMPOUND'
   | 'RADIAL_BEARING'
   | 'POINT_ON_CURVE'
   | 'SUBDIVIDE_CURVE'
@@ -386,6 +394,69 @@ export type CommandSession =
       inputValue: string;
       resultText?: string;
     }
+  // CAD Curves F1 — two-line tangent sessions. Entity picks store the exact
+  // clicked entity id + pick point (snapSourceEntityId law, no nearest-guess).
+  // Escape cancels with zero mutation; nothing commits until the final typed
+  // metric/entry input succeeds through one atomic *_CREATE transaction.
+  | {
+      key: 'CURVE_BETWEEN_TWO_LINES' | 'CURVE_ON_TWO_LINES';
+      inputValue: string;
+      firstEntityId: string | null;
+      firstPickPoint: CommandPoint | null;
+      secondEntityId: string | null;
+      secondPickPoint: CommandPoint | null;
+      metricMode: CadCurveMetricMode | null;
+      metricValue: number | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CURVE_THROUGH_POINT';
+      inputValue: string;
+      firstEntityId: string | null;
+      firstPickPoint: CommandPoint | null;
+      secondEntityId: string | null;
+      secondPickPoint: CommandPoint | null;
+      throughPoint: CommandPoint | null;
+      candidateSide: 'left' | 'right' | null;
+      resultText?: string;
+    }
+  | {
+      key: 'MULTIPLE_CURVES';
+      inputValue: string;
+      firstEntityId: string | null;
+      firstPickPoint: CommandPoint | null;
+      secondEntityId: string | null;
+      secondPickPoint: CommandPoint | null;
+      count: number | null;
+      floatingIndex: number | null;
+      segments: Array<{ length: number; radius: number }>;
+      resultText?: string;
+    }
+  | {
+      key: 'CURVE_FROM_END';
+      inputValue: string;
+      sourceEntityId: string | null;
+      pickPoint: CommandPoint | null;
+      end: 'start' | 'end' | null;
+      mode: 'point' | 'radius' | null;
+      endPoint: CommandPoint | null;
+      signedRadius: number | null;
+      extentMode: CadCurveF1ExtentMode | null;
+      extentValue: number | null;
+      resultText?: string;
+    }
+  | {
+      key: 'REVERSE_OR_COMPOUND';
+      inputValue: string;
+      sourceEntityId: string | null;
+      end: 'start' | 'end' | null;
+      rcMode: 'reverse' | 'compound' | null;
+      radius: number | null;
+      extentMode: CadCurveF1ExtentMode | null;
+      extentValue: number | null;
+      pointEnd: CommandPoint | null;
+      resultText?: string;
+    }
   | {
       key:
         | 'RADIAL_BEARING'
@@ -395,7 +466,8 @@ export type CommandSession =
         | 'REVERSE_CURVE'
         | 'COMPOUND_CURVE';
       inputValue: string;
-      arc: CadArcEntity;
+      /** Null while the session prompts for an arc pick (dead-click fix). */
+      arc: CadArcEntity | null;
       resultText?: string;
     }
   | {
@@ -421,9 +493,17 @@ export type CommandSession =
   | {
       key: 'LINE_CIRCLE_INTX' | 'PERP_INTX' | 'SKEW_INTX';
       inputValue: string;
-      lineStart: CommandPoint;
-      lineEnd: CommandPoint;
+      /** Null while the session prompts for a line pick (pick flow). */
+      lineStart: CommandPoint | null;
+      lineEnd: CommandPoint | null;
       targetPoint: CommandPoint | null;
+      /**
+       * Preferred LINE_CIRCLE_INTX path: the exact picked native circle
+       * entity id. When set, intersections use the actual circle geometry
+       * (center + radius from the entity); `targetPoint` + typed radius stay
+       * as the legacy center+radius fallback.
+       */
+      circleEntityId?: string | null;
       resultText?: string;
     }
   | {

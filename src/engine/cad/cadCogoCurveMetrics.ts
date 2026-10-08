@@ -11,7 +11,7 @@ export interface CadCurveMetricsSummary extends CadCurveMetrics {
   middleOrdinate: number;
 }
 
-const buildCadCurveMetricsSummary = (
+export const buildCadCurveMetricsSummary = (
   metrics: CadCurveMetrics | null,
 ): CadCurveMetricsSummary | null => {
   if (!metrics) return null;

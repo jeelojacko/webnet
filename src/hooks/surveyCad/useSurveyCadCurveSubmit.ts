@@ -1,7 +1,6 @@
 import {
   cadArcPointByArcDistance,
   cadArcPointByChordDistance,
-  cadArcSubdivisionPoints,
   cadBuildArcFromChordBearingRadius,
   cadBuildArcFromPiRadiusDelta,
   cadBuildCompoundCurve,
@@ -12,8 +11,8 @@ import {
   cadSolveCurveMetrics,
 } from '../../engine/cad/cadCogo';
 import { cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
+import type { CadProject } from '../../engine/cad/cadTypes';
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
-import type { CommandSession } from './useSurveyCadCommandTypes';
 import {
   parseChordBearingCurveInput,
   parseCurveMeasureInput,
@@ -24,6 +23,10 @@ import {
   parseOffsetArcInput,
 } from './useSurveyCadCommandParsing';
 import type { HandleSurveyCadCurveSubmitOptions } from './useSurveyCadCurveSubmit.types';
+
+/** Count only survey-point entities: subdivide labels are never marker points. */
+const countSurveyPointEntities = (project: CadProject): number =>
+  project.entities.filter((entity) => entity.type === 'survey-point').length;
 
 const handleSelectedArcSubmit = ({
   applyHistoryUpdate,
@@ -42,16 +45,26 @@ const handleSelectedArcSubmit = ({
   ) {
     return false;
   }
+  // Dead-click fix: arc-less sessions prompt for an arc pick (the pick
+  // handler fills `arc`); typed input without an arc stays active.
+  if (!session.arc) {
+    replaceSession({
+      ...session,
+      resultText: `${session.key} needs an arc first. Click an arc body, then type the input.`,
+    });
+    return true;
+  }
+  const arc = session.arc;
 
   if (session.key === 'RADIAL_BEARING') {
     const token = session.inputValue.trim().toUpperCase();
     const angleDeg =
       token === 'PC'
-        ? session.arc.startAngleDeg
+        ? arc.startAngleDeg
         : token === 'PT'
-          ? session.arc.endAngleDeg
+          ? arc.endAngleDeg
           : token === 'MID'
-            ? session.arc.startAngleDeg + cadSignedSweepDeg(session.arc.startAngleDeg, session.arc.endAngleDeg) / 2
+            ? arc.startAngleDeg + cadSignedSweepDeg(arc.startAngleDeg, arc.endAngleDeg) / 2
             : null;
     if (angleDeg == null) {
       replaceSession({
@@ -60,13 +73,13 @@ const handleSelectedArcSubmit = ({
       });
       return true;
     }
-    const bearing = cadRadialBearingAtArcAngle({ arc: session.arc, angleDeg });
+    const bearing = cadRadialBearingAtArcAngle({ arc: arc, angleDeg });
     publishReport(
       'RADIAL_BEARING',
       'Radial Bearing',
-      `Computed radial bearing on ${session.arc.id}`,
+      `Computed radial bearing on ${arc.id}`,
       [
-        { label: 'Arc', value: session.arc.id },
+        { label: 'Arc', value: arc.id },
         { label: 'Location', value: token },
         { label: 'Bearing', value: bearing },
       ],
@@ -74,7 +87,7 @@ const handleSelectedArcSubmit = ({
     replaceSession({
       ...session,
       inputValue: '',
-      resultText: `RADIAL_BEARING ${session.arc.id} ${token}: ${bearing}.`,
+      resultText: `RADIAL_BEARING ${arc.id} ${token}: ${bearing}.`,
     });
     return true;
   }
@@ -83,9 +96,9 @@ const handleSelectedArcSubmit = ({
     const parsed = parseCurveMeasureInput(session.inputValue);
     const point =
       parsed?.mode === 'arc'
-        ? cadArcPointByArcDistance(session.arc, parsed.distance)
+        ? cadArcPointByArcDistance(arc, parsed.distance)
         : parsed?.mode === 'chord'
-          ? cadArcPointByChordDistance(session.arc, parsed.distance)
+          ? cadArcPointByChordDistance(arc, parsed.distance)
           : null;
     if (!parsed || !point) {
       replaceSession({
@@ -104,9 +117,9 @@ const handleSelectedArcSubmit = ({
     publishReport(
       'POINT_ON_CURVE',
       'Point On Curve',
-      `Created point on ${session.arc.id}`,
+      `Created point on ${arc.id}`,
       [
-        { label: 'Arc', value: session.arc.id },
+        { label: 'Arc', value: arc.id },
         { label: 'Mode', value: parsed.mode.toUpperCase() },
         { label: 'Distance', value: parsed.distance.toFixed(3), unit: 'm' },
         { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
@@ -119,35 +132,48 @@ const handleSelectedArcSubmit = ({
 
   if (session.key === 'SUBDIVIDE_CURVE') {
     const parsed = parseCurveSubdivisionInput(session.inputValue);
-    const points = parsed ? cadArcSubdivisionPoints({ arc: session.arc, mode: parsed.mode, value: parsed.value }) : [];
-    if (!parsed || points.length === 0) {
+    if (!parsed) {
       replaceSession({
         ...session,
         resultText: 'SUBDIVIDE_CURVE input invalid. Use `EQUAL,count`, `ARC,interval`, or `CHORD,interval` that yields interior points.',
       });
       return true;
     }
-    applyHistoryUpdate((existing) =>
-      points.reduce(
-        (current, point, index) =>
-          runCadCommand(current, {
-            key: 'POINT',
-            x: point.x,
-            y: point.y,
-            label: `${session.arc.id}-${index + 1}`,
-          }),
-        existing,
-      ),
-    );
+    // Atomic marker points: every interior point lands in ONE history entry
+    // via SUBDIVIDE_CURVE_CREATE (the arc is never split).
+    // The transaction emits one survey-point per interior point PLUS one
+    // anchored text label per point, so a raw entity delta double-counts.
+    // Derive the visible count from committed survey-points only.
+    let committedCount: number | null = null;
+    applyHistoryUpdate((existing) => {
+      const next = runCadCommand(existing, {
+        key: 'SUBDIVIDE_CURVE_CREATE',
+        arcEntityId: arc.id,
+        mode: parsed.mode,
+        value: parsed.value,
+      });
+      if (next !== existing) {
+        committedCount =
+          countSurveyPointEntities(next.present.project) - countSurveyPointEntities(existing.present.project);
+      }
+      return next;
+    });
+    if (committedCount == null) {
+      replaceSession({
+        ...session,
+        resultText: 'SUBDIVIDE_CURVE input yields no interior marker points (locked source, degenerate chord, or empty division). The session stays active.',
+      });
+      return true;
+    }
     publishReport(
       'SUBDIVIDE_CURVE',
       'Curve Subdivision',
-      `Created ${points.length} subdivision point${points.length === 1 ? '' : 's'} on ${session.arc.id}`,
+      `Created ${committedCount} subdivision marker point${committedCount === 1 ? '' : 's'} on ${arc.id}`,
       [
-        { label: 'Arc', value: session.arc.id },
+        { label: 'Arc', value: arc.id },
         { label: 'Mode', value: parsed.mode.toUpperCase() },
         { label: 'Value', value: parsed.value.toFixed(3) },
-        { label: 'Points', value: points.length.toString() },
+        { label: 'Marker Points', value: String(committedCount) },
       ],
     );
     replaceSession(null);
@@ -159,7 +185,7 @@ const handleSelectedArcSubmit = ({
     const definition =
       parsed &&
       cadOffsetArc({
-        arc: session.arc,
+        arc: arc,
         offsetDistance: parsed.offsetDistance,
         side: parsed.side,
       });
@@ -179,9 +205,9 @@ const handleSelectedArcSubmit = ({
     publishReport(
       'OFFSET_CURVE',
       'Offset Curve',
-      `Created offset curve from ${session.arc.id}`,
+      `Created offset curve from ${arc.id}`,
       [
-        { label: 'Arc', value: session.arc.id },
+        { label: 'Arc', value: arc.id },
         { label: 'Offset', value: `${parsed.side} ${parsed.offsetDistance.toFixed(3)} m` },
         { label: 'Radius', value: definition.radius.toFixed(3), unit: 'm' },
       ],
@@ -195,12 +221,12 @@ const handleSelectedArcSubmit = ({
     parsed &&
     (session.key === 'REVERSE_CURVE'
       ? cadBuildReverseCurve({
-          sourceArc: session.arc,
+          sourceArc: arc,
           radius: parsed.radius,
           deltaDeg: parsed.deltaDeg,
         })
       : cadBuildCompoundCurve({
-          sourceArc: session.arc,
+          sourceArc: arc,
           radius: parsed.radius,
           deltaDeg: parsed.deltaDeg,
         }));
@@ -212,7 +238,7 @@ const handleSelectedArcSubmit = ({
     return true;
   }
   commitArcDefinition(session.key, definition, {
-    sourceArcId: session.arc.id,
+    sourceArcId: arc.id,
     side: parsed.side,
     radius: parsed.radius,
     deltaDeg: parsed.deltaDeg,
@@ -220,9 +246,9 @@ const handleSelectedArcSubmit = ({
   publishReport(
     session.key,
     session.key === 'REVERSE_CURVE' ? 'Reverse Curve' : 'Compound Curve',
-    `Created ${session.key === 'REVERSE_CURVE' ? 'reverse' : 'compound'} curve from ${session.arc.id}`,
+    `Created ${session.key === 'REVERSE_CURVE' ? 'reverse' : 'compound'} curve from ${arc.id}`,
     [
-      { label: 'Source Arc', value: session.arc.id },
+      { label: 'Source Arc', value: arc.id },
       { label: 'Radius', value: parsed.radius.toFixed(3), unit: 'm' },
       { label: 'Delta', value: parsed.deltaDeg.toFixed(4), unit: 'deg' },
     ],

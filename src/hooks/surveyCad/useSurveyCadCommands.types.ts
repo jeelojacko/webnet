@@ -164,6 +164,12 @@ export interface UseSurveyCadCommandsResult {
   startChordBearingCurveCommand: () => void;
   startReverseCurveCommand: () => void;
   startCompoundCurveCommand: () => void;
+  startCurveBetweenTwoLinesCommand: () => void;
+  startCurveOnTwoLinesCommand: () => void;
+  startCurveThroughPointCommand: () => void;
+  startMultipleCurvesCommand: () => void;
+  startCurveFromEndCommand: () => void;
+  startReverseOrCompoundCommand: () => void;
   startBearingBearingIntersectionCommand: () => void;
   startBearingDistanceIntersectionCommand: () => void;
   startDistanceDistanceIntersectionCommand: () => void;

@@ -80,6 +80,13 @@ export interface SurveyCadCommandStarters {
   startChordBearingCurveCommand: () => void;
   startReverseCurveCommand: () => void;
   startCompoundCurveCommand: () => void;
+  /** CAD Curves F1 — two-line tangent sessions (preseed from selection, else pick). */
+  startCurveBetweenTwoLinesCommand: () => void;
+  startCurveOnTwoLinesCommand: () => void;
+  startCurveThroughPointCommand: () => void;
+  startMultipleCurvesCommand: () => void;
+  startCurveFromEndCommand: () => void;
+  startReverseOrCompoundCommand: () => void;
   startBearingBearingIntersectionCommand: () => void;
   startBearingDistanceIntersectionCommand: () => void;
   startDistanceDistanceIntersectionCommand: () => void;

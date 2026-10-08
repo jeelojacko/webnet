@@ -16,6 +16,15 @@ import type { CadGradingResult, GradingCriterion, GradingSide } from './grading/
 import type { CadGradingGroupResult, GradingGroupCourse, GradingGroupCourseCriterionOverride } from './grading/gradingGroupTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
+import type {
+  CadCurveBetweenLinesCommand,
+  CadCurveFromEndCommand,
+  CadCurveOnLinesCommand,
+  CadCurveThroughPointCommand,
+  CadMultipleCurvesCommand,
+  CadReverseCompoundCurveCommand,
+  CadSubdivideCurveCommand,
+} from './cadTransactionsCurveF1Types';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -336,7 +345,15 @@ export type CadCommandKey =
   // CAD Best Fit E1 — least-squares geometry from stored sample snapshots.
   | 'BEST_FIT_LINE'
   | 'BEST_FIT_ARC'
-  | 'BEST_FIT_PARABOLA';
+  | 'BEST_FIT_PARABOLA'
+  // CAD Curves F1 — six atomic curve commands + atomic subdivision.
+  | 'CURVE_BETWEEN_TWO_LINES_CREATE'
+  | 'CURVE_ON_TWO_LINES_CREATE'
+  | 'CURVE_THROUGH_POINT_CREATE'
+  | 'MULTIPLE_CURVES_CREATE'
+  | 'CURVE_FROM_END_CREATE'
+  | 'REVERSE_COMPOUND_CURVE_CREATE'
+  | 'SUBDIVIDE_CURVE_CREATE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1985,7 +2002,15 @@ export type CadCommand =
       key: 'POLYLINE_DELETE_VERTEX';
       entityId: CadEntityId;
       vertexIndex: number;
-    };
+    }
+  // CAD Curves F1 — six atomic curve commands + atomic subdivision.
+  | CadCurveBetweenLinesCommand
+  | CadCurveOnLinesCommand
+  | CadCurveThroughPointCommand
+  | CadMultipleCurvesCommand
+  | CadCurveFromEndCommand
+  | CadReverseCompoundCurveCommand
+  | CadSubdivideCurveCommand;
 
 export interface CadTransaction {
   id: string;

@@ -81,11 +81,20 @@ export const handlePerpendicularPointPick = ({
   'applyHistoryUpdate' | 'current' | 'point' | 'publishReport' | 'replaceSession'
 >): boolean => {
   if (current.key !== 'PERP_INTX') return false;
+  if (current.lineStart == null || current.lineEnd == null) {
+    replaceSession({
+      ...current,
+      resultText: 'PERP_INTX needs a selected line first. The session stays active.',
+    });
+    return true;
+  }
+  const perpLineStart = current.lineStart;
+  const perpLineEnd = current.lineEnd;
   const solution = cadIntersectPerpendicular({
-    lineStart: current.lineStart,
-    lineEnd: current.lineEnd,
+    lineStart: perpLineStart,
+    lineEnd: perpLineEnd,
     fromPoint: point,
-    lineLabel: `${current.lineStart.label}-${current.lineEnd.label}`,
+    lineLabel: `${perpLineStart.label}-${perpLineEnd.label}`,
     pointLabel: point.label,
   });
   if (!solution) {
@@ -105,10 +114,10 @@ export const handlePerpendicularPointPick = ({
   publishReport(
     'PERP_INTX',
     'Perpendicular Intersection',
-    `Computed perpendicular foot from ${point.label} to ${current.lineStart.label}-${current.lineEnd.label}`,
+    `Computed perpendicular foot from ${point.label} to ${perpLineStart.label}-${perpLineEnd.label}`,
     [
       { label: 'Point', value: point.label },
-      { label: 'Line', value: `${current.lineStart.label}-${current.lineEnd.label}` },
+      { label: 'Line', value: `${perpLineStart.label}-${perpLineEnd.label}` },
       { label: 'Northing', value: solution.point.y.toFixed(3), unit: 'm' },
       { label: 'Easting', value: solution.point.x.toFixed(3), unit: 'm' },
       {

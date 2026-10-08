@@ -1,0 +1,39 @@
+{
+  "flowA": {
+    "rows": 16,
+    "planned": 0,
+    "default": "CURVE_BETWEEN_TWO_LINES"
+  },
+  "flowB": {
+    "radius": 20
+  },
+  "flowC": {
+    "radius": 20,
+    "sourcesUnchanged": true
+  },
+  "flowD": {
+    "throughRadius": 20.00046304838157,
+    "onRayRadius": 59.999999999999986,
+    "noSolutionStaysActive": true
+  },
+  "flowE": {
+    "arcs": 3,
+    "continuous": true
+  },
+  "flowF": {
+    "fromEndArcs": 2
+  },
+  "flowG": {
+    "continuations": 2
+  },
+  "flowH": {
+    "markers": 6,
+    "chord": 5
+  },
+  "flowHlc": {
+    "circle": "cad-circle-2b36481d-e33e-476a-8bec-715390a46c88"
+  },
+  "flowI": {
+    "pickFlows": true
+  }
+}

@@ -2,6 +2,8 @@ import { bestFitPromptForSession, isBestFitSession } from './useSurveyCadBestFit
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import { cadLineL1Prompt } from './useSurveyCadLineL1Session';
+import { isCurveF1Session } from './useSurveyCadCurveF1Session';
+import { promptForCurveF1Session, promptForLegacyArcPickSession } from './useSurveyCadCurveF1Text';
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import {
   plineArcThroughOf,
@@ -70,6 +72,7 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
   if (!session) return fallbackStatus;
   if (isCadLineL1Key(session.key)) return cadLineL1Prompt(session as CadLineL1SessionState);
   if (isBestFitSession(session)) return bestFitPromptForSession(session);
+  if (isCurveF1Session(session)) return promptForCurveF1Session(session);
   switch (session.key) {
     case 'POINT':
       return session.resultText ?? 'POINT active. Click in model space or enter `x,y` / `LABEL=x,y`, then press Enter.';
@@ -218,7 +221,7 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
     case 'TANGENT_CURVE':
       return session.resultText ??
         (session.piPoint == null
-          ? 'TANGENT_CURVE active. Click or enter the PI point.'
+          ? 'TANGENT_CURVE active (WebNet-native 3-point tangent law: PI + back-tangent + ahead-tangent + radius). Click or enter the PI point.'
           : session.backTangentPoint == null
             ? `TANGENT_CURVE active. PI ${session.piPoint.label} captured. Enter the back tangent point.`
             : session.aheadTangentPoint == null
@@ -293,13 +296,21 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
     case 'CURVE_SOLVER':
       return session.resultText ?? 'CURVE_SOLVER active. Enter `param1,param2,value1,value2` such as `radius,delta,200,60`.';
     case 'RADIAL_BEARING':
-      return session.resultText ?? `RADIAL_BEARING active. Selected arc ${session.arc.id}. Enter \`PC\`, \`PT\`, or \`MID\`.`;
+      return session.arc == null
+        ? promptForLegacyArcPickSession(session, '')
+        : promptForLegacyArcPickSession(session, `RADIAL_BEARING active. Selected arc ${session.arc.id}. Enter \`PC\`, \`PT\`, or \`MID\`.`);
     case 'POINT_ON_CURVE':
-      return session.resultText ?? `POINT_ON_CURVE active. Selected arc ${session.arc.id}. Enter \`ARC,distance\` or \`CHORD,distance\`.`;
+      return session.arc == null
+        ? promptForLegacyArcPickSession(session, '')
+        : promptForLegacyArcPickSession(session, `POINT_ON_CURVE active. Selected arc ${session.arc.id}. Enter distance as \`ARC,distance\` or \`CHORD,distance\` from the arc start.`);
     case 'SUBDIVIDE_CURVE':
-      return session.resultText ?? `SUBDIVIDE_CURVE active. Selected arc ${session.arc.id}. Enter \`EQUAL,count\`, \`ARC,interval\`, or \`CHORD,interval\`.`;
+      return session.arc == null
+        ? promptForLegacyArcPickSession(session, '')
+        : promptForLegacyArcPickSession(session, `SUBDIVIDE_CURVE active. Selected arc ${session.arc.id}. Enter \`EQUAL,count\`, \`ARC,interval\`, or \`CHORD,interval\` to place marker points.`);
     case 'OFFSET_CURVE':
-      return session.resultText ?? `OFFSET_CURVE active. Selected arc ${session.arc.id}. Enter \`Ldistance\` or \`Rdistance\`.`;
+      return session.arc == null
+        ? promptForLegacyArcPickSession(session, '')
+        : promptForLegacyArcPickSession(session, `OFFSET_CURVE active. Selected arc ${session.arc.id}. Enter \`Ldistance\` or \`Rdistance\`.`);
     case 'PI_CURVE':
       return session.resultText ??
         (session.piPoint == null
@@ -313,9 +324,13 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
           ? 'CHORD_BEARING_CURVE active. Click or enter the start point.'
           : `CHORD_BEARING_CURVE active. Enter \`bearing,chord,radius,L|R\` from ${session.startPoint.label}.`);
     case 'REVERSE_CURVE':
-      return session.resultText ?? `REVERSE_CURVE active. Selected arc ${session.arc.id}. Enter \`Lradius,delta\` or \`Rradius,delta\`.`;
+      return session.arc == null
+        ? promptForLegacyArcPickSession(session, '')
+        : promptForLegacyArcPickSession(session, `REVERSE_CURVE active. Selected arc ${session.arc.id}. Enter \`Lradius,delta\` or \`Rradius,delta\`.`);
     case 'COMPOUND_CURVE':
-      return session.resultText ?? `COMPOUND_CURVE active. Selected arc ${session.arc.id}. Enter \`Lradius,delta\` or \`Rradius,delta\`.`;
+      return session.arc == null
+        ? promptForLegacyArcPickSession(session, '')
+        : promptForLegacyArcPickSession(session, `COMPOUND_CURVE active. Selected arc ${session.arc.id}. Enter \`Lradius,delta\` or \`Rradius,delta\`.`);
     case 'BEARING_BEARING_INTX':
       return session.resultText ??
         (session.firstPoint == null
@@ -339,13 +354,19 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
             : `DISTANCE_DISTANCE_INTX active. Enter \`distance1,distance2\` from ${session.firstPoint.label} and ${session.secondPoint.label}.`);
     case 'LINE_CIRCLE_INTX':
       return session.resultText ??
-        (session.targetPoint == null
-          ? `LINE_CIRCLE_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the circle center point.`
-          : `LINE_CIRCLE_INTX active. Enter the radius from center ${session.targetPoint.label}.`);
+        (session.lineStart == null || session.lineEnd == null
+          ? 'LINE_CIRCLE_INTX active. Click a line body first (the infinite line through it is tested, not the segment).'
+          : session.circleEntityId != null
+            ? `LINE_CIRCLE_INTX active. Line ${session.lineStart.label}-${session.lineEnd.label} + circle ${session.circleEntityId} captured (infinite-line law). Click another circle or press Enter.`
+            : session.targetPoint == null
+              ? `LINE_CIRCLE_INTX active. Infinite line through ${session.lineStart.label}-${session.lineEnd.label} captured. Click a native circle body, or type the circle center as \`x,y\`.`
+              : `LINE_CIRCLE_INTX active. Enter the radius from center ${session.targetPoint.label} (legacy center+radius path).`);
     case 'PERP_INTX':
       return session.resultText ??
         (session.targetPoint == null
-          ? `PERP_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the external point.`
+          ? (session.lineStart == null || session.lineEnd == null
+              ? 'PERP_INTX active. Select a line first.'
+              : `PERP_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the external point.`)
           : `PERP_INTX active. Press Enter to create the perpendicular foot from ${session.targetPoint.label}.`);
     case 'OFFSET_INTX':
       return session.resultText ??
@@ -353,7 +374,9 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
     case 'SKEW_INTX':
       return session.resultText ??
         (session.targetPoint == null
-          ? `SKEW_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the source point.`
+          ? (session.lineStart == null || session.lineEnd == null
+              ? 'SKEW_INTX active. Select a line first.'
+              : `SKEW_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the source point.`)
           : `SKEW_INTX active. Enter \`Langle\` or \`Rangle\` from ${session.targetPoint.label}.`);
     case 'MOVE':
       return session.resultText ??

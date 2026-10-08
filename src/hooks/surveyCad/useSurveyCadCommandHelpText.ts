@@ -1,6 +1,8 @@
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import { cadLineL1HelpText } from './useSurveyCadLineL1Session';
+import { isCurveF1Session } from './useSurveyCadCurveF1Session';
+import { helpForCurveF1Session } from './useSurveyCadCurveF1Text';
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 
 export const helpTextForSession = (session: CommandSession | null): string => {
@@ -8,6 +10,7 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return 'Interactive commands accept `x,y`, optional `LABEL=x,y`, `@azimuth,distance`, and survey bearing-distance like `N45-00-00E,100`.';
   }
   if (isCadLineL1Key(session.key)) return cadLineL1HelpText(session as CadLineL1SessionState);
+  if (isCurveF1Session(session)) return helpForCurveF1Session(session);
   switch (session.key) {
     case 'POINT':
       return 'POINT input: click in the model space, or type `x,y` / `LABEL=x,y`. Enter commits. Esc cancels.';
@@ -116,8 +119,8 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return 'Continue Curve input: click in the model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the continuation side.';
     case 'TANGENT_CURVE':
       return session.aheadTangentPoint
-        ? 'Tangent curve radius input: numeric radius only.'
-        : 'Tangent curve point input: click in the model space or type `x,y` / `LABEL=x,y`.';
+        ? 'Tangent curve radius input: numeric radius only. WebNet-native 3-point law (PI + back-tangent + ahead-tangent + radius); Civil line workflows belong to CURVE_BETWEEN_TWO_LINES / CURVE_ON_TWO_LINES.'
+        : 'Tangent curve point input: click in the model space or type `x,y` / `LABEL=x,y`. WebNet-native 3-point law (PI + back-tangent + ahead-tangent + radius).';
     case 'INVERSE':
       return session.startPoint
         ? 'INVERSE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
@@ -171,15 +174,15 @@ export const helpTextForSession = (session: CommandSession | null): string => {
     case 'RADIAL_BEARING':
       return 'RADIAL_BEARING input: enter `PC`, `PT`, or `MID` for the selected arc.';
     case 'POINT_ON_CURVE':
-      return 'POINT_ON_CURVE input: enter `ARC,distance` or `CHORD,distance` from the selected arc start.';
+      return 'POINT_ON_CURVE input: enter `ARC,distance` or `CHORD,distance` measured from the selected arc start (true distance along/through the curve, not a station).';
     case 'SUBDIVIDE_CURVE':
-      return 'SUBDIVIDE_CURVE input: enter `EQUAL,count`, `ARC,interval`, or `CHORD,interval`.';
+      return 'SUBDIVIDE_CURVE input: enter `EQUAL,count`, `ARC,interval`, or `CHORD,interval`. Places one marker point per interior division in a single undo entry; the arc is never split.';
     case 'OFFSET_CURVE':
       return 'OFFSET_CURVE input: enter `Ldistance` or `Rdistance` from the selected arc.';
     case 'PI_CURVE':
       return session.backTangentPoint
-        ? 'PI_CURVE value input: enter `Lradius,delta` or `Rradius,delta`.'
-        : 'PI_CURVE point input: click in model space or type `x,y` / `LABEL=x,y` for PI and back tangent points.';
+        ? 'PI_CURVE value input: enter `Lradius,delta` or `Rradius,delta`. Builds the tangent arc at the PI (radius + delta fix the curve); the arc does not pass through the PI.'
+        : 'PI_CURVE point input: click in model space or type `x,y` / `LABEL=x,y` for PI and back tangent points. Builds the tangent arc at the PI, not through it.';
     case 'CHORD_BEARING_CURVE':
       return session.startPoint
         ? 'CHORD_BEARING_CURVE input: enter `bearing,chord,radius,L|R`.'
@@ -202,8 +205,8 @@ export const helpTextForSession = (session: CommandSession | null): string => {
         : 'DISTANCE_DISTANCE_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for both circle centers.';
     case 'LINE_CIRCLE_INTX':
       return session.targetPoint
-        ? 'LINE_CIRCLE_INTX input: enter the circle radius as a positive number.'
-        : 'LINE_CIRCLE_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for the circle center.';
+        ? 'LINE_CIRCLE_INTX input: enter the circle radius as a positive number (legacy center+radius path).'
+        : 'LINE_CIRCLE_INTX picks: click a line body, then a native circle body (actual circle geometry wins). Tests the infinite line, never the finite segment.';
     case 'PERP_INTX':
       return session.targetPoint
         ? 'PERP_INTX creates the perpendicular foot immediately after the external point is captured.'

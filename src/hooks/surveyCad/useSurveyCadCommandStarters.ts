@@ -1,6 +1,8 @@
 import { buildBestFitPreseedSamples } from './useSurveyCadBestFitSession';
 import type {
   CadArcEntity,
+  CadLineEntity,
+  CadProject,
 } from '../../engine/cad/cadTypes';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import { createCadLineL1Session } from './useSurveyCadLineL1Session';
@@ -8,6 +10,13 @@ import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type {
   SelectedLineCommandPoints,
 } from './useSurveyCadCommandSelection';
+import {
+  continuationSourceOf,
+  exactlyOneSelectedLinePair,
+  exactlyOneSelectedOf,
+  findF1Arc,
+  findF1Line,
+} from './useSurveyCadCurveF1Session';
 import type {
   BuildSurveyCadCommandStartersOptions,
   SurveyCadCommandStarters,
@@ -46,12 +55,87 @@ const lineCommandSession = (
 
 const selectedArcCommandSession = (
   key: 'RADIAL_BEARING' | 'POINT_ON_CURVE' | 'SUBDIVIDE_CURVE' | 'OFFSET_CURVE' | 'REVERSE_CURVE' | 'COMPOUND_CURVE',
-  arc: CadArcEntity,
+  arc: CadArcEntity | null,
 ): CommandSession => ({
   key,
   inputValue: '',
   arc,
 });
+
+const LINE_SET = new Set(['line']);
+const LINE_OR_ARC_SET = new Set(['line', 'arc']);
+const ARC_SET = new Set(['arc']);
+
+const lineMidpoint = (line: CadLineEntity): { x: number; y: number; label: string } => ({
+  x: (line.fromX + line.toX) / 2,
+  y: (line.fromY + line.toY) / 2,
+  label: `${line.fromStationId}-${line.toStationId}`,
+});
+
+const arcMidpoint = (arc: CadArcEntity): { x: number; y: number; label: string } => {
+  const midDeg = arc.startAngleDeg + (arc.endAngleDeg - arc.startAngleDeg) / 2;
+  const radians = (midDeg * Math.PI) / 180;
+  return {
+    x: arc.centerX + Math.cos(radians) * arc.radius,
+    y: arc.centerY + Math.sin(radians) * arc.radius,
+    label: `${arc.id}-mid`,
+  };
+};
+
+const arcNearerEnd = (arc: CadArcEntity, pick: { x: number; y: number }): 'start' | 'end' => {
+  const startRadians = (arc.startAngleDeg * Math.PI) / 180;
+  const start = { x: arc.centerX + Math.cos(startRadians) * arc.radius, y: arc.centerY + Math.sin(startRadians) * arc.radius };
+  const sweep = arc.endAngleDeg - arc.startAngleDeg;
+  const endRadians = ((arc.startAngleDeg + sweep) * Math.PI) / 180;
+  const end = { x: arc.centerX + Math.cos(endRadians) * arc.radius, y: arc.centerY + Math.sin(endRadians) * arc.radius };
+  return Math.hypot(pick.x - end.x, pick.y - end.y) <= Math.hypot(pick.x - start.x, pick.y - start.y) ? 'end' : 'start';
+};
+
+/** Line-pair preseed: two selected lines → both slots; one line → first slot. */
+const linePairPreseed = (
+  project: CadProject | null,
+  selectedEntityIds: readonly string[],
+): {
+  firstEntityId: string | null;
+  firstPickPoint: { x: number; y: number; label: string } | null;
+  secondEntityId: string | null;
+  secondPickPoint: { x: number; y: number; label: string } | null;
+  invalidMessage: string | null;
+} => {
+  const empty = {
+    firstEntityId: null,
+    firstPickPoint: null,
+    secondEntityId: null,
+    secondPickPoint: null,
+    invalidMessage: null as string | null,
+  };
+  if (!project || selectedEntityIds.length === 0) return empty;
+  const pair = exactlyOneSelectedLinePair(project, selectedEntityIds);
+  if (pair) {
+    return {
+      firstEntityId: pair[0].id,
+      firstPickPoint: lineMidpoint(pair[0]),
+      secondEntityId: pair[1].id,
+      secondPickPoint: lineMidpoint(pair[1]),
+      invalidMessage: null,
+    };
+  }
+  const singleId = exactlyOneSelectedOf(project, selectedEntityIds, LINE_SET);
+  if (singleId) {
+    const line = findF1Line(project, singleId);
+    return {
+      firstEntityId: singleId,
+      firstPickPoint: line ? lineMidpoint(line) : null,
+      secondEntityId: null,
+      secondPickPoint: null,
+      invalidMessage: null,
+    };
+  }
+  return {
+    ...empty,
+    invalidMessage: 'The current selection holds no usable line. Click two line bodies to begin; the session stays active.',
+  };
+};
 
 export const useSurveyCadCommandStarters = ({
   beginSession,
@@ -69,7 +153,11 @@ export const useSurveyCadCommandStarters = ({
   surveyPointEntityIdsInStationOrder = [],
   selectedEditablePolylineId = null,
   bestFitProject = null,
-}: BuildSurveyCadCommandStartersOptions): SurveyCadCommandStarters => ({
+}: BuildSurveyCadCommandStartersOptions): SurveyCadCommandStarters => {
+  // CAD Curves F1 preseed source: the live project (same reference the Best
+  // Fit preseed uses). Null = pick-only sessions.
+  const f1Project = bestFitProject;
+  return {
   startLineL1Command: (key: CadLineL1CommandKey) => {
     const referenceStart =
       key === 'LINE_ANGLE' || key === 'LINE_DEFLECTION' ? selectedLineCommandPoints?.start ?? null : null;
@@ -316,19 +404,16 @@ export const useSurveyCadCommandStarters = ({
   },
   startCurveSolverCommand: () => beginSession({ key: 'CURVE_SOLVER', inputValue: '' }),
   startRadialBearingCommand: () => {
-    if (!selectedArcForCurveCogo) return;
+    // Dead-click fix: an arc-less start prompts for an arc pick (never a silent no-op).
     beginSession(selectedArcCommandSession('RADIAL_BEARING', selectedArcForCurveCogo));
   },
   startPointOnCurveCommand: () => {
-    if (!selectedArcForCurveCogo) return;
     beginSession(selectedArcCommandSession('POINT_ON_CURVE', selectedArcForCurveCogo));
   },
   startSubdivideCurveCommand: () => {
-    if (!selectedArcForCurveCogo) return;
     beginSession(selectedArcCommandSession('SUBDIVIDE_CURVE', selectedArcForCurveCogo));
   },
   startOffsetCurveCommand: () => {
-    if (!selectedArcForCurveCogo) return;
     beginSession(selectedArcCommandSession('OFFSET_CURVE', selectedArcForCurveCogo));
   },
   startPiCurveCommand: () =>
@@ -345,12 +430,142 @@ export const useSurveyCadCommandStarters = ({
       startPoint: null,
     }),
   startReverseCurveCommand: () => {
-    if (!selectedArcForCurveCogo) return;
     beginSession(selectedArcCommandSession('REVERSE_CURVE', selectedArcForCurveCogo));
   },
   startCompoundCurveCommand: () => {
-    if (!selectedArcForCurveCogo) return;
     beginSession(selectedArcCommandSession('COMPOUND_CURVE', selectedArcForCurveCogo));
+  },
+  startCurveBetweenTwoLinesCommand: () => {
+    const preseed = linePairPreseed(f1Project, selectedEntityIds);
+    beginSession({
+      key: 'CURVE_BETWEEN_TWO_LINES',
+      inputValue: '',
+      firstEntityId: preseed.firstEntityId,
+      firstPickPoint: preseed.firstPickPoint,
+      secondEntityId: preseed.secondEntityId,
+      secondPickPoint: preseed.secondPickPoint,
+      metricMode: null,
+      metricValue: null,
+      ...(preseed.invalidMessage ? { resultText: preseed.invalidMessage } : {}),
+    });
+  },
+  startCurveOnTwoLinesCommand: () => {
+    const preseed = linePairPreseed(f1Project, selectedEntityIds);
+    beginSession({
+      key: 'CURVE_ON_TWO_LINES',
+      inputValue: '',
+      firstEntityId: preseed.firstEntityId,
+      firstPickPoint: preseed.firstPickPoint,
+      secondEntityId: preseed.secondEntityId,
+      secondPickPoint: preseed.secondPickPoint,
+      metricMode: null,
+      metricValue: null,
+      ...(preseed.invalidMessage ? { resultText: preseed.invalidMessage } : {}),
+    });
+  },
+  startCurveThroughPointCommand: () => {
+    const preseed = linePairPreseed(f1Project, selectedEntityIds);
+    beginSession({
+      key: 'CURVE_THROUGH_POINT',
+      inputValue: '',
+      firstEntityId: preseed.firstEntityId,
+      firstPickPoint: preseed.firstPickPoint,
+      secondEntityId: preseed.secondEntityId,
+      secondPickPoint: preseed.secondPickPoint,
+      throughPoint: null,
+      candidateSide: null,
+      ...(preseed.invalidMessage ? { resultText: preseed.invalidMessage } : {}),
+    });
+  },
+  startMultipleCurvesCommand: () => {
+    const preseed = linePairPreseed(f1Project, selectedEntityIds);
+    beginSession({
+      key: 'MULTIPLE_CURVES',
+      inputValue: '',
+      firstEntityId: preseed.firstEntityId,
+      firstPickPoint: preseed.firstPickPoint,
+      secondEntityId: preseed.secondEntityId,
+      secondPickPoint: preseed.secondPickPoint,
+      count: null,
+      floatingIndex: null,
+      segments: [],
+      ...(preseed.invalidMessage ? { resultText: preseed.invalidMessage } : {}),
+    });
+  },
+  startCurveFromEndCommand: () => {
+    if (f1Project) {
+      const sourceId = exactlyOneSelectedOf(f1Project, selectedEntityIds, LINE_OR_ARC_SET);
+      if (sourceId) {
+        const source = continuationSourceOf(f1Project, sourceId);
+        const arc = findF1Arc(f1Project, sourceId);
+        const line = source && source.kind === 'line' ? findF1Line(f1Project, sourceId) : null;
+        const mid = line ? lineMidpoint(line) : arc ? arcMidpoint(arc) : null;
+        let end: 'start' | 'end' = 'end';
+        if (line && mid) {
+          end = 'end';
+        } else if (arc && mid) {
+          end = arcNearerEnd(arc, mid);
+        }
+        beginSession({
+          key: 'CURVE_FROM_END',
+          inputValue: '',
+          sourceEntityId: sourceId,
+          pickPoint: mid,
+          end,
+          mode: null,
+          endPoint: null,
+          signedRadius: null,
+          extentMode: null,
+          extentValue: null,
+        });
+        return;
+      }
+    }
+    beginSession({
+      key: 'CURVE_FROM_END',
+      inputValue: '',
+      sourceEntityId: null,
+      pickPoint: null,
+      end: null,
+      mode: null,
+      endPoint: null,
+      signedRadius: null,
+      extentMode: null,
+      extentValue: null,
+      ...(selectedEntityIds.length > 0 ? { resultText: 'The current selection holds no usable line-or-arc source. Click a line-or-arc body near the end to continue from; the session stays active.' } : {}),
+    });
+  },
+  startReverseOrCompoundCommand: () => {
+    if (f1Project) {
+      const sourceId = exactlyOneSelectedOf(f1Project, selectedEntityIds, ARC_SET);
+      if (sourceId) {
+        beginSession({
+          key: 'REVERSE_OR_COMPOUND',
+          inputValue: '',
+          sourceEntityId: sourceId,
+          // Preseed defaults to the end; a click near either end re-fixes it.
+          end: 'end',
+          rcMode: null,
+          radius: null,
+          extentMode: null,
+          extentValue: null,
+          pointEnd: null,
+        });
+        return;
+      }
+    }
+    beginSession({
+      key: 'REVERSE_OR_COMPOUND',
+      inputValue: '',
+      sourceEntityId: null,
+      end: null,
+      rcMode: null,
+      radius: null,
+      extentMode: null,
+      extentValue: null,
+      pointEnd: null,
+      ...(selectedEntityIds.length > 0 ? { resultText: 'The current selection holds no usable arc source. Click an arc body near the endpoint to continue from; the session stays active.' } : {}),
+    });
   },
   startBearingBearingIntersectionCommand: () =>
     beginSession({
@@ -374,13 +589,74 @@ export const useSurveyCadCommandStarters = ({
       secondPoint: null,
     }),
   startLineCircleIntersectionCommand: () => {
-    if (!selectedLineCommandPoints) return;
+    // Preferred path: one selected line + one selected circle preseed the
+    // native circle entity (actual center/radius geometry at commit). Legacy
+    // center+radius typing stays as the fallback; otherwise prompt picks.
+    if (f1Project && selectedEntityIds.length > 0) {
+      const lines = selectedEntityIds
+        .map((id) => findF1Line(f1Project, id))
+        .filter((entry): entry is CadLineEntity => entry != null);
+      const circles = selectedEntityIds
+        .map((id) => {
+          const entity = f1Project.entities.find((entry) => entry.id === id) ?? null;
+          return entity?.type === 'circle' ? entity : null;
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry != null);
+      if (lines.length === 1 || circles.length === 1) {
+        const line = lines.length === 1 ? lines[0]! : null;
+        const circle = circles.length === 1 ? circles[0]! : null;
+        if (lines.length <= 1 && circles.length <= 1 && (line || circle)) {
+          beginSession({
+            key: 'LINE_CIRCLE_INTX',
+            inputValue: '',
+            lineStart: line ? { x: line.fromX, y: line.fromY, label: line.fromStationId } : null,
+            lineEnd: line ? { x: line.toX, y: line.toY, label: line.toStationId } : null,
+            targetPoint: null,
+            circleEntityId: circle ? circle.id : null,
+          });
+          return;
+        }
+      }
+      if (selectedLineCommandPoints) {
+        beginSession({
+          key: 'LINE_CIRCLE_INTX',
+          inputValue: '',
+          lineStart: selectedLineCommandPoints.start,
+          lineEnd: selectedLineCommandPoints.end,
+          targetPoint: null,
+          circleEntityId: null,
+        });
+        return;
+      }
+      beginSession({
+        key: 'LINE_CIRCLE_INTX',
+        inputValue: '',
+        lineStart: null,
+        lineEnd: null,
+        targetPoint: null,
+        circleEntityId: null,
+        resultText: 'The current selection holds no usable line/circle pair. Click a line body first, then a native circle body; the session stays active.',
+      });
+      return;
+    }
+    if (!selectedLineCommandPoints) {
+      beginSession({
+        key: 'LINE_CIRCLE_INTX',
+        inputValue: '',
+        lineStart: null,
+        lineEnd: null,
+        targetPoint: null,
+        circleEntityId: null,
+      });
+      return;
+    }
     beginSession({
       key: 'LINE_CIRCLE_INTX',
       inputValue: '',
       lineStart: selectedLineCommandPoints.start,
       lineEnd: selectedLineCommandPoints.end,
       targetPoint: null,
+      circleEntityId: null,
     });
   },
   startPerpendicularIntersectionCommand: () => {
@@ -583,4 +859,5 @@ export const useSurveyCadCommandStarters = ({
       insertion: null,
     });
   },
-});
+};
+};

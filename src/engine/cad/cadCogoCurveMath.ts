@@ -100,12 +100,59 @@ export const cadArcPointByChordDistance = (
   arc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'startAngleDeg' | 'endAngleDeg'>,
   chordDistance: number,
 ): CadWorldPoint | null => {
+  if (!Number.isFinite(chordDistance) || chordDistance < -1e-9) return null;
+  const center = { x: arc.centerX, y: arc.centerY };
+  // A zero chord is the arc start point (the lower bound), not an error.
+  if (chordDistance <= 1e-9) return cadPointOnCircle(center, arc.radius, arc.startAngleDeg);
   const metrics = cadBuildCurveMetricsFromChordLength(arc.radius, chordDistance);
   const totalSweep = Math.abs(cadSignedSweepDeg(arc.startAngleDeg, arc.endAngleDeg));
   if (!metrics || metrics.deltaDeg - totalSweep > 1e-9) return null;
   const angleDeg =
     arc.startAngleDeg + (cadSignedSweepDeg(arc.startAngleDeg, arc.endAngleDeg) >= 0 ? metrics.deltaDeg : -metrics.deltaDeg);
-  return cadPointOnCircle({ x: arc.centerX, y: arc.centerY }, arc.radius, angleDeg);
+  return cadPointOnCircle(center, arc.radius, angleDeg);
+};
+
+/** Hard refusal for a subdivision that would emit an unbounded point family. */
+export const CAD_CURVE_SUBDIVIDE_MAX_POINTS = 10000;
+
+type CadArcLike = Pick<
+  CadArcEntity,
+  'centerX' | 'centerY' | 'radius' | 'startAngleDeg' | 'endAngleDeg'
+>;
+
+const subdivideEqualCount = (
+  arc: CadArcLike,
+  totalSweep: number,
+  divisionCount: number,
+): CadWorldPoint[] => {
+  if (divisionCount < 2 || divisionCount - 1 > CAD_CURVE_SUBDIVIDE_MAX_POINTS) return [];
+  return Array.from({ length: divisionCount - 1 }, (_, index) => {
+    const fraction = (index + 1) / divisionCount;
+    const angleDeg = arc.startAngleDeg + totalSweep * fraction;
+    return cadPointOnCircle({ x: arc.centerX, y: arc.centerY }, arc.radius, angleDeg);
+  });
+};
+
+/**
+ * Equal-angle stepping shared by arc-length and chord intervals. `stepDeg` is a
+ * positive angular step; points sit at `start + k * step` for k = 1.. and stop
+ * strictly before the end angle (never on it). This is the equal-chord oracle
+ * law for chord mode: d = 2·asin(C / 2R).
+ */
+const subdivideEqualAngleSteps = (
+  arc: CadArcLike,
+  totalSweepDeg: number,
+  stepDeg: number,
+): CadWorldPoint[] => {
+  if (!Number.isFinite(stepDeg) || stepDeg <= 0) return [];
+  if (Math.abs(totalSweepDeg) / stepDeg > CAD_CURVE_SUBDIVIDE_MAX_POINTS) return [];
+  const sign = totalSweepDeg >= 0 ? 1 : -1;
+  const points: CadWorldPoint[] = [];
+  for (let step = 1; step * stepDeg < Math.abs(totalSweepDeg) - 1e-9; step += 1) {
+    const angleDeg = arc.startAngleDeg + sign * step * stepDeg;
+    points.push(cadPointOnCircle({ x: arc.centerX, y: arc.centerY }, arc.radius, angleDeg));
+  }
+  return points;
 };
 
 export const cadArcSubdivisionPoints = ({
@@ -113,34 +160,33 @@ export const cadArcSubdivisionPoints = ({
   mode,
   value,
 }: {
-  arc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'startAngleDeg' | 'endAngleDeg'>;
+  arc: CadArcLike;
   mode: 'equal' | 'arc' | 'chord';
   value: number;
 }): CadWorldPoint[] => {
   const totalSweep = cadSignedSweepDeg(arc.startAngleDeg, arc.endAngleDeg);
   const totalArcLength = Math.abs((totalSweep * Math.PI * arc.radius) / 180);
-  if (!Number.isFinite(value) || value <= 0 || totalArcLength <= 1e-12) return [];
+  if (
+    !Number.isFinite(value) ||
+    value <= 0 ||
+    totalArcLength <= 1e-12 ||
+    !Number.isFinite(arc.radius) ||
+    arc.radius <= 1e-12
+  ) {
+    return [];
+  }
   if (mode === 'equal') {
-    const divisionCount = Math.floor(value);
-    if (divisionCount < 2) return [];
-    return Array.from({ length: divisionCount - 1 }, (_, index) => {
-      const fraction = (index + 1) / divisionCount;
-      const angleDeg = arc.startAngleDeg + totalSweep * fraction;
-      return cadPointOnCircle({ x: arc.centerX, y: arc.centerY }, arc.radius, angleDeg);
-    });
+    return subdivideEqualCount(arc, totalSweep, Math.floor(value));
   }
-  const points: CadWorldPoint[] = [];
-  let cursor = value;
-  while (cursor < totalArcLength - 1e-9) {
-    const point =
-      mode === 'arc'
-        ? cadArcPointByArcDistance(arc, cursor)
-        : cadArcPointByChordDistance(arc, cursor);
-    if (!point) break;
-    points.push(point);
-    cursor += value;
+  if (mode === 'arc') {
+    const stepDeg = (value / arc.radius) * (180 / Math.PI);
+    return subdivideEqualAngleSteps(arc, totalSweep, stepDeg);
   }
-  return points;
+  // Chord mode: reject C >= diameter (no positive interior step exists) and
+  // advance by the equal-chord angle d = 2·asin(C / 2R).
+  if (value >= 2 * arc.radius - 1e-12) return [];
+  const stepDeg = (2 * Math.asin(value / (2 * arc.radius)) * 180) / Math.PI;
+  return subdivideEqualAngleSteps(arc, totalSweep, stepDeg);
 };
 
 export const cadOffsetArc = ({

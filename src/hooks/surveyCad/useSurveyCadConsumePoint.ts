@@ -20,6 +20,7 @@ import { handleCadLineL1PointPick } from './useSurveyCadLineL1Session';
 import { buildTraverseLegInputFromPoints } from './useSurveyCadCommandSession';
 import { normalizeDraftPoint } from './useSurveyCadCommandParsing';
 import { handleSurveyCadArcPointPick } from './useSurveyCadArcPointPick';
+import { handleCurveF1PointPick } from './useSurveyCadCurveF1Submit';
 import type {
   HandleSurveyCadConsumePointOptions,
   ReplaceSession,
@@ -327,6 +328,14 @@ export const handleSurveyCadConsumePoint = (
   if (
     handleReportPointPick(options) ||
     handleStagedPointPick(current, point, replaceSession) ||
+    handleCurveF1PointPick({
+      current: options.current,
+      point: options.point,
+      replaceSession: options.replaceSession,
+      project: options.history.present.project,
+      applyHistoryUpdate: options.applyHistoryUpdate,
+      publishReport: options.publishReport,
+    }) ||
     handleIntersectionPointPick(current, point, replaceSession) ||
     handleBestFitPointPick({
       current,
