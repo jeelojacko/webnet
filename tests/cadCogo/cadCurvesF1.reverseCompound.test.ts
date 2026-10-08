@@ -1,18 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildCadCurveReverseOrCompound,
   cadArcEndPoint,
   cadArcEndTangentAzimuthDeg,
   cadBuildContinuedArc,
   cadDistance,
   cadNormalizeAngleDeg,
   cadSignedSweepDeg,
-  orientCadCurveReverseCompoundSource,
-  solveCadCurveMetricsFromRadius,
   type CadArcDefinition,
-  type CadCurveMetricMode,
-  type CadCurveReverseCompoundSource,
 } from '../../src/engine/cad/cadGeometry';
+import {
+  solveCadCurveMetricsFromRadius,
+  type CadCurveMetricMode,
+} from '../../src/engine/cad/cadCurveMetricsSolver';
+import {
+  buildCadCurveReverseOrCompound,
+  orientCadCurveReverseCompoundSource,
+  type CadCurveReverseCompoundSource,
+} from '../../src/engine/cad/cadCurvesReverseCompound';
 import {
   cadBuildCompoundCurve,
   cadBuildReverseCurve,

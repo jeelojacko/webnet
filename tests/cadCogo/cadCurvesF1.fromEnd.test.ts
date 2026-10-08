@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { cadDistance, cadSignedSweepDeg } from '../../src/engine/cad/cadGeometry';
+import {
+  solveCadCurveMetricsFromRadius,
+  type CadCurveMetricMode,
+} from '../../src/engine/cad/cadCurveMetricsSolver';
 import {
   buildCadCurveFromEndPoint,
   buildCadCurveFromEndRadius,
-  cadDistance,
-  cadSignedSweepDeg,
   resolveCadCurveFromEndBase,
-  solveCadCurveMetricsFromRadius,
   type CadCurveContinuationSource,
-  type CadCurveMetricMode,
-} from '../../src/engine/cad/cadGeometry';
+} from '../../src/engine/cad/cadCurvesFromEnd';
 
 const eastLine: CadCurveContinuationSource = {
   kind: 'line',

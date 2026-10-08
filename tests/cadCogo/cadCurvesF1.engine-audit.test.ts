@@ -7,13 +7,15 @@ import {
   cadSolveCurveMetrics,
 } from '../../src/engine/cad/cadCogo';
 import {
-  buildCadCurveChain,
   cadDistance,
+  cadSignedSweepDeg,
+} from '../../src/engine/cad/cadGeometry';
+import {
+  buildCadCurveChain,
   cadEqualChordDistance,
   cadEqualChordStepDeg,
-  cadSignedSweepDeg,
-  resolveTwoTangentRays,
-} from '../../src/engine/cad/cadGeometry';
+} from '../../src/engine/cad/cadCurvesMultiple';
+import { resolveTwoTangentRays } from '../../src/engine/cad/cadCurvesTwoTangent';
 
 const quarterArc = {
   centerX: 0,

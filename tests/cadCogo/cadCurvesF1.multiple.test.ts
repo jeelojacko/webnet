@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildCadCurveChain,
   cadDistance,
-  cadEqualChordDistance,
-  cadEqualChordStepDeg,
   cadNormalizeAngleDeg,
   cadSignedSweepDeg,
-  resolveTwoTangentRays,
   type CadArcDefinition,
-  type CadCurveChainSegmentInput,
   type CadWorldPoint,
 } from '../../src/engine/cad/cadGeometry';
+import {
+  buildCadCurveChain,
+  cadEqualChordDistance,
+  cadEqualChordStepDeg,
+  type CadCurveChainSegmentInput,
+} from '../../src/engine/cad/cadCurvesMultiple';
+import { resolveTwoTangentRays } from '../../src/engine/cad/cadCurvesTwoTangent';
 
 const eastLine = { entityId: 'a', start: { x: -300, y: 0 }, end: { x: 300, y: 0 } };
 const northLine = { entityId: 'b', start: { x: 0, y: -300 }, end: { x: 0, y: 300 } };

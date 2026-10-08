@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildCadCurveBetweenTangentRays,
   cadAzimuthDeg,
   cadDistance,
   cadNormalizeAngleDeg,
   cadSignedSweepDeg,
+  type CadWorldPoint,
+} from '../../src/engine/cad/cadGeometry';
+import {
+  buildCadCurveBetweenTangentRays,
   resolveCadCurveMinDistancePt,
   resolveTwoTangentRays,
   solveCadCurveThroughTwoTangentRays,
   type CadCurveLineInput,
   type CadTwoTangentRays,
-  type CadWorldPoint,
-} from '../../src/engine/cad/cadGeometry';
+} from '../../src/engine/cad/cadCurvesTwoTangent';
 
 const eastLine: CadCurveLineInput = {
   entityId: 'line-e',

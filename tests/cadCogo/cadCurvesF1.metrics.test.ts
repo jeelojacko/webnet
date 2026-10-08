@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { cadBuildCurveMetricsFromRadiusDelta } from '../../src/engine/cad/cadGeometry';
 import {
   CAD_CURVE_DELTA_CAP_DEG,
   CAD_CURVE_DELTA_FLOOR_DEG,
   CAD_CURVE_DEGREE_BASE_LENGTH,
   buildCadCurveMetricsSummaryFromRadiusDeltaDeg,
-  cadBuildCurveMetricsFromRadiusDelta,
   isValidCadCurveDeltaDeg,
   solveCadCurveMetricsFromDelta,
   solveCadCurveMetricsFromRadius,
   type CadCurveMetricMode,
-} from '../../src/engine/cad/cadGeometry';
+} from '../../src/engine/cad/cadCurveMetricsSolver';
 
 const EXTENT_MODES: CadCurveMetricMode[] = [
   'tangent',
