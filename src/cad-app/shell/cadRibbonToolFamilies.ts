@@ -100,24 +100,24 @@ export const CAD_RIBBON_TOOL_FAMILIES: readonly CadRibbonToolFamily[] = [
     id: 'curves',
     label: 'Curves',
     defaultVariantId: 'curves-between-two-lines',
-    // Civil reference rows (planned except Curve Calculator) then WebNet-native
-    // curve rows below the separator. REVERSE_CURVE and COMPOUND_CURVE stay
-    // separate honest rows rather than pretending to be Civil's combined menu.
+    // Civil tangent-curve rows: the six F1 commands are live (Between is the
+    // sticky default face). Curve Calculator stays report-only; the two
+    // legacy WebNet-native rows below the separator keep 3-point/tangent law.
     variants: [
-      { id: 'curves-between-two-lines', label: 'Create Curves between Two Lines', planned: true, hint: 'Planned: tangent curve between two lines.' },
-      { id: 'curves-on-two-lines', label: 'Create Curve on Two Lines', planned: true, hint: 'Planned: curve fixed on two lines.' },
-      { id: 'curves-through-point', label: 'Create Curve through Point', planned: true, hint: 'Planned: curve constrained through a point.' },
-      { id: 'curves-multiple', label: 'Create Multiple Curves', planned: true, hint: 'Planned: several curves in one operation.' },
-      { id: 'curves-from-end', label: 'Create Curve from End of Object', planned: true, hint: 'Planned: curve from an object endpoint.' },
-      { id: 'curves-reverse-compound', label: 'Create Reverse or Compound Curve', planned: true, hint: 'Planned as one Civil menu row; WebNet exposes Reverse and Compound separately below.' },
-      { id: 'curves-calculator', label: 'Curve Calculator', commandKey: 'CURVE_SOLVER', hint: 'Solve circular curve parameters.' },
-      { id: 'curves-tangent', label: 'Tangent Curve', icon: 'snap-tangent', commandKey: 'TANGENT_CURVE', hint: 'Tangent curve from selected line.', separatorBefore: true },
-      { id: 'curves-pi', label: 'PI Curve', commandKey: 'PI_CURVE', hint: 'Curve through a PI point.' },
+      { id: 'curves-between-two-lines', label: 'Create Curves between Two Lines', commandKey: 'CURVE_BETWEEN_TWO_LINES', hint: 'Tangent curve between two lines; trims both to PC/PT.' },
+      { id: 'curves-on-two-lines', label: 'Create Curve on Two Lines', commandKey: 'CURVE_ON_TWO_LINES', hint: 'Tangent curve fixed on two lines; sources unchanged.' },
+      { id: 'curves-through-point', label: 'Create Curve through Point', commandKey: 'CURVE_THROUGH_POINT', hint: 'Tangent curve through a picked point; trims both lines.' },
+      { id: 'curves-multiple', label: 'Create Multiple Curves', commandKey: 'MULTIPLE_CURVES', hint: 'Chain of 2-10 tangent curves with one floating curve.' },
+      { id: 'curves-from-end', label: 'Create Curve from End of Object', commandKey: 'CURVE_FROM_END', hint: 'Point- or radius-mode continuation from a line/arc end.' },
+      { id: 'curves-reverse-compound', label: 'Create Reverse or Compound Curve', commandKey: 'REVERSE_OR_COMPOUND', hint: 'G1 reverse (opposite turn) or compound (same turn) continuation.' },
+      { id: 'curves-calculator', label: 'Curve Calculator', commandKey: 'CURVE_SOLVER', hint: 'Solve circular curve parameters (report only; creates nothing).' },
+      { id: 'curves-tangent', label: 'Tangent Curve', icon: 'snap-tangent', commandKey: 'TANGENT_CURVE', hint: 'WebNet-native 3-point tangent arc (PI + back + ahead + radius).', separatorBefore: true },
+      { id: 'curves-pi', label: 'PI Curve', commandKey: 'PI_CURVE', hint: 'Tangent arc at a PI point; the arc does not pass through the PI.' },
       { id: 'curves-chord-bearing', label: 'Chord Bearing Curve', commandKey: 'CHORD_BEARING_CURVE', hint: 'Curve from chord bearing.' },
       { id: 'curves-reverse', label: 'Reverse Curve', commandKey: 'REVERSE_CURVE', hint: 'Reverse curve from an arc.' },
       { id: 'curves-compound', label: 'Compound Curve', commandKey: 'COMPOUND_CURVE', hint: 'Compound curve from an arc.' },
-      { id: 'curves-point-on', label: 'Point on Curve', commandKey: 'POINT_ON_CURVE', hint: 'Point at station on a curve.' },
-      { id: 'curves-subdivide', label: 'Subdivide Curve', commandKey: 'SUBDIVIDE_CURVE', hint: 'Split a curve into parts.' },
+      { id: 'curves-point-on', label: 'Point on Curve', commandKey: 'POINT_ON_CURVE', hint: 'Point at a true distance along a curve.' },
+      { id: 'curves-subdivide', label: 'Subdivide Curve', commandKey: 'SUBDIVIDE_CURVE', hint: 'Place marker points along a curve (never splits).' },
       { id: 'curves-offset', label: 'Offset Curve', commandKey: 'OFFSET_CURVE', hint: 'Parallel curve at an offset.' },
       { id: 'curves-line-circle-intx', label: 'Line/Circle Intersection', commandKey: 'LINE_CIRCLE_INTX', hint: 'Intersect a line and circle.' },
     ],

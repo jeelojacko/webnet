@@ -6,6 +6,7 @@ import {
   handleAnnotationEnterKey,
 } from './useSurveyCadAnnotationSessions';
 import { commitBestFitSession, isBestFitSession } from './useSurveyCadBestFitSession';
+import { isCurveF1Session } from './useSurveyCadCurveF1Session';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
@@ -157,6 +158,13 @@ export const useSurveyCadCommandLifecycle = ({
     // refuses and stays active. Typed input routes to the U/point parser.
     if (live && isBestFitSession(live) && live.inputValue.trim().length === 0) {
       commitBestFitSession({ applyHistoryUpdate, replaceSession, reportComputation, session: live });
+      return;
+    }
+    // CAD Curves F1: empty Enter attempts the commit when the session is
+    // complete (otherwise the submit reports what is missing); Escape is the
+    // only zero-mutation cancel and never commits.
+    if (live && isCurveF1Session(live) && live.inputValue.trim().length === 0) {
+      submitSessionInput();
       return;
     }
     if (session.key === 'TRIM' || session.key === 'EXTEND') {

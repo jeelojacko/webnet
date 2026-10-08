@@ -22,6 +22,7 @@ import type {
 } from './useSurveyCadTransformPanel';
 import type { ProjectTransformPanelState } from './useSurveyCadProjectTransformPanel';
 import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
+import type { ActiveCommandKey } from './useSurveyCadCommandTypes';
 
 export interface CommandHoverTarget {
   entityId: string;
@@ -111,109 +112,7 @@ export interface UseSurveyCadWorkspaceResult {
   canUseSelectedLineCoreCogo: boolean;
   canUseSelectedLinePairIntersection: boolean;
   canUseSelectedArcCurveCogo: boolean;
-  activeCommandKey:
-    | 'POINT'
-    | 'COGO_POINT'
-    | 'LINE'
-    | 'RECTANGLE'
-    | 'CIRCLE'
-    | 'CIRCLECD'
-    | 'CIRCLE2P'
-    | 'CIRCLE3P'
-    | 'CIRCLETTR'
-    | 'CIRCLETTT'
-    | 'POLYGON'
-    | 'PLINE'
-    | 'TRAVERSE'
-    | 'BATCH_COGO'
-    | 'MTEXT'
-    | 'LEADER'
-    | 'DIM'
-    | 'DIMLINEAR'
-    | 'DIMALIGNED'
-    | 'DIMANGULAR'
-    | 'DIMRADIUS'
-    | 'DIMDIAMETER'
-    | 'BDLABEL'
-    | 'CURVELABEL'
-    | 'LINETABLE'
-    | 'CURVETABLE'
-    | 'PARCELTABLE'
-    | 'POINTTABLE'
-    | 'PARCELREPORT'
-    | 'PARCELDESC'
-    | 'SURVEYTABLE'
-    | 'ARC_3PT'
-    | 'ARC_SCE'
-    | 'ARC_CSE'
-    | 'ARC_SCA'
-    | 'ARC_CSA'
-    | 'ARC_SCL'
-    | 'ARC_CSL'
-    | 'ARC_SEA'
-    | 'ARC_SED'
-    | 'ARC_SER'
-    | 'CONTINUE_CURVE'
-    | 'TANGENT_CURVE'
-    | 'BESTFITLINE'
-    | 'BESTFITARC'
-    | 'BESTFITPARABOLA'
-    | 'INVERSE'
-    | 'MULTI_INVERSE'
-    | 'AREA'
-    | 'BEARING_REPORT'
-    | 'DISTANCE_REPORT'
-    | 'TURNED_POINT'
-    | 'DEFLECT_POINT'
-    | 'POINT_ALONG_LINE'
-    | 'EXTEND_LINE'
-    | 'OFFSET_POINT'
-    | 'ALIGNMENT_OFFSET_CREATE'
-    | 'ALIGNMENT_STATION_EQUATION'
-    | 'ALIGNMENT_OFFSET_POINT'
-    | 'ALIGNMENT_INTERVAL_POINTS'
-    | 'CURVE_SOLVER'
-    | 'RADIAL_BEARING'
-    | 'POINT_ON_CURVE'
-    | 'SUBDIVIDE_CURVE'
-    | 'OFFSET_CURVE'
-    | 'PI_CURVE'
-    | 'CHORD_BEARING_CURVE'
-    | 'REVERSE_CURVE'
-    | 'COMPOUND_CURVE'
-    | 'BEARING_BEARING_INTX'
-    | 'BEARING_DISTANCE_INTX'
-    | 'DISTANCE_DISTANCE_INTX'
-    | 'LINE_CIRCLE_INTX'
-    | 'PERP_INTX'
-    | 'OFFSET_INTX'
-    | 'SKEW_INTX'
-    | 'PARCEL_SPLIT_BEARING'
-    | 'PARCEL_SPLIT_AREA'
-    | 'PARCELDESIGNATE'
-    | 'PARCELNUMBER'
-    | 'PARCELLINK'
-    | 'PARCELUNLINK'
-    | 'PARCELCHECK'
-    | 'PARCELSCHEDULE'
-    | 'PARCELSHAREDEDIT'
-    | 'PLINEINSERTVERTEX'
-    | 'PLINEDELETEVERTEX'
-    | 'MOVE'
-    | 'COPY'
-    | 'ROTATE'
-    | 'SCALE'
-    | 'MIRROR'
-    | 'ALIGN2D'
-    | 'HELMERT2D'
-    | 'GRIDGROUND'
-    | 'PROJECTTRANSFORM'
-    | 'EXTEND'
-    | 'TRIM'
-    | 'FILLET'
-    | 'PASTE'
-    | CadLineL1CommandKey
-    | null;
+  activeCommandKey: ActiveCommandKey | null;
   commandInputValue: string;
   statusText: string;
   commandHelpText: string;
@@ -343,6 +242,12 @@ export interface UseSurveyCadWorkspaceResult {
   startChordBearingCurveCommand: () => void;
   startReverseCurveCommand: () => void;
   startCompoundCurveCommand: () => void;
+  startCurveBetweenTwoLinesCommand: () => void;
+  startCurveOnTwoLinesCommand: () => void;
+  startCurveThroughPointCommand: () => void;
+  startMultipleCurvesCommand: () => void;
+  startCurveFromEndCommand: () => void;
+  startReverseOrCompoundCommand: () => void;
   startBearingBearingIntersectionCommand: () => void;
   startBearingDistanceIntersectionCommand: () => void;
   startDistanceDistanceIntersectionCommand: () => void;

@@ -488,8 +488,11 @@ export const buildCommandPreview = ({
     }
     case 'LINE_CIRCLE_INTX':
     case 'PERP_INTX':
-    case 'SKEW_INTX':
+    case 'SKEW_INTX': {
       if (!previewPoint || session.targetPoint != null) return null;
+      if (session.lineEnd == null) {
+        return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+      }
       return {
         kind: 'line',
         points: [
@@ -497,6 +500,7 @@ export const buildCommandPreview = ({
           { x: previewPoint.x, y: previewPoint.y },
         ],
       };
+    }
     case 'PLINE':
       return buildPlinePreview(session, previewPoint);
     case 'BESTFITLINE':

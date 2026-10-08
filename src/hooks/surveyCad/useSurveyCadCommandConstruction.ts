@@ -148,12 +148,17 @@ export const buildSnapConstructionContext = (
     case 'LINE_CIRCLE_INTX':
     case 'PERP_INTX':
     case 'SKEW_INTX':
+      if (session.key === 'LINE_CIRCLE_INTX' && (session.lineStart == null || session.lineEnd == null)) {
+        return inactiveConstructionContext();
+      }
       return session.targetPoint
         ? inactiveConstructionContext()
-        : {
-            active: true,
-            basePoint: { x: session.lineEnd.x, y: session.lineEnd.y },
-          };
+        : session.lineEnd
+          ? {
+              active: true,
+              basePoint: { x: session.lineEnd.x, y: session.lineEnd.y },
+            }
+          : inactiveConstructionContext();
     case 'MOVE':
     case 'COPY':
     case 'ROTATE':

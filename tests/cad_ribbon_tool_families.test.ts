@@ -80,16 +80,20 @@ describe('phase 21A tool-family manifests (§80)', () => {
     expect(referenceRows.every((variant) => isCadRibbonVariantSelectable(line, variant.id))).toBe(true);
   });
 
-  it('curves maps only proven WebNet semantics and keeps the Civil combined row planned', () => {
+  it('curves wires the six F1 rows live with zero planned entries', () => {
     const curves = family('curves');
-    const calculator = curves.variants.find((variant) => variant.id === 'curves-calculator');
-    expect(calculator?.commandKey).toBe('CURVE_SOLVER');
-    expect(calculator?.planned).not.toBe(true);
-    const combined = curves.variants.find((variant) => variant.id === 'curves-reverse-compound');
-    expect(combined?.planned).toBe(true);
-    expect(combined?.commandKey).toBeUndefined();
-    const webnet = curves.variants.filter((variant) => variant.commandKey != null && variant.id !== 'curves-calculator');
-    expect(webnet.map((variant) => variant.commandKey)).toEqual([
+    // F1: every Curves row is runnable; Between stays the sticky default.
+    expect(curves.defaultVariantId).toBe('curves-between-two-lines');
+    expect(curves.variants).toHaveLength(16);
+    expect(curves.variants.every((variant) => variant.planned !== true)).toBe(true);
+    expect(curves.variants.map((variant) => variant.commandKey)).toEqual([
+      'CURVE_BETWEEN_TWO_LINES',
+      'CURVE_ON_TWO_LINES',
+      'CURVE_THROUGH_POINT',
+      'MULTIPLE_CURVES',
+      'CURVE_FROM_END',
+      'REVERSE_OR_COMPOUND',
+      'CURVE_SOLVER',
       'TANGENT_CURVE',
       'PI_CURVE',
       'CHORD_BEARING_CURVE',
@@ -100,6 +104,9 @@ describe('phase 21A tool-family manifests (§80)', () => {
       'OFFSET_CURVE',
       'LINE_CIRCLE_INTX',
     ]);
+    expect(curves.variants.every((variant) => isCadRibbonVariantSelectable(curves, variant.id))).toBe(true);
+    const calculator = curves.variants.find((variant) => variant.id === 'curves-calculator');
+    expect(calculator?.commandKey).toBe('CURVE_SOLVER');
     expect(curves.variants.find((variant) => variant.id === 'curves-tangent')?.separatorBefore).toBe(true);
   });
 

@@ -31,6 +31,8 @@ import { useSurveyCadTraverseDraftActions } from './useSurveyCadTraverseDraftAct
 import { createBatchCogoDraftBuilder } from './useSurveyCadBatchCogoDraft';
 import { buildSurveyCadCommandAvailability } from './useSurveyCadCommandAvailability';
 import { handleSurveyCadCurveSubmit } from './useSurveyCadCurveSubmit';
+import { handleSurveyCadCurveF1Submit } from './useSurveyCadCurveF1Submit';
+import { buildCurveF1Preview, isCurveF1Session } from './useSurveyCadCurveF1Session';
 import { handleSurveyCadIntersectionSubmit } from './useSurveyCadIntersectionSubmit';
 import { handleSurveyCadTransformSubmit } from './useSurveyCadTransformSubmit';
 import {
@@ -139,14 +141,22 @@ export const useSurveyCadCommands = ({
   const commandExpectsPointPick = useMemo(() => sessionExpectsPointPick(session), [session]);
   const snapConstructionContext = useMemo(() => buildSnapConstructionContext(session), [session]);
   const commandPreview = useMemo(
-    () =>
-      buildCommandPreview({
+    () => {
+      if (session && isCurveF1Session(session)) {
+        return buildCurveF1Preview({
+          session,
+          project: history.present.project,
+          previewPoint,
+        });
+      }
+      return buildCommandPreview({
         session,
         previewPoint,
         reverseDirectionModifier,
         projectEntityIds: history.present.project.entities.map((entity) => entity.id),
-      }),
-    [history.present.project.entities, previewPoint, reverseDirectionModifier, session],
+      });
+    },
+    [history.present.project, previewPoint, reverseDirectionModifier, session],
   );
   // Phase 18Q HELMERT2D / GRIDGROUND compact panel: derived from the live
   // session; buttons route through the typed-submit path so panel and
@@ -319,6 +329,17 @@ export const useSurveyCadCommands = ({
         publishReport,
         replaceSession,
         session,
+      })
+    ) {
+      return;
+    }
+    if (
+      handleSurveyCadCurveF1Submit({
+        applyHistoryUpdate,
+        publishReport,
+        replaceSession,
+        session,
+        project: history.present.project,
       })
     ) {
       return;

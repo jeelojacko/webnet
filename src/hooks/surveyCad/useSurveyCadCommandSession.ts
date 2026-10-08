@@ -12,6 +12,7 @@ import type {
 import type { CadLineL1SessionState } from './useSurveyCadCommandTypes';
 import { isCadLineL1Key } from './useSurveyCadLineL1Keys';
 import { cadLineL1ExpectsPointPick } from './useSurveyCadLineL1Session';
+import { isCurveF1Session } from './useSurveyCadCurveF1Session';
 
 const ARC_TANGENT_SEED_KINDS = new Set<CadSnapKind>([
   'nearest',
@@ -89,6 +90,26 @@ export const recalculateTraverseSideshotPoint = (
 export const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
   if (!session) return false;
   if (isCadLineL1Key(session.key)) return cadLineL1ExpectsPointPick(session as CadLineL1SessionState);
+  // F1 sessions pick entities/points until every slot is filled; typed-only
+  // stages (metric/count/extent) expect no pick.
+  if (isCurveF1Session(session)) {
+    switch (session.key) {
+      case 'CURVE_BETWEEN_TWO_LINES':
+      case 'CURVE_ON_TWO_LINES':
+      case 'MULTIPLE_CURVES':
+        return session.firstEntityId == null || session.secondEntityId == null;
+      case 'CURVE_THROUGH_POINT':
+        return session.firstEntityId == null || session.secondEntityId == null || session.throughPoint == null;
+      case 'CURVE_FROM_END':
+        if (session.sourceEntityId == null) return true;
+        if (!session.mode) return true;
+        return session.mode === 'point' && session.endPoint == null;
+      case 'REVERSE_OR_COMPOUND':
+        if (session.sourceEntityId == null) return true;
+        if (session.rcMode == null || session.radius == null) return false;
+        return session.extentMode == null && session.pointEnd == null;
+    }
+  }
   switch (session.key) {
     case 'POINT':
     case 'COGO_POINT':
@@ -151,17 +172,20 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'PI_CURVE':
       return session.backTangentPoint == null;
     case 'LINE_CIRCLE_INTX':
+      return session.lineStart == null || session.lineEnd == null || (session.targetPoint == null && session.circleEntityId == null);
     case 'PERP_INTX':
     case 'SKEW_INTX':
       return session.targetPoint == null;
     case 'CURVE_SOLVER':
+    case 'OFFSET_INTX':
+      return false;
     case 'RADIAL_BEARING':
     case 'POINT_ON_CURVE':
     case 'SUBDIVIDE_CURVE':
     case 'OFFSET_CURVE':
     case 'REVERSE_CURVE':
     case 'COMPOUND_CURVE':
-    case 'OFFSET_INTX':
+      return session.arc == null;
     case 'ALIGNMENT_OFFSET_CREATE':
     case 'ALIGNMENT_STATION_EQUATION':
     case 'ALIGNMENT_OFFSET_POINT':

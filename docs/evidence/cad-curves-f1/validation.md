@@ -82,3 +82,41 @@ Fixed. `cadArcSubdivisionPoints` chord mode now uses
 `d = 2·asin(C / 2R)`, emits `start + k·d` for `k = 1..` while strictly before
 the end angle, refuses `C >= diameter`, and shares the 10000-point cap. The
 pre-fix behavior (chord measured from the start each iteration) is gone.
+
+## UI worker validation (sessions/prompts/preview/ribbon/browser)
+
+Scope: six canonical session keys (`CURVE_BETWEEN_TWO_LINES`,
+`CURVE_ON_TWO_LINES`, `CURVE_THROUGH_POINT`, `MULTIPLE_CURVES`,
+`CURVE_FROM_END`, `REVERSE_OR_COMPOUND`) with collision-free aliases
+(`CURVEBETWEENTWOLINES`, `CURVEONTWOLINES`, `CURVETHROUGHPOINT`,
+`MULTIPLECURVES`, `CURVEFROMENDOFOBJECT`, `REVERSEORCOMPOUND`); shared
+prompt/help/parsing in `useSurveyCadCurveF1Session.ts` +
+`useSurveyCadCurveF1Text.ts`, submit/picks in
+`useSurveyCadCurveF1Submit.ts`. No engine file touched
+(`git status` shows engine/ clean).
+
+- `tsc --noEmit` clean.
+- New `tests/cad_curves_f1_sessions.test.ts` (35 tests): shared
+  parsing (metric/extent-with-D-as-delta/signed-radius/degree/count/
+  floating/`L,R` segments/backstep), registry resolution + alias
+  uniqueness + repaired hints, preseed law, Between/On/Through/Multiple/
+  From-End/Reverse-Compound submits (trim/identity/atomicity/continuity/
+  side laws/endpoint sharing), exact-id picks + invalid-stays-active,
+  legacy arc-less picks, native-circle LINE_CIRCLE commit, bounded
+  previews, prompt/empty-slot no-throw regressions.
+- Updated `tests/cad_ribbon_tool_families.test.ts`: Curves = 16 live rows,
+  zero planned, Between default, all selectable.
+- Browser `tests-browser/cad-draw-curves-f1.spec.ts`: 9/9 green with zero
+  page/console/unhandled errors (see `browser-qa.md`).
+- Neighboring suites green: `tests/cadCogo/*` (129), shell registry,
+  ribbon families, circle/line sessions; full `test:agent` + exact-head CI
+  own the final gate (see worker report).
+- Icons: no assets adopted (none exact); six F1 rows stay text-face; no
+  manifest change, no draw-spline wiring (see `icon-sources.md`).
+- Ribbon: `defaultVariantId` stays `curves-between-two-lines` (now
+  runnable); sticky face moves only on flyout choice; typed commands never
+  move it; New/Open resets via the existing lifecycle hook.
+- Caught during QA: eager `${session.arc!.id}` template evaluation threw
+  on arc-less sessions and broke the render (fixed with null guards +
+  no-throw regression tests); dock autocomplete hover arming under a
+  resting cursor (spec parks the mouse; app law unchanged).

@@ -211,12 +211,23 @@ const handleLineIntersectionSubmit = ({
   }
 
   if (session.key === 'LINE_CIRCLE_INTX') {
+    // Null-line sessions are pick-driven (see the entity pick handler):
+    // typed center/radius input without a line stays active.
+    if (session.lineStart == null || session.lineEnd == null) {
+      replaceSession({
+        ...session,
+        resultText: 'LINE_CIRCLE_INTX needs a line-body click first. The infinite line through it is tested, never the finite segment.',
+      });
+      return true;
+    }
+    const lineStart = session.lineStart;
+    const lineEnd = session.lineEnd;
     if (session.targetPoint == null) {
-      const parsedPoint = parseInputPoint(session.inputValue, session.lineEnd);
+      const parsedPoint = parseInputPoint(session.inputValue, lineEnd);
       if (!parsedPoint) {
         replaceSession({
           ...session,
-          resultText: 'LINE_CIRCLE_INTX center input invalid. Use `x,y` or `LABEL=x,y`.',
+          resultText: 'LINE_CIRCLE_INTX center input invalid. Click a native circle body, or type the center as `x,y`.',
         });
         return true;
       }
@@ -226,11 +237,11 @@ const handleLineIntersectionSubmit = ({
     const radius = Number(session.inputValue.trim());
     const solutions = Number.isFinite(radius)
       ? cadIntersectLineCircle({
-          lineStart: session.lineStart,
-          lineEnd: session.lineEnd,
+          lineStart,
+          lineEnd,
           center: session.targetPoint,
           radius,
-          lineLabel: `${session.lineStart.label}-${session.lineEnd.label}`,
+          lineLabel: `${lineStart.label}-${lineEnd.label}`,
           centerLabel: session.targetPoint.label,
         })
       : [];
@@ -238,7 +249,7 @@ const handleLineIntersectionSubmit = ({
     if (!primary) {
       replaceSession({
         ...session,
-        resultText: 'LINE_CIRCLE_INTX radius invalid or no intersection found.',
+        resultText: 'LINE_CIRCLE_INTX radius invalid, or the infinite line misses the circle. The session stays active.',
       });
       return true;
     }
@@ -246,9 +257,9 @@ const handleLineIntersectionSubmit = ({
     publishReport(
       'LINE_CIRCLE_INTX',
       'Line-Circle Intersection',
-      `Computed line-circle intersection on ${session.lineStart.label}-${session.lineEnd.label}`,
+      `Computed infinite-line/circle intersection on ${lineStart.label}-${lineEnd.label}`,
       [
-        { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+        { label: 'Line (infinite)', value: `${lineStart.label}-${lineEnd.label}` },
         { label: 'Center', value: session.targetPoint.label },
         { label: 'Radius', value: radius.toFixed(3), unit: 'm' },
         { label: 'Chosen Northing', value: primary.point.y.toFixed(3), unit: 'm' },
@@ -304,6 +315,13 @@ const handleLineIntersectionSubmit = ({
   }
 
   if (session.targetPoint == null) {
+    if (session.lineStart == null || session.lineEnd == null) {
+      replaceSession({
+        ...session,
+        resultText: 'SKEW_INTX needs a selected line first. The session stays active.',
+      });
+      return true;
+    }
     const parsedPoint = parseInputPoint(session.inputValue, session.lineEnd);
     if (!parsedPoint) {
       replaceSession({
@@ -315,17 +333,27 @@ const handleLineIntersectionSubmit = ({
     consumePoint(parsedPoint);
     return true;
   }
+  if (session.lineStart == null || session.lineEnd == null) {
+    replaceSession({
+      ...session,
+      resultText: 'SKEW_INTX needs a selected line first. The session stays active.',
+    });
+    return true;
+  }
+  const skewLineStart = session.lineStart;
+  const skewLineEnd = session.lineEnd;
+  const skewTarget = session.targetPoint;
   const parsed = parseSideDistanceInput(session.inputValue);
   const solution =
     parsed &&
     cadIntersectSkew({
-      lineStart: session.lineStart,
-      lineEnd: session.lineEnd,
-      fromPoint: session.targetPoint,
+      lineStart: skewLineStart,
+      lineEnd: skewLineEnd,
+      fromPoint: skewTarget,
       angleDeg: parsed.distance,
       side: parsed.side,
-      lineLabel: `${session.lineStart.label}-${session.lineEnd.label}`,
-      pointLabel: session.targetPoint.label,
+      lineLabel: `${skewLineStart.label}-${skewLineEnd.label}`,
+      pointLabel: skewTarget.label,
     });
   if (!parsed || !solution) {
     replaceSession({
@@ -338,10 +366,10 @@ const handleLineIntersectionSubmit = ({
   publishReport(
     'SKEW_INTX',
     'Skew Intersection',
-    `Computed skew intersection from ${session.targetPoint.label} onto ${session.lineStart.label}-${session.lineEnd.label}`,
+    `Computed skew intersection from ${skewTarget.label} onto ${skewLineStart.label}-${skewLineEnd.label}`,
     [
-      { label: 'Source point', value: session.targetPoint.label },
-      { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+      { label: 'Source point', value: skewTarget.label },
+      { label: 'Line', value: `${skewLineStart.label}-${skewLineEnd.label}` },
       { label: 'Skew', value: `${parsed.side} ${parsed.distance.toFixed(4)} deg` },
       { label: 'Northing', value: solution.point.y.toFixed(3), unit: 'm' },
       { label: 'Easting', value: solution.point.x.toFixed(3), unit: 'm' },
