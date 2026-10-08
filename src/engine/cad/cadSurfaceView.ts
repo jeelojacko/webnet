@@ -10,7 +10,7 @@ import {
 import type { CadSurfaceContourSet } from './surfaceContours/contourTypes';
 import { computeCadSurfaceSourceRevision, deriveSurfaceStatus, getSurfaceElevationAt } from './cadSurfaces';
 import { querySurfaceSlopeAt, type SurfaceSlopeResult } from './surfaceAnalysis';
-import { backfillCadSurfaceStyles } from './cadSurfaceStyles';
+import { findCadSurfaceStyle } from './cadSurfaceStyles';
 import { resolveSurfaceLayerId as resolveDefaultSurfaceLayerId } from './cadSurfaceTypes';
 import type { CadProject, CadSurface, CadSurfaceStatus } from './cadTypes';
 import { surfacePointGroupIds } from './cadTypes';
@@ -180,11 +180,40 @@ export const resolveSurfaceDisplayStatus = (
   };
 };
 
-/** Content revision this session built (cache key); pure engine helper. */
+/**
+ * Content revision this session built (cache key). Byte-identical to
+ * `computeCadSurfaceSourceRevision` (the canonical engine truth); this UI
+ * wrapper memoizes by immutable project identity + surface object identity
+ * so the four UI read paths (auto-derive, contours, display, shell snapshot)
+ * share one hash per project revision.
+ *
+ * Contract: projects and surfaces are treated as immutable — every
+ * transaction replaces them. A replaced surface object under the same id (or
+ * a new project object) recomputes; an in-place mutation of the *same*
+ * project+surface objects is deliberately not invalidated (all production
+ * writers replace; pinned by tests/cad_surface_revision_cache_185.test.ts).
+ * The cache is weak on the project key, so no drawing is retained.
+ */
+const sourceRevisionCache = new WeakMap<
+  CadProject,
+  Map<string, { surface: CadSurface; revision: string }>
+>();
+
 export const surfaceContentRevision = (
   project: CadProject,
   surface: CadSurface,
-): string => computeCadSurfaceSourceRevision(project, surface);
+): string => {
+  let byId = sourceRevisionCache.get(project);
+  if (byId === undefined) {
+    byId = new Map();
+    sourceRevisionCache.set(project, byId);
+  }
+  const cached = byId.get(surface.id);
+  if (cached !== undefined && cached.surface === surface) return cached.revision;
+  const revision = computeCadSurfaceSourceRevision(project, surface);
+  byId.set(surface.id, { surface, revision });
+  return revision;
+};
 
 /**
  * Elevation at a plan point from a cached mesh via the engine grid index
@@ -320,9 +349,7 @@ export const resolveSurfaceDisplayOptions = (
   surface: CadSurface,
   project: CadProject,
 ): CadSurfaceDisplayOptions => {
-  const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
-    (entry) => entry.id === surface.styleId,
-  );
+  const style = findCadSurfaceStyle(project.surfaceStyles, surface.styleId);
   return {
     showTriangles: style?.showTriangles ?? true,
     showVertices: style?.showPoints ?? false,
@@ -394,9 +421,7 @@ export const buildSurfaceDisplayLayer = (
     if (vertex.y > maxY) maxY = vertex.y;
   }
   const vertices = display.showVertices ? mesh.points.slice(0, SURFACE_DISPLAY_VERTEX_CAP) : [];
-  const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
-    (entry) => entry.id === surface.styleId,
-  );
+  const style = findCadSurfaceStyle(project.surfaceStyles, surface.styleId);
   const contourDisplay = resolveContourDisplay(style, display.stroke);
   const contourSet = contourDisplay && contours ? contours.set : null;
   const contourLabels = contourDisplay && contourSet && contourDisplay.showLabels

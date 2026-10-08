@@ -66,6 +66,33 @@ export const backfillCadSurfaceStyles = (
   styles: CadSurfaceStyle[] | undefined,
 ): CadSurfaceStyle[] => (styles == null ? seedSurfaceStyles() : cloneCadSurfaceStyles(styles));
 
+/**
+ * Read-only single-style lookup (no clone): seeds the legacy absent-style
+ * default but never copies an existing array. Display/derivation reads use
+ * this so a per-surface lookup never allocates a full style clone. Callers
+ * must not mutate the returned style (the array may be the stored one).
+ */
+export const findCadSurfaceStyle = (
+  styles: CadSurfaceStyle[] | undefined,
+  styleId: string | null | undefined,
+): CadSurfaceStyle | undefined => (styles ?? seedSurfaceStyles()).find((style) => style.id === styleId);
+
+/**
+ * First-wins style index over one `backfillCadSurfaceStyles` clone.
+ * Duplicate ids resolve to the FIRST entry, matching the prior
+ * `backfill(...).find(...)` read path (a bare `new Map(styles.map(...))`
+ * would keep the LAST duplicate). No load-time rejection/migration.
+ */
+export const indexCadSurfaceStylesById = (
+  styles: CadSurfaceStyle[] | undefined,
+): Map<string, CadSurfaceStyle> => {
+  const index = new Map<string, CadSurfaceStyle>();
+  for (const style of backfillCadSurfaceStyles(styles)) {
+    if (!index.has(style.id)) index.set(style.id, style);
+  }
+  return index;
+};
+
 export const isSurfaceStyleNameTaken = (
   styles: CadSurfaceStyle[],
   name: string,
