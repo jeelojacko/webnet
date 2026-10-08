@@ -36,6 +36,13 @@ Exactly one candidate → use it. Multiple → return every candidate with its
 left/right side so the operator chooses (never an array-order pick). Zero →
 typed no-solution. Both source entities are trimmed on commit.
 
+Note: with both tangency points required on the selected rays and the point on
+the finite minor sweep, a fixed ray pair admits at most one through-point
+circle (the two bisector roots are the minor- and major-sweep circles). The
+kernel still returns a candidate array plus a defensive `MULTIPLE_SOLUTIONS`
+status so a future generalization can surface the L/R choice without an API
+change.
+
 ## 4. Multiple 2..10
 
 Between two rays, build `N` (2..10) tangent curves. Exactly one index floats.

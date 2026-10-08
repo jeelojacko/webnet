@@ -146,6 +146,14 @@ describe('CAD Curves F1 multiple-curve chain', () => {
         ]),
       ),
     ).toBe('INVALID_CHAIN');
+    expect(
+      failureCode(
+        buildCadCurveChain(rays, [
+          { radius: 10, length: -5 },
+          { radius: 10, length: 0, floating: true },
+        ]),
+      ),
+    ).toBe('INVALID_CHAIN');
   });
 
   it('rejects an impossible residual that cannot fit below the delta cap', () => {

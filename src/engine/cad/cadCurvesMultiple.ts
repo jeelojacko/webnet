@@ -90,6 +90,9 @@ export const buildCadCurveChain = (
     if (!isValidCadCurveRadius(segment.radius) || !Number.isFinite(segment.length)) {
       return { ok: false, code: 'INVALID_CHAIN' };
     }
+    if (!segment.floating && segment.length <= 0) {
+      return { ok: false, code: 'INVALID_CHAIN' };
+    }
   }
 
   const turnSign = rays.signedTurnDeg >= 0 ? 1 : -1;
