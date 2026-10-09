@@ -4,7 +4,6 @@ import type {
   CadBounds,
   CadDrawingDocument,
   CadParcelLayoutUiState,
-  CadSurface,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
 import type { FeatureCodeCatalog } from '../engine/fieldToFinish/featureCatalog';
@@ -68,10 +67,9 @@ import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCad
 import { useSurveyCadSurfacePointEditSessions } from '../hooks/surveyCad/useSurveyCadSurfacePointEditSessions';
 import { useSurveyCadSurfaceBulkSelection } from '../hooks/surveyCad/useSurveyCadSurfaceBulkSelection';
 import { useSurveyCadSurfaceBulkEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceBulkEditSessions';
-import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
+import { useSurveyCadSurfaceBuildLifecycle } from '../hooks/surveyCad/useSurveyCadSurfaceBuildLifecycle';
+import { useSurveyCadContourLifecycle } from '../hooks/surveyCad/useSurveyCadContourLifecycle';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
-import { SurfaceBuildService } from '../workers/surfaceBuildService';
-import { SurfaceContourService } from '../workers/surfaceContourService';
 import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
 import { SurfaceGradingService } from '../workers/surfaceGradingService';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
@@ -92,13 +90,6 @@ import {
   type CadSurfaceComposeMode,
 } from '../cad-app/shell/cadSurfaceCompose';
 import { SurfaceComposeService } from '../workers/surfaceComposeService';
-import { findCadSurfaceStyle, indexCadSurfaceStylesById } from '../engine/cad/cadSurfaceStyles';
-import { contourLevelSpecFromStyle } from '../engine/cad/cadSurfaceContourView';
-import {
-  computeContourGeometryRevision,
-  toContourGeometrySpec,
-} from '../engine/cad/surfaceContours/contourStyleRevision';
-import type { SurfaceContourDisplayInput } from '../engine/cad/cadSurfaceView';
 import { surfaceContentRevision } from '../engine/cad/cadSurfaceView';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
@@ -332,207 +323,40 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     repeat: boolean;
   } | null>(null);
   const [lastSurfaceInquiry, setLastSurfaceInquiry] = useState<CadSurfaceInquiry | null>(null);
-  const [surfaceMeshSessions, setSurfaceMeshSessions] = useState<Record<string, string[]>>({});
-  const surfaceCache = useMemo(
-    () => createCadSurfaceCache(activeDrawing.drawingId),
-    [activeDrawing.drawingId],
-  );
-  const surfaceRevisionIndex = useMemo(
-    () => new Map(Object.entries(surfaceMeshSessions)),
-    [surfaceMeshSessions],
-  );
-  // Phase 18G — production builds run through the surface build service
-  // (one worker per drawing session; async completion populates the
-  // session mesh cache). Refs mirror render state so late worker
-  // completions always guard against the live project/drawing.
-  const activeProjectForBuildsRef = useRef(cadProject);
-  activeProjectForBuildsRef.current = cadProject;
-  const drawingIdForBuildsRef = useRef(activeDrawing.drawingId);
-  drawingIdForBuildsRef.current = activeDrawing.drawingId;
-  const surfaceMeshSessionsForBuildsRef = useRef(surfaceMeshSessions);
-  surfaceMeshSessionsForBuildsRef.current = surfaceMeshSessions;
-  const [surfaceBuildVersion, setSurfaceBuildVersion] = useState(0);
-  const surfaceBuildService = useMemo(
-    () =>
-      new SurfaceBuildService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        cache: surfaceCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        getBuiltRevisions: (surfaceId) => surfaceMeshSessionsForBuildsRef.current[surfaceId] ?? [],
-        // Bounded index: current + ≤1 previous stale revision per surface.
-        recordRevision: (surfaceId, revision) =>
-          setSurfaceMeshSessions((previous) => ({
-            ...previous,
-            [surfaceId]: [...(previous[surfaceId] ?? []), revision].slice(-2),
-          })),
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setSurfaceBuildVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache],
-  );
-  useEffect(() => () => surfaceBuildService.dispose(), [surfaceBuildService]);
-  // Snapshot inputs refresh only when the service reports a state change
-  // (pending/diagnostic transitions), not on every render.
-  const surfaceBuildInputs = useMemo(
-    () => ({
-      // Version tag: refreshes snapshot inputs whenever the service reports
-      // a state change (pending/diagnostic transitions), not on every render.
-      buildVersion: surfaceBuildVersion,
-      buildingSurfaceIds: surfaceBuildService.buildingSurfaceIds(),
-      sessionDiagnostics: surfaceBuildService.sessionDiagnostics(),
-      syncFallbackRevisions: surfaceBuildService.syncFallbackRevisions(),
-    }),
-    [surfaceBuildService, surfaceBuildVersion],
-  );
-  // Phase 18H — contour derivation control plane (one per drawing
-  // session, mirrors SurfaceBuildService ownership). Derivations consume
-  // the cached TIN (never rebuild it) and populate the session contour
-  // cache; late results from an old interval/mesh/drawing never replace
-  // the current set (latest-wins per surface, owned by the service).
-  const contourCache = useMemo(
-    () => createCadSurfaceContourCache(activeDrawing.drawingId),
-    [activeDrawing.drawingId],
-  );
-  const [contourVersion, setContourVersion] = useState(0);
-  const contourService = useMemo(
-    () =>
-      new SurfaceContourService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        contourCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        shouldAutoDerive: (surfaceId) => {
-          const project = activeProjectForBuildsRef.current;
-          const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
-          if (!surface) return false;
-          const style = findCadSurfaceStyle(project.surfaceStyles, surface.styleId);
-          return style != null && contourLevelSpecFromStyle(style) != null;
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setContourVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache, contourCache],
-  );
-  useEffect(() => () => contourService.dispose(), [contourService]);
-  // Auto-derive: every surface whose style enables contours and whose
-  // parent TIN is CURRENT gets a cached set for the style's geometry
-  // revision. Guarded (cached/pending/current-TIN checks) so the effect
-  // converges instead of re-requesting. Fires on project edits (style or
-  // definition) and TIN completions (the build epoch). Never touches the TIN.
-  // The epoch bundles the project revision and the mesh-build version so the
-  // dependency is explicit and identity-stable across unrelated renders — no
-  // fresh-each-render dependency, no bare ref read, no missing cache epoch.
-  // The contour service identity already covers a drawing switch (one service
-  // per drawing).
-  const contourAutoDeriveInput = useMemo(
-    () => ({ project: cadProject, buildVersion: surfaceBuildVersion }),
-    [cadProject, surfaceBuildVersion],
-  );
-  useEffect(() => {
-    const project = contourAutoDeriveInput.project;
-    // One style clone per sweep (never one per surface). First-wins on
-    // duplicate ids, matching the prior `.find()` read path.
-    const styleById = indexCadSurfaceStylesById(project.surfaceStyles);
-    for (const surface of project.surfaces ?? []) {
-      const style = styleById.get(surface.styleId ?? '');
-      if (!style) continue;
-      const spec = contourLevelSpecFromStyle(style);
-      if (!spec) continue;
-      // Session CURRENT = fresh TIN cache hit (cachedRevision is never
-      // written in-session; see resolveSurfaceDisplayStatus). A fresh source
-      // revision without a rebuilt TIN misses here and never promotes stale
-      // contours.
-      const revision = surfaceContentRevision(project, surface);
-      if (!surfaceCache.get(surface.id, revision)) continue;
-      const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
-      if (contourCache.get(surface.id, revision, geometryRevision)) continue;
-      // Revision-aware pending gate: skip only when the in-flight request
-      // already matches the current (source revision, geometry revision). If
-      // the style or geometry changed under a pending request (interval A →
-      // B), fall through so `requestContours` supersedes A with B
-      // (latest-wins). A bare `buildingContourIds().has(...)` skip would
-      // strand B until an unrelated project edit or TIN build, because a
-      // stale A never applies and completion only bumps `contourVersion`
-      // (intentionally not an effect dependency).
-      const pending = contourService.pendingContourRequest(surface.id);
-      if (
-        pending != null &&
-        pending.revision === revision &&
-        pending.geometryRevision === geometryRevision
-      ) {
-        continue;
-      }
-      contourService.requestContours(surface.id, spec);
-    }
-    // `contourVersion` is intentionally NOT a dependency: completion /
-    // diagnostic transitions must not re-trigger the sweep (that is where the
-    // old no-dependency effect could loop when the transport was unavailable).
-    // Every surface is covered in one pass, and the request/cache/pending
-    // gates converge without it.
-  }, [contourAutoDeriveInput, contourService, surfaceCache, contourCache]);
-  // Scene input: current-geometry set when the TIN is fresh, newest
-  // retained set as stale display otherwise (mirrors the stale-mesh
-  // contract). Null = no contour display (definition-only, legacy style,
-  // or nothing derived yet). Version tag re-renders on derivation state
-  // changes.
-  const surfaceContourInputs = useMemo(() => {
-    const project = cadProject;
-    // One style clone + surface index per project revision (never per surface
-    // per scene build). Both indexes are first-wins, matching the prior
-    // `.find()` read paths (surface ids should be unique; the guard keeps the
-    // contract identical if a duplicate ever loads).
-    const styleById = indexCadSurfaceStylesById(project.surfaceStyles);
-    const surfaceById = new Map<string, CadSurface>();
-    for (const surface of project.surfaces ?? []) {
-      if (!surfaceById.has(surface.id)) surfaceById.set(surface.id, surface);
-    }
-    const getContours = (surfaceId: string): SurfaceContourDisplayInput | null => {
-      const surface = surfaceById.get(surfaceId);
-      if (!surface) return null;
-      const style = styleById.get(surface.styleId ?? '');
-      if (!style) return null;
-      const spec = contourLevelSpecFromStyle(style);
-      if (!spec) return null;
-      const revision = surfaceContentRevision(project, surface);
-      if (surfaceCache.get(surfaceId, revision)) {
-        const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
-        const set = contourCache.get(surfaceId, revision, geometryRevision);
-        return set ? { set } : null;
-      }
-      const retained = contourCache.retained(surfaceId);
-      const stale = retained.length > 0 ? retained[retained.length - 1]! : undefined;
-      return stale ? { set: stale } : null;
-    };
-    return { version: contourVersion, getContours };
-  }, [contourVersion, surfaceCache, contourCache, cadProject]);
+  // STRUCT-194.4 — early surface-build lifecycle (session TIN state, the
+  // per-drawing cache + live refs, the one-worker build service, and the
+  // revision-keyed snapshot inputs). Declared here, before the contour
+  // lifecycle, at the exact former surface/contour render position.
+  const {
+    surfaceMeshSessions,
+    setSurfaceMeshSessions,
+    surfaceCache,
+    surfaceRevisionIndex,
+    surfaceBuildService,
+    surfaceBuildVersion,
+    surfaceBuildInputs,
+    activeProjectForBuildsRef,
+    drawingIdForBuildsRef,
+  } = useSurveyCadSurfaceBuildLifecycle({
+    activeDrawingId: activeDrawing.drawingId,
+    cadProject,
+    setFileStatusText,
+  });
+  // STRUCT-194.4 — contour lifecycle (cache + version + service, the
+  // auto-derive epoch/effect, and the contour scene inputs), immediately
+  // after the build lifecycle so it consumes the same per-drawing TIN cache.
+  const {
+    contourService,
+    surfaceContourInputs,
+  } = useSurveyCadContourLifecycle({
+    activeDrawingId: activeDrawing.drawingId,
+    cadProject,
+    surfaceCache,
+    surfaceBuildVersion,
+    activeProjectForBuildsRef,
+    drawingIdForBuildsRef,
+    setFileStatusText,
+  });
   // Phase 18I — volume derivation control plane (one per drawing
   // session, mirrors SurfaceBuildService ownership). Manual calculation
   // only: source rebuilds never auto-start volume work; notifyMeshBuilt
@@ -1872,6 +1696,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       }
       return changed ? kept : previous;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProject.surfaces, surfaceCache, contourService]);
 
   // Phase 18B shell seam (+18F surface actions): shared by the shell link
