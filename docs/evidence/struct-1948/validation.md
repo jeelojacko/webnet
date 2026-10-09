@@ -12,7 +12,7 @@ untouched).
 | --- | --- | --- |
 | LSP diagnostics | every new + edited file | clean |
 | Production build | `npm run build` | clean, `✓ built in 11.56s` |
-| Portable paths | `npm run check:portable-paths` | 6250 tracked paths, 0 violations |
+| Portable paths | `npm run check:portable-paths` | 6263 tracked paths, 0 violations |
 
 Lint/typecheck at commit are owned by Husky and were not run manually here.
 
@@ -52,7 +52,9 @@ trio, unrelated to CAD and untouched by this phase:
 - `study-desktop/tests/study_ai_unit_preflight.test.ts`
 
 Same class as the 194.1–194.7 baselines (frozen `sourcePackageId` drift). No CAD
-test failed.
+test failed. A first, back-to-back run (immediately after the focused batches)
+reported a transient 4th failure that did not reproduce on the confirming run
+above; the three study-desktop files account for every reproducible failure.
 
 ## Browser QA (real headless Chromium /cad)
 
@@ -133,5 +135,7 @@ Total browser flows exercised this phase: **20/20**.
 
 ## Head
 
-Baseline `b7fdf2302cbff76c2b2136622a11af0f4a9bfac7`; final head recorded in the
-commit that lands this slice.
+Baseline `b7fdf2302cbff76c2b2136622a11af0f4a9bfac7`. Implementation + initial
+evidence: `956ab2126becb637ef80291f44ae97db0616dbde`. This page is refreshed in
+a docs-only closeout commit on top of that head; the final branch head is
+the closeout commit.

@@ -52,6 +52,9 @@ Root call-site order (line at extraction): hook 1 @569, hook 2 @833, hook 3
 `surfaceEditSessions`/`surfacePointEditSessions` hooks stay between hooks 2 and
 3; `runSurfaceBuild`/`rebuildAllSurfaces` stay between hooks 2 and 3.
 
+Baseline `b7fdf2302cbff76c2b2136622a11af0f4a9bfac7`; implementation + initial
+evidence commit `956ab2126becb637ef80291f44ae97db0616dbde`; docs closeout on top.
+
 ### Hook 1 — `useSurveyCadPreGradingDerivedScene`
 
 Seven `useMemo`s in their original order with byte-identical dependency arrays
