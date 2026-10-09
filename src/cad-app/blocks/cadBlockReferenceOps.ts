@@ -10,7 +10,7 @@ import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
 import { createStableRuntimeId } from '../../engine/id';
 import type { CadBlockChild, CadBlockReferenceEntity, CadEntity, CadProject } from '../../engine/cad/cadTypes';
 import type { CadBlockUiOp, CadBlockUiResult } from './cadBlockUiCommands';
-import { blockFail as fail, blockSiblingNames as siblingNames } from './cadBlockUiCommands';
+import { fail, siblingNames } from './cadBlockUiCommon';
 
 export const applyBlockReferenceOp = (project: CadProject, op: Extract<CadBlockUiOp, { kind: 'insert' | 'explode' | 'set-transform' }>): CadBlockUiResult => {
   const definitions = project.blockDefinitions ?? [];

@@ -14,6 +14,7 @@ import type { CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import { createStableRuntimeId } from '../../engine/id';
 import { collectChildren, selectionBasePoint } from './cadBlockSelectionGeometry';
 import { applyBlockReferenceOp } from './cadBlockReferenceOps';
+import { fail, siblingNames, type CadBlockUiCommandKey } from './cadBlockUiCommon';
 import type {
   CadBlockDefinition,
   CadBlockReferenceEntity,
@@ -21,9 +22,6 @@ import type {
   CadEntityId,
   CadProject,
 } from '../../engine/cad/cadTypes';
-
-const siblingNames = (project: CadProject, exceptId?: string): string[] =>
-  (project.blockDefinitions ?? []).filter((entry) => entry.id !== exceptId).map((entry) => entry.name);
 
 const uniqueName = (project: CadProject, base: string): string => {
   const taken = new Set(siblingNames(project).map((name) => name.trim().toLowerCase()));
@@ -67,31 +65,11 @@ export interface CadBlockUiResult {
   reason?: string;
   project: CadProject;
   label: string;
-  commandKey:
-    | 'BLOCK_SEED'
-    | 'BLOCK_CREATE'
-    | 'BLOCK_DUPLICATE'
-    | 'BLOCK_RENAME'
-    | 'BLOCK_REDEFINE'
-    | 'BLOCK_DELETE'
-    | 'BLOCK_INSERT'
-    | 'BLOCK_EXPLODE'
-    | 'BLOCK_EDIT';
+  commandKey: CadBlockUiCommandKey;
   addedEntityIds: CadEntityId[];
   removedEntityIds: CadEntityId[];
   afterSelectionIds?: CadEntityId[];
 }
-
-const fail = (project: CadProject, commandKey: CadBlockUiResult['commandKey'], reason: string): CadBlockUiResult => ({
-  applied: false,
-  reason,
-  project,
-  label: reason,
-  commandKey,
-  addedEntityIds: [],
-  removedEntityIds: [],
-});
-
 
 export const applyBlockUiOp = (project: CadProject, op: CadBlockUiOp): CadBlockUiResult => {
   const definitions = project.blockDefinitions ?? [];
@@ -307,5 +285,3 @@ export const commitBlockUiOp = (state: CadHistoryState, op: CadBlockUiOp): CadBl
     },
   };
 };
-
-export { fail as blockFail, siblingNames as blockSiblingNames };

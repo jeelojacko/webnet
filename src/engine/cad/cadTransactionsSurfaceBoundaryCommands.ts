@@ -12,7 +12,7 @@ import {
 } from './cadBoundaryCandidateValidation';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { isSurfaceLayerLocked, resolveSurfaceLayerId } from './cadSurfaceTypes';
-import { commitSurface, editSurface } from './cadTransactionsSurfaceCommands';
+import { commitSurface, editSurface } from './cadTransactionsSurfaceCore';
 import type {
   CadCommand,
   CadCommandDefinition,
@@ -31,8 +31,9 @@ import { isNativeSurfaceDefinition } from './cadTypes';
 
 /**
  * Phase 18W — boundary source transactions (extracted verbatim from
- * cadTransactionsSurfaceCommands.ts; behavior-identical split).
- * Boundary entries stay entity-backed refs; parcel sources are copy-only.
+ * cadTransactionsSurfaceCommands.ts; behavior-identical split). Boundary
+ * entries stay entity-backed refs; parcel sources are copy-only. Value
+ * helpers come from the leaf core, never from the commands module.
  */
 
 const RING_ENTITY_TYPES = new Set(['polyline', 'polygon', 'parcel']);
