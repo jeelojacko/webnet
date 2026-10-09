@@ -192,3 +192,14 @@ beyond what the numbers show, and no residual path is hidden.
   surface edits, dxf, profiles) into leaves.
 - Keep `scripts/cadTypeImportGraph.mjs` as the regression entry point; the
   value graph must stay identical to this AFTER measurement.
+
+## Phase-end closeout (parent-recorded, 195.2 merged)
+
+PR #226 merged: reviewed head `c19dc6d4e6450859da15e7ee5a37372b965887c3`,
+main merge SHA `706ab3ff9ec8a172aad2e4e17492d78d2274c329`. Exact-head GitHub
+CI all 5 jobs green; Chromium 3/3 per the merged PR record. The
+worker-scope caveat in Limitations above ("No production build, browser
+QA, or CI is run or claimed here — parent integration owns those")
+remains the true record of what the workers ran; this note is the
+parent-recorded phase closeout, not a claim that the workers ran CI.
+Refs #195 — issue #195 stays OPEN.
