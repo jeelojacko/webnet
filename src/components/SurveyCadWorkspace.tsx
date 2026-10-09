@@ -22,7 +22,6 @@ import type { CadDrawingLifecycleEvent } from '../cad-app/cadAppTypes';
 import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
-import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
 import type { CadSurfaceInquiry } from '../cad-app/shell/cadSurfaceSnapshot';
 import {
   analysisAreaUnit,
@@ -31,14 +30,7 @@ import {
 } from '../cad-app/shell/cadAnalysisSnapshot';
 import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
 import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput';
-import { buildGradingSceneLayers } from '../cad-app/shell/cadGradingDisplay';
 import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
-import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
-import {
-  buildSampleLineDisplayLayers,
-  buildSectionViewDisplayLayers,
-} from '../engine/cad/cadSectionView';
-import { filterCadDerivedLayersForViewport } from '../engine/cad/cadViewportAppearance';
 import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceEditSessions';
 import { useSurveyCadSurfacePointEditSessions } from '../hooks/surveyCad/useSurveyCadSurfacePointEditSessions';
 import { useSurveyCadSurfaceBulkSelection } from '../hooks/surveyCad/useSurveyCadSurfaceBulkSelection';
@@ -51,7 +43,6 @@ import { useSurveyCadComposeLifecycle } from '../hooks/surveyCad/useSurveyCadCom
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
 import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
 import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCache';
-import { buildGroupGradingSceneLayers } from '../cad-app/shell/cadGradingGroupDisplay';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import type { DrawingDependencySummary } from '../engine/cad/cadAdjustmentDependency';
 import { summarizeActiveDrawingDependency } from './surveyCad/cadDependencyDiagnostics';
@@ -65,6 +56,16 @@ import { useSurveyCadDrawingLifecycleState } from '../hooks/surveyCad/useSurveyC
 import { useSurveyCadDrawingFileLifecycle } from '../hooks/surveyCad/useSurveyCadDrawingFileLifecycle';
 import { useSurveyCadLandXmlImportLifecycle } from '../hooks/surveyCad/useSurveyCadLandXmlImportLifecycle';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
+import { useSurveyCadPreGradingDerivedScene } from '../hooks/surveyCad/useSurveyCadPreGradingDerivedScene';
+import { useSurveyCadGradingEditOverlayScene } from '../hooks/surveyCad/useSurveyCadGradingEditOverlayScene';
+import {
+  useSurveyCadShellCursorAndInsertKeyEffects,
+  type CadBlockInsertPick,
+} from '../hooks/surveyCad/useSurveyCadShellCursorAndInsertKeyEffects';
+import { useSurveyCadSurfaceEditHotkeys } from '../hooks/surveyCad/useSurveyCadSurfaceEditHotkeys';
+import { useSurveyCadAnalysisVolumeRetirement } from '../hooks/surveyCad/useSurveyCadAnalysisVolumeRetirement';
+import { useSurveyCadProfileSectionRetirement } from '../hooks/surveyCad/useSurveyCadProfileSectionRetirement';
+import { useSurveyCadSurfaceRetirement } from '../hooks/surveyCad/useSurveyCadSurfaceRetirement';
 import type { SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
 import SurveyCadWorkspaceManagers from './surveyCad/SurveyCadWorkspaceManagers';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
@@ -279,12 +280,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
   const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
-  const [blockInsertPick, setBlockInsertPick] = useState<{
-    definitionId: string;
-    scale: number;
-    rotationDeg: number;
-    repeat: boolean;
-  } | null>(null);
+  const [blockInsertPick, setBlockInsertPick] = useState<CadBlockInsertPick | null>(null);
   const [lastSurfaceInquiry, setLastSurfaceInquiry] = useState<CadSurfaceInquiry | null>(null);
   // STRUCT-194.4 — early surface-build lifecycle (session TIN state, the
   // per-drawing cache + live refs, the one-worker build service, and the
@@ -568,78 +564,19 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setShowParcelLabels(activeDrawing.showParcelLabels ?? true);
   }, [activeDrawing]);
 
-  const displaySceneWithParcelLabelToggle = useMemo(
-    () =>
-      showParcelLabels
-        ? displayScene
-        : {
-            ...displayScene,
-            primitives: displayScene.primitives.filter(
-              (primitive) => primitive.kind !== 'text' || !primitive.id.endsWith(':parcel-label'),
-            ),
-        },
-    [displayScene, showParcelLabels],
-  );
-  // Phase 18J — derived profile-view display layers. OFF/FROZEN hiding
-  // is engine-owned: layers attach unfiltered and the viewport filter
-  // drops them under the same visible/!frozen contract as surfaces/volumes.
-  // activeProject is the dep (new identity per transaction): a ref read
-  // alone never resubscribes, so view create/delete left stale [] behind.
-  const profileViewLayers = useMemo(() => {
-    // surfaceProfileInputs.version is the republish signal: the cache is
-    // mutated in place by the service, so a version bump is the only
-    // reliable "results changed" trigger for this memo.
-    void surfaceProfileInputs.version;
-    return buildProfileViewDisplayLayers(activeProject, profileCache);
-  }, [activeProject, profileCache, surfaceProfileInputs]);
-  const displaySceneWithProfiles = useMemo(
-    () =>
-      // PERF-186.1: displaySceneWithParcelLabelToggle is already viewport
-      // filtered; only the newly attached profile-view layers need the
-      // OFF/FROZEN contract applied here.
-      filterCadDerivedLayersForViewport(activeProject, displaySceneWithParcelLabelToggle, {
-        profileViewLayers,
-      }),
-    [activeProject, displaySceneWithParcelLabelToggle, profileViewLayers],
-  );
-  // Phase 18K — derived sample-line plan + section-view display layers.
-  // OFF/FROZEN hiding is engine-owned (same visible/!frozen contract as
-  // profiles); activeProject is the dep (new identity per transaction).
-  const sampleLineLayers = useMemo(() => {
-    void surfaceSectionInputs.version;
-    return buildSampleLineDisplayLayers(activeProject);
-  }, [activeProject, surfaceSectionInputs]);
-  const sectionViewLayers = useMemo(() => {
-    // Version bump is the only reliable "results changed" trigger: the
-    // cache is mutated in place by the service.
-    void surfaceSectionInputs.version;
-    return buildSectionViewDisplayLayers(activeProject, sectionCache);
-  }, [activeProject, sectionCache, surfaceSectionInputs]);
-  const displaySceneWithSections = useMemo(() =>
-    // PERF-186.1: base is already filtered; only the newly attached sample /
-    // section / analysis layers are filtered. withBlockHoverTitles maps the
-    // existing primitives in place (hover metadata only) — it adds/removes no
-    // primitive, so the already-filtered list is reused without a rescan.
-    filterCadDerivedLayersForViewport(activeProject, displaySceneWithProfiles, {
-      // Phase 18N — refs render natively (persist slice); tag the
-      // expansion primitives with hover titles only.
-      primitives: withBlockHoverTitles(activeProject, displaySceneWithProfiles.primitives),
-      sampleLineLayers,
-      sectionViewLayers,
-      // Phase 18U — band fills render UNDER the surface/volume passes and
-      // legend rows read the CURRENT cached result at render time.
-      analysisLayers: analysisDisplay.layers,
-      analysisLegendLayers: analysisDisplay.legendLayers,
-    }),
-  [activeProject, displaySceneWithProfiles, sampleLineLayers, sectionViewLayers, analysisDisplay],
-  );
-  const reportedComputationEntities = useMemo(
-    () =>
-      reportedComputation
-        ? activeProject.entities.filter((entity) => reportedComputation.createdEntityIds.includes(entity.id))
-        : [],
-    [activeProject.entities, reportedComputation],
-  );
+  // STRUCT-194.8 — pre-grading derived display scene (parcel-label toggle,
+  // profile / sample-line / section / analysis stages, reported entities).
+  const { displaySceneWithSections, reportedComputationEntities } = useSurveyCadPreGradingDerivedScene({
+    displayScene,
+    showParcelLabels,
+    activeProject,
+    profileCache,
+    surfaceProfileInputs,
+    surfaceSectionInputs,
+    sectionCache,
+    analysisDisplay,
+    reportedComputation,
+  });
 
   const traverseDraftPanelState = useSurveyCadTraverseDraftPanelState({
     activeTraverseDraft,
@@ -892,47 +829,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (shellLink && shellSnapshot) shellLink.publish(shellSnapshot);
   }, [shellLink, shellSnapshot]);
 
-  // Phase 18N — Esc ends the INSERT pick loop (capture: runs before the
-  // command dock input consumes it; typing targets keep their own Esc).
-  useEffect(() => {
-    if (!blockInsertPick) return;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return;
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
-        return;
-      }
-      setBlockInsertPick(null);
-    };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [blockInsertPick]);
-
-  useEffect(() => {
-    if (!shellLink) return;
-    // PERF-183.1 — cursor readout rides the imperative pointer channel so
-    // idle pointer moves never commit root React state. Snap changes still
-    // re-run this effect through the `activeSnap` dependency.
-    const publishCursor = (): void => {
-      const snap = cursorActiveSnap;
-      const raw = cursorPointerWorldPointRef.current;
-      shellLink.publishCursor(
-        snap
-          ? { x: snap.x, y: snap.y, label: snap.label }
-          : raw
-            ? { x: raw.x, y: raw.y, label: `${raw.x.toFixed(3)},${raw.y.toFixed(3)}` }
-            : null,
-      );
-    };
-    const unsubscribe = subscribeCursorPointerWorldPoint(publishCursor);
-    publishCursor();
-    return unsubscribe;
-  }, [
+  // STRUCT-194.8 — shell cursor readout + block-INSERT Escape (PERF-183.1).
+  useSurveyCadShellCursorAndInsertKeyEffects({
+    blockInsertPick,
+    setBlockInsertPick,
     shellLink,
     cursorActiveSnap,
     cursorPointerWorldPointRef,
     subscribeCursorPointerWorldPoint,
-  ]);
+  });
 
   /**
    * Phase 18G — production rebuild through the build service (single
@@ -975,117 +880,41 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     notify: (message) => setFileStatusText(message),
   });
 
-  // Phase 18S/18T/18V — Esc ends the active surface session; Enter commits
-  // the staged edit/selection (capture, before dock input; typing targets
-  // keep their own keys).
-  useEffect(() => {
-    if (
-      !surfaceEditSessions.session &&
-      !surfacePointEditSessions.session &&
-      !surfaceBulkSelection.session &&
-      !surfaceBulkEditSessions.session
-    ) return;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' && event.key !== 'Enter') return;
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
-        return;
-      }
-      if (event.key === 'Escape') {
-        surfaceEditSessions.cancel();
-        surfacePointEditSessions.cancel();
-        surfaceBulkSelection.cancel();
-        surfaceBulkEditSessions.cancel();
-        setFileStatusText('Surface edit session ended.');
-      } else if (surfacePointEditSessions.session) {
-        if (surfacePointEditSessions.handleEnter()) event.preventDefault();
-      } else if (surfaceBulkEditSessions.handleEnter()) {
-        event.preventDefault();
-      } else if (surfaceBulkSelection.handleEnter()) {
-        event.preventDefault();
-      } else if (surfaceEditSessions.handleEnter()) {
-        event.preventDefault();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => document.removeEventListener('keydown', onKeyDown, true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [surfaceEditSessions, surfacePointEditSessions, surfaceBulkSelection, surfaceBulkEditSessions]);
-  // Phase 18S/18V overlay: staged current/proposed/affected edges and the
-  // selection/bulk previews appended post-filter so they render even when
-  // the style hides triangles.
-  const surfaceEditOverlayPrimitives = [
-    ...surfaceEditSessions.previewPrimitives,
-    ...surfacePointEditSessions.previewPrimitives,
-    ...surfaceBulkSelection.previewPrimitives,
-    ...surfaceBulkEditSessions.previewPrimitives,
-  ];
-  // Phase 20B — CURRENT grading fills + daylight from the shell snapshot
-  // (same freshness as the manager). OFF/FROZEN layers drop here under the
-  // same visible/!frozen contract as surfaces/volumes; stale/failed rows
-  // contribute no layer, so superseded geometry never renders as current.
-  const gradingDisplayLayers = useMemo(
-    () => buildGradingSceneLayers(shellSnapshot?.grading),
-    [shellSnapshot],
-  );
-  // Phase 20C — CURRENT group fills + daylight + seam, ghost side arrows
-  // for the selected uncalculated group, failed corner/course markers.
-  // OFF/FROZEN layers drop under the same contract; stale rows contribute
-  // no layer, so superseded geometry never renders as current.
-  const groupGradingDisplayLayers = useMemo(() => {
-    const failedErrors = new Map<string, string>();
-    for (const [groupId, diagnostic] of gradingService.groupGradingDiagnostics()) {
-      failedErrors.set(groupId, diagnostic.error);
-    }
-    return buildGroupGradingSceneLayers(shellSnapshot?.gradingGroups, { failedErrors });
-  }, [shellSnapshot, gradingService]);
-  const displaySceneWithGrading = useMemo(
-    // PERF-186.1: base is already filtered; only the newly attached grading
-    // layers need the OFF/FROZEN contract applied.
-    () => filterCadDerivedLayersForViewport(activeProject, displaySceneWithSections, {
-      gradingLayers: gradingDisplayLayers,
-      groupGradingLayers: groupGradingDisplayLayers,
-    }),
-    [activeProject, displaySceneWithSections, gradingDisplayLayers, groupGradingDisplayLayers],
-  );
-  const displaySceneWithSurfaceEdits = surfaceEditOverlayPrimitives.length === 0
-    ? displaySceneWithGrading
-    : {
-      ...displaySceneWithGrading,
-      primitives: [...displaySceneWithGrading.primitives, ...surfaceEditOverlayPrimitives],
-    };
+  // STRUCT-194.8 — 18S/18T/18V surface edit-session Esc/Enter hotkeys.
+  useSurveyCadSurfaceEditHotkeys({
+    surfaceEditSessions,
+    surfacePointEditSessions,
+    surfaceBulkSelection,
+    surfaceBulkEditSessions,
+    setFileStatusText,
+  });
 
-  // Phase 18U — drop session results for deleted maps (results never
-  // persist; the control plane invalidates the cache). Legends referencing a
-  // deleted map derive BROKEN_REFERENCE, so they are legal to keep.
-  const knownAnalysisIdsRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const live = new Set((activeProject.analysisMaps ?? []).map((entry) => entry.id));
-    for (const id of knownAnalysisIdsRef.current) {
-      if (!live.has(id)) analysisPlane.handleAnalysisDeleted(id);
-    }
-    knownAnalysisIdsRef.current = live;
-    if (selectedAnalysisId != null && !live.has(selectedAnalysisId)) setSelectedAnalysisId(null);
-  }, [activeProject.analysisMaps, analysisPlane, selectedAnalysisId]);
-  useEffect(() => {
-    const live = new Set((activeProject.analysisLegends ?? []).map((entry) => entry.id));
-    if (selectedAnalysisLegendId != null && !live.has(selectedAnalysisLegendId)) {
-      setSelectedAnalysisLegendId(null);
-    }
-  }, [activeProject.analysisLegends, selectedAnalysisLegendId]);
+  // STRUCT-194.8 — grading layers + post-filter surface-edit preview append.
+  const displaySceneWithSurfaceEdits = useSurveyCadGradingEditOverlayScene({
+    activeProject,
+    displaySceneWithSections,
+    shellSnapshot,
+    gradingService,
+    surfaceEditPreviewPrimitives: surfaceEditSessions.previewPrimitives,
+    surfacePointEditPreviewPrimitives: surfacePointEditSessions.previewPrimitives,
+    surfaceBulkSelectionPreviewPrimitives: surfaceBulkSelection.previewPrimitives,
+    surfaceBulkEditPreviewPrimitives: surfaceBulkEditSessions.previewPrimitives,
+  });
 
-  // Phase 18I — drop session results for deleted volumes (results never
-  // persist; the service cancels in-flight work first so late arrivals
-  // never re-apply). Converges: unknown ids are simply absent.
-  const knownVolumeIdsRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const live = new Set((activeProject.volumeSurfaces ?? []).map((entry) => entry.id));
-    for (const id of knownVolumeIdsRef.current) {
-      if (!live.has(id)) volumeService.handleVolumeDeleted(id);
-    }
-    knownVolumeIdsRef.current = live;
-    if (selectedVolumeId != null && !live.has(selectedVolumeId)) setSelectedVolumeId(null);
-  }, [activeProject.volumeSurfaces, volumeService, selectedVolumeId]);
+  // STRUCT-194.8 — analysis + volume session-result retirement.
+  useSurveyCadAnalysisVolumeRetirement({
+    analysisMaps: activeProject.analysisMaps,
+    analysisPlane,
+    selectedAnalysisId,
+    setSelectedAnalysisId,
+    analysisLegends: activeProject.analysisLegends,
+    selectedAnalysisLegendId,
+    setSelectedAnalysisLegendId,
+    volumeSurfaces: activeProject.volumeSurfaces,
+    volumeService,
+    selectedVolumeId,
+    setSelectedVolumeId,
+  });
 
   // STRUCT-194.6 — the four civil inquiry helpers are pure closures over the
   // current project / TIN cache / section cache / analysis snapshot. Built once
@@ -1103,56 +932,24 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     analysisSnapshot,
   });
 
-  // Phase 18J — drop session samples for deleted profiles (results never
-  // persist; the service cancels in-flight work first). Source surface
-  // meshes are untouched.
-  const knownProfileIdsRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const live = new Set((activeProject.surfaceProfiles ?? []).map((entry) => entry.id));
-    for (const id of knownProfileIdsRef.current) {
-      if (!live.has(id)) profileService.handleProfileDeleted(id);
-    }
-    knownProfileIdsRef.current = live;
-    if (selectedProfileId != null && !live.has(selectedProfileId)) setSelectedProfileId(null);
-  }, [activeProject.surfaceProfiles, profileService, selectedProfileId]);
-
-  // Phase 18K — drop session sections for deleted groups (results never
-  // persist; the service cancels in-flight work first). Source surface
-  // meshes are untouched.
-  const knownSectionGroupIdsRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const live = new Set((activeProject.sampleLineGroups ?? []).map((entry) => entry.id));
-    for (const id of knownSectionGroupIdsRef.current) {
-      if (!live.has(id)) sectionService.handleGroupDeleted(id);
-    }
-    knownSectionGroupIdsRef.current = live;
-    if (selectedSampleLineGroupId != null && !live.has(selectedSampleLineGroupId)) {
-      setSelectedSampleLineGroupId(null);
-      setSelectedSampleLineId(null);
-    }
-  }, [activeProject.sampleLineGroups, sectionService, selectedSampleLineGroupId]);
-
-  // Phase 18F — drop session meshes for deleted surfaces (meshes never
-  // persist; the revision index doubles as the known-id set). Phase 18H:
-  // contour sets drop with the definition (service cancels in-flight
-  // derivations first so late arrivals never re-apply).
-  useEffect(() => {
-    const live = new Set((activeProject.surfaces ?? []).map((entry) => entry.id));
-    setSurfaceMeshSessions((previous) => {
-      const kept: Record<string, string[]> = {};
-      let changed = false;
-      for (const [id, revisions] of Object.entries(previous)) {
-        if (live.has(id)) kept[id] = revisions;
-        else {
-          changed = true;
-          surfaceCache.invalidate(id);
-          contourService.handleSurfaceDeleted(id);
-        }
-      }
-      return changed ? kept : previous;
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProject.surfaces, surfaceCache, contourService]);
+  // STRUCT-194.8 — profile + section session-result retirement.
+  useSurveyCadProfileSectionRetirement({
+    surfaceProfiles: activeProject.surfaceProfiles,
+    profileService,
+    selectedProfileId,
+    setSelectedProfileId,
+    sampleLineGroups: activeProject.sampleLineGroups,
+    sectionService,
+    selectedSampleLineGroupId,
+    setSelectedSampleLineGroupId,
+    setSelectedSampleLineId,
+  });
+  useSurveyCadSurfaceRetirement({
+    surfaces: activeProject.surfaces,
+    setSurfaceMeshSessions,
+    surfaceCache,
+    contourService,
+  });
 
   // Phase 18B shell seam (+18F surface actions): shared by the shell link
   // and workspace-local consumers (surface manager) alike. STRUCT-194.2 —
