@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
-import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import type {
   CadBounds,
   CadDrawingDocument,
@@ -21,7 +20,6 @@ import {
   buildCadDrawingFileName,
   createBlankCadDrawingDocument,
   MAX_CAD_DRAWING_TEXT_BYTES,
-  migrateSurveyCadStateToDrawing,
   parseCadDrawingFile,
   serializeCadDrawingFile,
 } from '../engine/cad/cadDrawingFile';
@@ -72,9 +70,6 @@ import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput'
 import { buildGradingSceneLayers } from '../cad-app/shell/cadGradingDisplay';
 import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
 import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
-import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
-import { CadProfileManager } from '../cad-app/shell/CadProfileManager';
-import { CadSampleLineManager } from '../cad-app/shell/CadSampleLineManager';
 import {
   buildCadSectionSnapshot,
   estimateSectionViewFrame,
@@ -103,11 +98,9 @@ import { SurfaceGradingService } from '../workers/surfaceGradingService';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
 import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
 import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
-import { CadGradingManager } from '../cad-app/shell/CadGradingManager';
 import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCache';
 import { buildCadGradingGroupSnapshot } from '../cad-app/shell/cadGradingGroupSnapshot';
 import { buildGroupGradingSceneLayers } from '../cad-app/shell/cadGradingGroupDisplay';
-import { CadGradingGroupManager } from '../cad-app/shell/CadGradingGroupManager';
 import { SurfaceProfileService } from '../workers/surfaceProfileService';
 import { SurfaceSectionService } from '../workers/surfaceSectionService';
 import { createCadProfileCache } from '../engine/cad/profileCache';
@@ -148,26 +141,12 @@ import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
 import { validateSetCurrent } from './surveyCad/LayerPanel.guards';
-import {
-  summarizeDrawingDependency,
-  type CadDependencyReasonCode,
-  type DrawingDependencySummary,
-} from '../engine/cad/cadAdjustmentDependency';
-import {
-  buildDraftLabelEntityStatusMap,
-  evaluateDraftLabelDependencies,
-  hasStaleDerivedDraftLabel,
-} from '../engine/cad/cadDraftLabelDependency';
+import type { DrawingDependencySummary } from '../engine/cad/cadAdjustmentDependency';
+import { summarizeActiveDrawingDependency } from './surveyCad/cadDependencyDiagnostics';
+import { useSurveyCadDrawingSource, cloneCadBounds } from '../hooks/surveyCad/useSurveyCadDrawingSource';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
-import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
-import { SurveyCadDraftingPanel, type SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
-import { SurfacePointEditEntryForm } from './surveyCad/SurfacePointEditEntryForm';
-import { SurfaceBulkEditEntryForm } from './surveyCad/SurfaceBulkEditEntryForm';
-import { SurveyPointGroupManager } from './surveyCad/SurveyPointGroupManager';
-import { SurveyPointLabelStyleManager } from './surveyCad/SurveyPointLabelStyleManager';
-import { SurveyPointStyleManager } from './surveyCad/SurveyPointStyleManager';
-import { ExportCenterPanel } from './surveyCad/ExportCenterPanel';
-import { LandXmlImportReviewModal } from './landXmlImportReview/LandXmlImportReviewModal';
+import type { SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
+import SurveyCadWorkspaceManagers from './surveyCad/SurveyCadWorkspaceManagers';
 import { createLandXmlImportReviewSelection } from './landXmlImportReview/landXmlImportReview.selection';
 import { readLandXmlDocumentVersion } from './landXmlImportReview/landXmlImportReview.format';
 import { commitAndScheduleLandXmlImport } from '../hooks/surveyCad/surveyCadLandxmlImportBuild';
@@ -236,34 +215,6 @@ interface SurveyCadWorkspaceProps {
   lineweightDisplay?: import('../engine/cad/cadViewportAppearance').LineweightDisplayMode;
 }
 
-/** Phase 17E: first reason code in words for the dependency status chip. */
-const DEPENDENCY_CAUSE_WORDS: Record<CadDependencyReasonCode, string> = {
-  CAD_CURRENT: 'dependencies current',
-  CAD_NO_DEPENDENCY: 'manual only',
-  CAD_SOURCE_RESULT_STALE: 'result stale',
-  CAD_SOURCE_RESULT_REPLACED: 'result replaced',
-  CAD_SOURCE_STATION_MISSING: 'linked stations missing',
-  CAD_LEGACY_DEPENDENCY_UNKNOWN: 'unstamped legacy entities',
-  CAD_PARCEL_METRICS_STALE: 'parcel metrics changed',
-  CAD_F2F_SYNC_INCOMPLETE: 'field-to-finish sync incomplete',
-  CAD_DERIVED_LABEL_STALE: 'derived annotations stale',
-  CAD_OWNER_CONFLICT: 'conflicting ownership',
-};
-
-/** Phase 17E: action hint for the dependency status chip. */
-const DEPENDENCY_ACTION_HINT: Record<CadDependencyReasonCode, string> = {
-  CAD_CURRENT: '',
-  CAD_NO_DEPENDENCY: '',
-  CAD_SOURCE_RESULT_STALE: 'Refresh adjusted points',
-  CAD_SOURCE_RESULT_REPLACED: 'Refresh adjusted points',
-  CAD_SOURCE_STATION_MISSING: 'Refresh adjusted points',
-  CAD_LEGACY_DEPENDENCY_UNKNOWN: 'Review parcel',
-  CAD_PARCEL_METRICS_STALE: 'Review parcel',
-  CAD_F2F_SYNC_INCOMPLETE: 'Sync linked F2F',
-  CAD_DERIVED_LABEL_STALE: 'Refresh derived annotations',
-  CAD_OWNER_CONFLICT: 'Review parcel',
-};
-
 const CAD_DRAWING_FILE_TYPES = [
   {
     description: 'WebNet CAD Drawing',
@@ -292,75 +243,25 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   shellChrome = false,
   lineweightDisplay = 'thin',
 }) => {
-  const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
-    bounds
-      ? {
-          minX: bounds.minX,
-          minY: bounds.minY,
-          maxX: bounds.maxX,
-          maxY: bounds.maxY,
-        }
-      : null;
-
   useEffect(() => {
     // Phase 18A: CAD now has its own app/route; keep the perf marker on the
     // closest adjustment tab key so telemetry stays schema-valid.
     noteUiTabReady('map');
   }, []);
 
-  const legacyDrawing = useMemo<CadDrawingDocument>(() => {
-    if (persistedState) {
-      return migrateSurveyCadStateToDrawing({
-        state: persistedState,
-        units,
-      });
-    }
-    if (parseOptions) {
-      const project = buildSurveyCadSpikeProject({
-        input,
-        instrumentLibrary,
-        parseOptions,
-        units,
-        result: canFeedDraftingFromResult ? result : null,
-        resultDependencyIdentity,
-      });
-      const migrated = migrateSurveyCadStateToDrawing({
-        state: {
-          version: 1,
-          sourceSignature: 'legacy',
-          project,
-        },
-        name: project.name,
-        units,
-      });
-      return migrated;
-    }
-    return createBlankCadDrawingDocument({ units });
-  }, [canFeedDraftingFromResult, input, instrumentLibrary, parseOptions, persistedState, result, resultDependencyIdentity, units]);
-  const activeDrawing = drawing ?? legacyDrawing;
-  const emitDrawingChange: Dispatch<SetStateAction<CadDrawingDocument | null>> =
-    onDrawingChange ??
-    ((update) => {
-      if (!onPersistedStateChange) return;
-      onPersistedStateChange((previousLegacy) => {
-        const previousDrawing = previousLegacy
-          ? migrateSurveyCadStateToDrawing({ state: previousLegacy, units })
-          : activeDrawing;
-        const nextDrawing = typeof update === 'function' ? update(previousDrawing) : update;
-        if (nextDrawing === previousDrawing) return previousLegacy;
-        return nextDrawing
-          ? {
-              version: 1,
-              sourceSignature: nextDrawing.drawingId.startsWith('cad-drawing:')
-                ? nextDrawing.drawingId.slice('cad-drawing:'.length)
-                : nextDrawing.drawingId,
-              project: nextDrawing.project,
-              parcelLayout: nextDrawing.parcelLayout,
-              showParcelLabels: nextDrawing.showParcelLabels,
-            }
-          : null;
-      });
-    });
+  const { activeDrawing, emitDrawingChange } = useSurveyCadDrawingSource({
+    drawing,
+    onDrawingChange,
+    persistedState,
+    onPersistedStateChange,
+    input,
+    instrumentLibrary,
+    parseOptions,
+    units,
+    result,
+    resultDependencyIdentity,
+    canFeedDraftingFromResult,
+  });
   const cadProject = activeDrawing.project;
   // Phase 17E drawing dependency status (single text chip, not color-only).
   // Phase 18A: standalone CAD consumes the explicit bridge snapshot; the
@@ -372,33 +273,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const stationIds = useMemo(() => new Set(Object.keys(effectiveStations)), [effectiveStations]);
   const f2fLinkStatus = activeDrawing.project.metadata.fieldToFinishLink?.status;
   const f2fLinkSourceKind = activeDrawing.project.metadata.fieldToFinishLink?.sourceKind;
-  const dependencySummary: DrawingDependencySummary = useMemo(() => {
-    const summary = summarizeDrawingDependency(activeDrawing.project, resultDependencyIdentity, {
+  const dependencySummary: DrawingDependencySummary = useMemo(
+    () => summarizeActiveDrawingDependency(activeDrawing, resultDependencyIdentity, {
       stationIds,
       f2fLinkStatus,
       f2fLinkSourceKind,
-    });
-    if (summary.status === 'STALE') return summary;
-    const labels = activeDrawing.draft?.labels ?? [];
-    if (labels.length === 0) return summary;
-    const statusMap = buildDraftLabelEntityStatusMap(activeDrawing.project.entities, resultDependencyIdentity, {
-      stationIds,
-      f2fLinkStatus,
-      f2fLinkSourceKind,
-    });
-    if (!hasStaleDerivedDraftLabel(evaluateDraftLabelDependencies(labels, statusMap))) return summary;
-    return {
-      ...summary,
-      status: 'STALE',
-      reasons: summary.reasons.includes('CAD_DERIVED_LABEL_STALE')
-        ? summary.reasons
-        : [...summary.reasons, 'CAD_DERIVED_LABEL_STALE'],
-    };
-  }, [activeDrawing, resultDependencyIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind]);
-  const dependencyCause = DEPENDENCY_CAUSE_WORDS[dependencySummary.reasons[0] ?? 'CAD_OWNER_CONFLICT'];
-  const dependencyAction = dependencySummary.status === 'CURRENT' || dependencySummary.status === 'MANUAL_ONLY'
-    ? null
-    : DEPENDENCY_ACTION_HINT[dependencySummary.reasons[0] ?? 'CAD_OWNER_CONFLICT'];
+    }),
+    [activeDrawing, resultDependencyIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind],
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const landXmlImportInputRef = useRef<HTMLInputElement | null>(null);
   // Phase 18M — staged LandXML preview bound to one drawing (UI-only).
@@ -420,7 +302,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     viewportGenerationRef.current += 1;
     setViewport(action);
   }, []);
-  const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
+  const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneCadBounds(cadProject.bounds));
   const [parcelLayoutState, setParcelLayoutState] = useState<CadParcelLayoutUiState>(() =>
     cloneParcelLayoutUiState(activeDrawing.parcelLayout),
   );
@@ -1352,7 +1234,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   });
   useEffect(() => {
     applyViewport({ zoom: 1, panX: 0, panY: 0 });
-    setViewBounds(cloneBounds(cadProject.bounds));
+    setViewBounds(cloneCadBounds(cadProject.bounds));
   }, [activeDrawing.drawingId, cadProject.bounds, cadProject.id, applyViewport]);
 
   const replaceActiveDrawing = (nextDrawing: CadDrawingDocument, statusText: string) => {
@@ -2186,7 +2068,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         if (!parcel || parcel.type !== 'parcel' || parcel.vertices.length === 0) return;
         const xs = parcel.vertices.map((vertex) => vertex.x);
         const ys = parcel.vertices.map((vertex) => vertex.y);
-        const bounds = cloneBounds({
+        const bounds = cloneCadBounds({
           minX: Math.min(...xs),
           minY: Math.min(...ys),
           maxX: Math.max(...xs),
@@ -2760,391 +2642,220 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   });
 
   return (
-    <div className="h-full min-h-0 overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".wncad,.json,.survey-cad.json"
-        className="hidden"
-        onChange={handleOpenDrawingChange}
-        data-survey-cad-open-drawing-input
-      />
-      <input
-        ref={landXmlImportInputRef}
-        type="file"
-        accept=".xml"
-        className="hidden"
-        onChange={handleLandXmlImportChange}
-        data-landxml-import-input
-      />
-      <div className="relative h-full min-h-0 bg-slate-950">
-        {shellChrome ? null : (
-        <div className="absolute left-3 right-3 top-1 z-40 flex items-center justify-between gap-2 px-2 text-[11px] text-slate-300">
-          <div className="min-w-0 truncate" data-survey-cad-drawing-title>
-            {activeDrawing.name}
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-1">
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={handleNewDrawing} data-survey-cad-new-drawing>
-              New Drawing
-            </button>
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={() => fileInputRef.current?.click()} data-survey-cad-open-drawing>
-              Open Drawing
-            </button>
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={handleSaveDrawing} data-survey-cad-save-drawing>
-              Save Drawing
-            </button>
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={handleSaveDrawing} data-survey-cad-save-drawing-as>
-              Save Drawing As
-            </button>
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={handleSaveDrawing} data-survey-cad-export-drawing>
-              Export Drawing
-            </button>
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={() => setDraftingPanelOpen((current) => !current)} data-survey-cad-drafting-panels>
-              Sheets &amp; Layers
-            </button>
-            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={() => setExportCenterOpen((current) => !current)} data-survey-cad-export-center>
-              Export Center
-            </button>
-            {hasAdjustmentSource ? (
-              <button
-                type="button"
-                className="rounded border border-sky-500 bg-sky-950 px-2 py-1 text-sky-100 hover:bg-sky-900 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-500"
-                onClick={handleImportAdjustedPoints}
-                disabled={adjustmentSnapshot != null ? false : (!result || !canFeedDraftingFromResult || !resultDependencyIdentity)}
-                title={
-                  adjustmentSnapshot != null
-                    ? 'Import adjusted points from the published adjustment source'
-                    : canFeedDraftingFromResult
-                      ? 'Import adjusted points from the current result'
-                      : 'Import blocked: the adjustment result is not current'
-                }
-                data-survey-cad-import-adjusted-points
-              >
-                Import Adjusted Points
-              </button>
-            ) : null}
-          </div>
-        </div>
-        )}
-        {fileStatusText ? (
-          <div className="pointer-events-none absolute left-5 top-9 z-40 max-w-xl truncate text-[11px] text-slate-400" data-survey-cad-file-status>
-            {fileStatusText}
-          </div>
-        ) : null}
-        <div
-          className="pointer-events-none absolute left-5 top-14 z-40 max-w-xl truncate text-[11px] text-slate-300"
-          data-survey-cad-dependency-status
-          title={dependencyAction ?? undefined}
-        >
-          {`CAD status: ${dependencySummary.status === 'MANUAL_ONLY' ? 'MANUAL-ONLY' : dependencySummary.status}`}
-          {dependencySummary.status === 'CURRENT' || dependencySummary.status === 'MANUAL_ONLY'
-            ? ` — ${dependencyCause}.`
-            : ` — ${dependencyCause}.${dependencyAction ? ` ${dependencyAction}.` : ''}`}
-        </div>
-        {shellChrome ? null : (
-        <SurveyCadCommandToolbar
-          workspace={cadWorkspace}
-          canSplitParcelBySlideOrSwing={parcelLayoutWorkflow.canSplitParcelBySlideOrSwing}
-          onCreateParcel={parcelLayoutWorkflow.createPrimaryParcelLayout}
-          onSplitParcelBySlide={parcelLayoutWorkflow.splitParcelBySlide}
-          onSplitParcelBySwing={parcelLayoutWorkflow.splitParcelBySwing}
-          onToggleParcelLayoutPanel={floatingPanels.toggleParcelLayoutPanel}
-        />
-        )}
-        {draftingPanelOpen ? (
-          <SurveyCadDraftingPanel
-            project={activeProject}
-            initialTab={draftingInitialTab}
-            draft={activeDrawing.draft}
-            onLayerCommand={(command) => void cadWorkspace.runLayerCommand(command)}
-            onSetCurrentLayer={(layerId) => {
-              if (validateSetCurrent(activeProject.layers, layerId) != null) return;
-              void cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
-            }}
-            onDraftChange={(draft) => {
-              // Round 3F — draft-only edits are not model transactions. Route
-              // them through the shell-owned Draft history so the model
-              // undo/redo stacks survive (and the edit stays undoable on
-              // sheet tabs). Standalone/no-shell falls back to the legacy
-              // full-replace path.
-              if (shellLink?.requestDraftCommit) {
-                shellLink.requestDraftCommit(draft);
-                setFileStatusText('Updated title block template.');
-                return;
-              }
-              replaceActiveDrawing({ ...activeDrawing, draft }, 'Updated title block template.');
-            }}
-            onClose={() => setDraftingPanelOpen(false)}
-            onCommitFieldToFinishPayload={cadWorkspace.commitFieldToFinishPayload}
-            catalog={activeCatalog}
-            onCatalogChange={handleFeatureCatalogChange}
-            catalogStatus={catalogStatus}
-            catalogIsFallback={catalogIsFallback}
-            catalogHasLegacyContent={catalogHasLegacyContent}
-            referenceCounts={f2fReferenceCounts}
-            fieldToFinishSettings={activeProject.fieldToFinishSettings}
-            onFieldToFinishSettingsChange={handleFieldToFinishSettingsChange}
-            f2fSection={f2fSection}
-            adjustmentSource={adjustmentSource}
-          />
-        ) : null}
-        {surveyManager?.kind === 'point-styles' ? (
-          <SurveyPointStyleManager
-            project={activeProject}
-            catalog={activeCatalog}
-            onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
-            onCatalogRewire={(table, fromId, toId) => {
-              handleFeatureCatalogChange({
-                ...featureCatalogRef.current,
-                definitions: featureCatalogRef.current.definitions.map((def) =>
-                  table === 'point' && def.pointStyleId === fromId
-                    ? { ...def, pointStyleId: toId }
-                    : table === 'label' && def.labelStyleId === fromId
-                      ? { ...def, labelStyleId: toId }
-                      : def,
-                ),
-              });
-            }}
-            initialSelectedId={surveyManager.selectedId}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'point-label-styles' ? (
-          <SurveyPointLabelStyleManager
-            project={activeProject}
-            catalog={activeCatalog}
-            onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
-            onCatalogRewire={(table, fromId, toId) => {
-              handleFeatureCatalogChange({
-                ...featureCatalogRef.current,
-                definitions: featureCatalogRef.current.definitions.map((def) =>
-                  table === 'point' && def.pointStyleId === fromId
-                    ? { ...def, pointStyleId: toId }
-                    : table === 'label' && def.labelStyleId === fromId
-                      ? { ...def, labelStyleId: toId }
-                      : def,
-                ),
-              });
-            }}
-            initialSelectedId={surveyManager.selectedId}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'point-groups' ? (
-          <SurveyPointGroupManager
-            project={activeProject}
-            onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
-            initialSelectedId={surveyManager.selectedId}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'surfaces' && shellSnapshot ? (
-          <CadSurfaceManager
-            snapshot={shellSnapshot}
-            actions={shellActions}
-            initialSelectedId={surveyManager.selectedId}
-            pickArmedFor={surfacePick?.surfaceId ?? null}
-            volumePickArmedFor={volumePick?.volumeId ?? null}
-            volumePickAnswer={volumePickAnswer}
-            analysisPickArmedFor={analysisPick?.analysisId ?? null}
-            analysisPickAnswer={analysisPickAnswer}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'profiles' && shellSnapshot ? (
-          <CadProfileManager
-            snapshot={shellSnapshot}
-            actions={shellActions}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'sections' && shellSnapshot ? (
-          <CadSampleLineManager
-            snapshot={shellSnapshot}
-            actions={shellActions}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'gradings' && shellSnapshot ? (
-          <CadGradingManager
-            snapshot={shellSnapshot}
-            actions={shellActions}
-            initialSelectedId={surveyManager.selectedId}
-            initialTab={gradingManagerTab}
-            initialMethod={gradingManagerMethod}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {surveyManager?.kind === 'grading-groups' && shellSnapshot ? (
-          <CadGradingGroupManager
-            snapshot={shellSnapshot}
-            actions={shellActions}
-            initialSelectedId={surveyManager.selectedId}
-            initialTab={groupManagerTab}
-            onClose={() => setSurveyManager(null)}
-          />
-        ) : null}
-        {exportCenterOpen ? (
-          <ExportCenterPanel
-            drawing={activeDrawing}
-            // MISSING_LEGACY drawings have no embedded catalog: export no
-            // catalog rather than presenting the starter fallback as theirs.
-            catalog={catalogHasLegacyContent ? null : activeCatalog}
-            resultIdentity={resultDependencyIdentity}
-            stationIds={stationIds}
-            f2fLinkStatus={f2fLinkStatus}
-            f2fLinkSourceKind={f2fLinkSourceKind}
-            analysis={analysisExportInput}
-            grading={buildGradingExportInput(shellSnapshot?.grading)}
-            civilSources={exportCivilSources}
-            onClose={() => setExportCenterOpen(false)}
-          />
-        ) : null}
-        {stagedLandXmlImport ? (
-          <LandXmlImportReviewModal
-            staged={stagedLandXmlImport}
-            onChangeSelection={handleLandXmlSelectionChange}
-            onCancel={() => setStagedLandXmlImport(null)}
-            onImportSelected={handleLandXmlImportSelected}
-          />
-        ) : null}
-        {surfacePointEditSessions.session ? (
-        <SurfacePointEditEntryForm
-          session={surfacePointEditSessions.session}
-          onStageXy={(point) => surfacePointEditSessions.handlePick(point)}
-          onStageValue={(text) => surfacePointEditSessions.submitValueText(text)}
-          onCommit={() => surfacePointEditSessions.handleEnter()}
-          onCancel={() => surfacePointEditSessions.cancel()}
-        />
-      ) : null}
-        {surfaceBulkSelection.session ? (
-          <SurfaceBulkEditEntryForm
-            session={surfaceBulkSelection.session}
-            onStageXy={(point) => surfaceBulkSelection.handlePick(point)}
-            onStageValue={() => {}}
-            onCommit={() => surfaceBulkSelection.handleEnter()}
-            onCancel={() => surfaceBulkSelection.cancel()}
-          />
-        ) : null}
-        {surfaceBulkEditSessions.session ? (
-          <SurfaceBulkEditEntryForm
-            session={surfaceBulkEditSessions.session}
-            onStageXy={(point) => surfaceBulkEditSessions.handlePick(point)}
-            onStageValue={(text) => surfaceBulkEditSessions.submitValueText(text)}
-            onCommit={() => surfaceBulkEditSessions.handleEnter()}
-            onCancel={() => surfaceBulkEditSessions.cancel()}
-          />
-        ) : null}
-        <SurveyCadWorkspaceSurface
-          workspace={cadWorkspace}
-          floatingPanels={floatingPanels}
-          parcelLayoutWorkflow={parcelLayoutWorkflow}
-          traverseDraftPanelState={traverseDraftPanelState}
-          commandDisplay={commandDisplay}
-          displayScene={displaySceneWithSurfaceEdits}
-          reportedComputationEntities={reportedComputationEntities}
-          parcelLayoutState={parcelLayoutState}
-          parcelLayoutFrontageSegmentSelectionActive={parcelLayoutFrontageSegmentSelectionActive}
-          showParcelLabels={showParcelLabels}
-          viewport={viewport}
-          viewBounds={viewBounds}
-          onViewportChange={applyViewport}
-          onViewBoundsChange={setViewBounds}
-          onParcelLayoutPreviewStateChange={setParcelLayoutPreviewState}
-          onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
-          onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
-          cloneBounds={cloneBounds}
-          shellChrome={shellChrome}
-          surfacePickActive={surfacePick != null || volumePick != null || analysisPick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null || surfaceBulkSelection.session != null || surfaceBulkEditSessions.session != null}
-          onSurfacePickPoint={(worldPoint) => {
-            if (surfacePointEditSessions.session) {
-              surfacePointEditSessions.handlePick(worldPoint);
-              return;
+    <SurveyCadWorkspaceManagers
+      drawingFileInputRef={fileInputRef}
+      landXmlFileInputRef={landXmlImportInputRef}
+      fileInputs={{
+        onDrawingFileChange: handleOpenDrawingChange,
+        onLandXmlFileChange: handleLandXmlImportChange,
+      }}
+      chrome={{
+        shellChrome,
+        drawingName: activeDrawing.name,
+        fileStatusText,
+        dependencySummary,
+        hasAdjustmentSource,
+        adjustmentSnapshot,
+        result,
+        canFeedDraftingFromResult,
+        resultDependencyIdentity,
+        onNewDrawing: handleNewDrawing,
+        onSaveDrawing: handleSaveDrawing,
+        onImportAdjustedPoints: handleImportAdjustedPoints,
+        onToggleDraftingPanel: () => setDraftingPanelOpen((current) => !current),
+        onToggleExportCenter: () => setExportCenterOpen((current) => !current),
+      }}
+      toolbar={{
+        workspace: cadWorkspace,
+        canSplitParcelBySlideOrSwing: parcelLayoutWorkflow.canSplitParcelBySlideOrSwing,
+        onCreateParcel: parcelLayoutWorkflow.createPrimaryParcelLayout,
+        onSplitParcelBySlide: parcelLayoutWorkflow.splitParcelBySlide,
+        onSplitParcelBySwing: parcelLayoutWorkflow.splitParcelBySwing,
+        onToggleParcelLayoutPanel: floatingPanels.toggleParcelLayoutPanel,
+      }}
+      draftingPanel={{
+        open: draftingPanelOpen,
+        project: activeProject,
+        initialTab: draftingInitialTab,
+        draft: activeDrawing.draft,
+        workspace: cadWorkspace,
+        activeDrawing,
+        shellLink,
+        replaceActiveDrawing,
+        setFileStatusText,
+        onClose: () => setDraftingPanelOpen(false),
+        catalog: activeCatalog,
+        onCatalogChange: handleFeatureCatalogChange,
+        catalogStatus,
+        catalogIsFallback,
+        catalogHasLegacyContent,
+        referenceCounts: f2fReferenceCounts,
+        fieldToFinishSettings: activeProject.fieldToFinishSettings,
+        onFieldToFinishSettingsChange: handleFieldToFinishSettingsChange,
+        f2fSection,
+        adjustmentSource,
+      }}
+      managers={{
+        surveyManager,
+        setSurveyManager,
+        workspace: cadWorkspace,
+        project: activeProject,
+        catalog: activeCatalog,
+        featureCatalogRef,
+        onCatalogChange: handleFeatureCatalogChange,
+        shellSnapshot,
+        shellActions,
+        surfacePick,
+        volumePick,
+        volumePickAnswer,
+        analysisPick,
+        analysisPickAnswer,
+        gradingManagerTab,
+        gradingManagerMethod,
+        groupManagerTab,
+      }}
+      exportCenter={{
+        open: exportCenterOpen,
+        props: {
+          drawing: activeDrawing,
+          // MISSING_LEGACY drawings have no embedded catalog: export no
+          // catalog rather than presenting the starter fallback as theirs.
+          catalog: catalogHasLegacyContent ? null : activeCatalog,
+          resultIdentity: resultDependencyIdentity,
+          stationIds,
+          f2fLinkStatus,
+          f2fLinkSourceKind,
+          analysis: analysisExportInput,
+          grading: buildGradingExportInput(shellSnapshot?.grading),
+          civilSources: exportCivilSources,
+          onClose: () => setExportCenterOpen(false),
+        },
+      }}
+      landXml={
+        stagedLandXmlImport
+          ? {
+              staged: stagedLandXmlImport,
+              onChangeSelection: handleLandXmlSelectionChange,
+              onCancel: () => setStagedLandXmlImport(null),
+              onImportSelected: handleLandXmlImportSelected,
             }
-            if (surfaceBulkSelection.session) {
-              surfaceBulkSelection.handlePick(worldPoint);
-              return;
-            }
-            if (surfaceBulkEditSessions.session) {
-              surfaceBulkEditSessions.handlePick(worldPoint);
-              return;
-            }
-            if (surfaceEditSessions.session) {
-              surfaceEditSessions.handlePick(worldPoint);
-              return;
-            }            if (blockInsertPick) {
-              const outcome = cadWorkspace.runBlockOp({
-                kind: 'insert',
-                definitionId: blockInsertPick.definitionId,
-                x: worldPoint.x,
-                y: worldPoint.y,
-                rotationDeg: blockInsertPick.rotationDeg,
-                scale: blockInsertPick.scale,
-              });
-              // Repeat loop: stay armed for the next point; a rejected
-              // insert also stays armed (user adjusts scale/rotation).
-              // Esc (or Cancel) ends the loop.
-              if (outcome.applied && !blockInsertPick.repeat) setBlockInsertPick(null);
-              return;
-            }
-            if (analysisPick) {
-              const text = describeAnalysisAt(analysisPick.analysisId, worldPoint.x, worldPoint.y);
-              if (text != null) {
-                setAnalysisPickAnswer({ analysisId: analysisPick.analysisId, text });
-              }
-              setAnalysisPick(null);
-              return;
-            }
-            if (volumePick) {
-              const text = describeVolumeDifference(volumePick.volumeId, worldPoint.x, worldPoint.y);
-              if (text != null) {
-                setVolumePickAnswer({ volumeId: volumePick.volumeId, text });
-              }
-              setVolumePick(null);
-              return;
-            }
-            if (!surfacePick) return;
-            const text = surfacePick.mode === 'slope'
-              ? querySurfaceSlopeText(
-                activeProject,
-                surfaceCache,
-                surfacePick.surfaceId,
-                worldPoint.x,
-                worldPoint.y,
-              )
-              : querySurfaceElevationText(
-                activeProject,
-                surfaceCache,
-                surfacePick.surfaceId,
-                worldPoint.x,
-                worldPoint.y,
-              );
+          : null
+      }
+      editForms={{
+        surfacePointEditSessions,
+        surfaceBulkSelection,
+        surfaceBulkEditSessions,
+      }}
+    >
+      <SurveyCadWorkspaceSurface
+        workspace={cadWorkspace}
+        floatingPanels={floatingPanels}
+        parcelLayoutWorkflow={parcelLayoutWorkflow}
+        traverseDraftPanelState={traverseDraftPanelState}
+        commandDisplay={commandDisplay}
+        displayScene={displaySceneWithSurfaceEdits}
+        reportedComputationEntities={reportedComputationEntities}
+        parcelLayoutState={parcelLayoutState}
+        parcelLayoutFrontageSegmentSelectionActive={parcelLayoutFrontageSegmentSelectionActive}
+        showParcelLabels={showParcelLabels}
+        viewport={viewport}
+        viewBounds={viewBounds}
+        onViewportChange={applyViewport}
+        onViewBoundsChange={setViewBounds}
+        onParcelLayoutPreviewStateChange={setParcelLayoutPreviewState}
+        onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
+        onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
+        cloneBounds={cloneCadBounds}
+        shellChrome={shellChrome}
+        surfacePickActive={surfacePick != null || volumePick != null || analysisPick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null || surfaceBulkSelection.session != null || surfaceBulkEditSessions.session != null}
+        onSurfacePickPoint={(worldPoint) => {
+          if (surfacePointEditSessions.session) {
+            surfacePointEditSessions.handlePick(worldPoint);
+            return;
+          }
+          if (surfaceBulkSelection.session) {
+            surfaceBulkSelection.handlePick(worldPoint);
+            return;
+          }
+          if (surfaceBulkEditSessions.session) {
+            surfaceBulkEditSessions.handlePick(worldPoint);
+            return;
+          }
+          if (surfaceEditSessions.session) {
+            surfaceEditSessions.handlePick(worldPoint);
+            return;
+          }            if (blockInsertPick) {
+            const outcome = cadWorkspace.runBlockOp({
+              kind: 'insert',
+              definitionId: blockInsertPick.definitionId,
+              x: worldPoint.x,
+              y: worldPoint.y,
+              rotationDeg: blockInsertPick.rotationDeg,
+              scale: blockInsertPick.scale,
+            });
+            // Repeat loop: stay armed for the next point; a rejected
+            // insert also stays armed (user adjusts scale/rotation).
+            // Esc (or Cancel) ends the loop.
+            if (outcome.applied && !blockInsertPick.repeat) setBlockInsertPick(null);
+            return;
+          }
+          if (analysisPick) {
+            const text = describeAnalysisAt(analysisPick.analysisId, worldPoint.x, worldPoint.y);
             if (text != null) {
-              const surface = activeProject.surfaces?.find((entry) => entry.id === surfacePick.surfaceId);
-              setLastSurfaceInquiry({
-                surfaceId: surfacePick.surfaceId,
-                surfaceName: surface?.name ?? surfacePick.surfaceId,
-                x: worldPoint.x,
-                y: worldPoint.y,
-                text,
-              });
+              setAnalysisPickAnswer({ analysisId: analysisPick.analysisId, text });
             }
-            setSurfacePick(null);
-          }}
-          selectedSurfaceId={selectedSurfaceId}
-          onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
-          selectedProfileViewId={selectedProfileViewId}
-          onProfileViewClick={(viewId) => setSelectedProfileViewId(viewId)}
-          selectedSampleLineId={selectedSampleLineId}
-          onSampleLineClick={(groupId, lineId) => {
-            setSelectedSampleLineGroupId(groupId);
-            setSelectedSampleLineId(lineId);
-          }}
-          selectedSectionViewId={selectedSectionViewId}
-          onSectionViewClick={(viewId) => setSelectedSectionViewId(viewId)}
-        />
-      </div>
-    </div>
+            setAnalysisPick(null);
+            return;
+          }
+          if (volumePick) {
+            const text = describeVolumeDifference(volumePick.volumeId, worldPoint.x, worldPoint.y);
+            if (text != null) {
+              setVolumePickAnswer({ volumeId: volumePick.volumeId, text });
+            }
+            setVolumePick(null);
+            return;
+          }
+          if (!surfacePick) return;
+          const text = surfacePick.mode === 'slope'
+            ? querySurfaceSlopeText(
+              activeProject,
+              surfaceCache,
+              surfacePick.surfaceId,
+              worldPoint.x,
+              worldPoint.y,
+            )
+            : querySurfaceElevationText(
+              activeProject,
+              surfaceCache,
+              surfacePick.surfaceId,
+              worldPoint.x,
+              worldPoint.y,
+            );
+          if (text != null) {
+            const surface = activeProject.surfaces?.find((entry) => entry.id === surfacePick.surfaceId);
+            setLastSurfaceInquiry({
+              surfaceId: surfacePick.surfaceId,
+              surfaceName: surface?.name ?? surfacePick.surfaceId,
+              x: worldPoint.x,
+              y: worldPoint.y,
+              text,
+            });
+          }
+          setSurfacePick(null);
+        }}
+        selectedSurfaceId={selectedSurfaceId}
+        onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
+        selectedProfileViewId={selectedProfileViewId}
+        onProfileViewClick={(viewId) => setSelectedProfileViewId(viewId)}
+        selectedSampleLineId={selectedSampleLineId}
+        onSampleLineClick={(groupId, lineId) => {
+          setSelectedSampleLineGroupId(groupId);
+          setSelectedSampleLineId(lineId);
+        }}
+        selectedSectionViewId={selectedSectionViewId}
+        onSectionViewClick={(viewId) => setSelectedSectionViewId(viewId)}
+      />
+    </SurveyCadWorkspaceManagers>
   );
 };
 
