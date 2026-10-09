@@ -1,4 +1,4 @@
-import type { CadBounds, CadEntityId, CadPointSymbolShape } from './cadTypes';
+import type { CadBounds, CadEntityId, CadPointSymbolShape } from './cadCorePrimitiveTypes';
 
 export interface CadDisplayPoint {
   x: number;
