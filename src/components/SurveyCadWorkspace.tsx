@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import type {
   CadBounds,
@@ -7,20 +7,6 @@ import type {
   CadSurface,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
-import {
-  assertBrowserFileSize,
-  readBrowserFileAsText,
-  saveBrowserTextFile,
-} from '../engine/browserFileIo';
-import { buildLandXmlImportPreview } from '../engine/landxmlImport';
-import {
-  buildCadDrawingFileName,
-  createBlankCadDrawingDocument,
-  MAX_CAD_DRAWING_TEXT_BYTES,
-  parseCadDrawingFile,
-  serializeCadDrawingFile,
-} from '../engine/cad/cadDrawingFile';
-import { importAdjustedPointsIntoCadDrawing } from '../engine/cad/cadAdjustedPointsImport';
 import type { FeatureCodeCatalog } from '../engine/fieldToFinish/featureCatalog';
 import { cloneFeatureCatalog } from '../engine/fieldToFinish/featureCatalog';
 import { STARTER_CATALOG } from '../engine/fieldToFinish/starterCatalog';
@@ -33,7 +19,6 @@ import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import type { SuccessfulAdjustmentRunInfo } from '../hooks/useAdjustmentOutcomeApplication';
 import type { ResultDependencyIdentity } from '../engine/resultIntegrity';
 import type { AdjustmentSourceSnapshot } from '../cad-app/cadSourceBridge';
-import { importSnapshotIntoCadDrawing } from '../cad-app/cadSnapshotImport';
 import type { CadDrawingLifecycleEvent } from '../cad-app/cadAppTypes';
 import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
@@ -122,17 +107,12 @@ import type { DrawingDependencySummary } from '../engine/cad/cadAdjustmentDepend
 import { summarizeActiveDrawingDependency } from './surveyCad/cadDependencyDiagnostics';
 import { buildCadWorkspaceShellActions } from './surveyCad/cadWorkspaceShellActions';
 import { useSurveyCadDrawingSource, cloneCadBounds } from '../hooks/surveyCad/useSurveyCadDrawingSource';
+import { useSurveyCadDrawingLifecycleState } from '../hooks/surveyCad/useSurveyCadDrawingLifecycleState';
+import { useSurveyCadDrawingFileLifecycle } from '../hooks/surveyCad/useSurveyCadDrawingFileLifecycle';
+import { useSurveyCadLandXmlImportLifecycle } from '../hooks/surveyCad/useSurveyCadLandXmlImportLifecycle';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import type { SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
 import SurveyCadWorkspaceManagers from './surveyCad/SurveyCadWorkspaceManagers';
-import { createLandXmlImportReviewSelection } from './landXmlImportReview/landXmlImportReview.selection';
-import { readLandXmlDocumentVersion } from './landXmlImportReview/landXmlImportReview.format';
-import { commitAndScheduleLandXmlImport } from '../hooks/surveyCad/surveyCadLandxmlImportBuild';
-import type {
-  LandXmlImportCommitPayload,
-  LandXmlImportReviewSelection,
-  LandXmlImportStagedState,
-} from './landXmlImportReview/landXmlImportReview.types';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
 import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
 import { useSurveyCadFloatingPanels } from './useSurveyCadFloatingPanels';
@@ -193,15 +173,6 @@ interface SurveyCadWorkspaceProps {
   lineweightDisplay?: import('../engine/cad/cadViewportAppearance').LineweightDisplayMode;
 }
 
-const CAD_DRAWING_FILE_TYPES = [
-  {
-    description: 'WebNet CAD Drawing',
-    accept: {
-      'application/json': ['.wncad', '.json'],
-    },
-  },
-];
-
 const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   input = '',
   instrumentLibrary = {},
@@ -259,17 +230,24 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }),
     [activeDrawing, resultDependencyIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind],
   );
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const landXmlImportInputRef = useRef<HTMLInputElement | null>(null);
-  // Phase 18M — staged LandXML preview bound to one drawing (UI-only).
-  const [stagedLandXmlImport, setStagedLandXmlImport] = useState<LandXmlImportStagedState | null>(null);
-  // Phase 18M — imported surfaces awaiting schedule/settlement. The build
-  // service reads the drawing-project ref, so scheduling waits one render
-  // (effect) for the committed project to be visible. `watched` drives the
-  // workspace-level materialization-failure notice.
-  const [pendingImportedSurfaceIds, setPendingImportedSurfaceIds] = useState<readonly string[]>([]);
-  const importedSurfaceIdsRef = useRef<Set<string>>(new Set());
-  const [fileStatusText, setFileStatusText] = useState('');
+  // STRUCT-194.3 — early drawing-file / LandXML lifecycle state. Declared here
+  // (unconditional, before the worker-service construction) so `setFileStatusText`
+  // is available to every service `notify` hook and the refs stay stable across
+  // renders, shell registration, and the manager tree. The setters/refs are
+  // stable, but the exhaustive-deps rule cannot prove that through a custom
+  // hook, so the affected service memos and LandXML follow-up effects carry
+  // targeted suppressions that keep their exact dependency arrays.
+  const {
+    fileInputRef,
+    landXmlImportInputRef,
+    stagedLandXmlImport,
+    setStagedLandXmlImport,
+    pendingImportedSurfaceIds,
+    setPendingImportedSurfaceIds,
+    importedSurfaceIdsRef,
+    fileStatusText,
+    setFileStatusText,
+  } = useSurveyCadDrawingLifecycleState();
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
   // Monotonic viewport generation: bumped on EVERY viewport transform (zoom,
   // pan, zoom-extents, programmatic reset). Snap candidates are stamped with
@@ -403,6 +381,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setSurfaceBuildVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache],
   );
   useEffect(() => () => surfaceBuildService.dispose(), [surfaceBuildService]);
@@ -459,6 +438,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setContourVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache, contourCache],
   );
   useEffect(() => () => contourService.dispose(), [contourService]);
@@ -582,6 +562,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setVolumeVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache, volumeCache],
   );
   useEffect(() => () => volumeService.dispose(), [volumeService]);
@@ -612,6 +593,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setGradingVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache, gradingCache, groupCache],
   );
   useEffect(() => () => gradingService.dispose(), [gradingService]);
@@ -673,6 +655,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setAnalysisVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache],
   );
   useEffect(() => () => analysisPlane.dispose(), [analysisPlane]);
@@ -709,6 +692,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setProfileVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache, profileCache],
   );
   useEffect(() => () => profileService.dispose(), [profileService]);
@@ -789,6 +773,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setSectionVersion((version) => version + 1),
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache, sectionCache],
   );
   useEffect(() => () => sectionService.dispose(), [sectionService]);
@@ -976,6 +961,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             : 'Compose rejected — a source revision moved or the target layer is locked.');
         },
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeDrawing.drawingId, surfaceCache, cadWorkspace],
   );
   useEffect(() => () => composeService.dispose(), [composeService]);
@@ -1215,181 +1201,50 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setViewBounds(cloneCadBounds(cadProject.bounds));
   }, [activeDrawing.drawingId, cadProject.bounds, cadProject.id, applyViewport]);
 
-  const replaceActiveDrawing = (nextDrawing: CadDrawingDocument, statusText: string) => {
-    emitDrawingChange(nextDrawing);
-    cadWorkspace.replaceCadProject(nextDrawing.project, statusText);
-    setFileStatusText(statusText);
-  };
+  // STRUCT-194.3 — drawing-file control plane (New / Open / Save /
+  // Import-adjusted). Called at the former handler position so the drawing
+  // closures read the current render's active drawing + history seam.
+  const {
+    replaceActiveDrawing,
+    handleNewDrawing,
+    handleSaveDrawing,
+    handleOpenDrawingChange,
+    hasAdjustmentSource,
+    handleImportAdjustedPoints,
+  } = useSurveyCadDrawingFileLifecycle({
+    activeDrawing,
+    emitDrawingChange,
+    replaceCadProject: cadWorkspace.replaceCadProject,
+    units,
+    onDrawingLifecycle,
+    adjustmentSnapshot,
+    result,
+    canFeedDraftingFromResult,
+    resultDependencyIdentity,
+    setFileStatusText,
+  });
 
-  const handleNewDrawing = () => {
-    replaceActiveDrawing(
-      createBlankCadDrawingDocument({ units }),
-      'New CAD drawing created.',
-    );
-    onDrawingLifecycle?.('cad-created', null);
-  };
-
-  const handleSaveDrawing = async () => {
-    const fileName = buildCadDrawingFileName(activeDrawing.name);
-    const saved = await saveBrowserTextFile(
-      fileName,
-      serializeCadDrawingFile(activeDrawing),
-      CAD_DRAWING_FILE_TYPES,
-    );
-    if (saved) {
-      setFileStatusText(`Saved ${fileName}.`);
-      onDrawingLifecycle?.('cad-saved', fileName);
-    }
-  };
-
-  const handleOpenDrawingChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    try {
-      assertBrowserFileSize(file, MAX_CAD_DRAWING_TEXT_BYTES, `${file.name} CAD drawing`);
-      const rawText = await readBrowserFileAsText(file);
-      const parsed = parseCadDrawingFile(rawText);
-      if (!parsed.ok) {
-        setFileStatusText(parsed.errors.join(' '));
-        return;
-      }
-      replaceActiveDrawing(parsed.drawing, `Opened ${file.name}.`);
-      onDrawingLifecycle?.('cad-opened', file.name);
-    } catch (error) {
-      setFileStatusText(error instanceof Error ? error.message : String(error));
-    }
-  };
-
-  // Phase 18M — LandXML production import: read text, build a preview, stage
-  // the review. Cancel = no change; malformed = visible error, no change.
-  const handleLandXmlImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    try {
-      const rawText = await readBrowserFileAsText(file);
-      // Re-read the live drawing id: a drawing switch during the async read
-      // must not bind a staged preview to the wrong drawing.
-      const drawingId = drawingIdForBuildsRef.current;
-      if (drawingId !== activeDrawing.drawingId) {
-        setFileStatusText('LandXML import cancelled — the active drawing changed while reading the file.');
-        return;
-      }
-      const preview = buildLandXmlImportPreview(rawText, { fileName: file.name });
-      setStagedLandXmlImport({
-        drawingId,
-        fileName: file.name,
-        version: readLandXmlDocumentVersion(rawText),
-        preview,
-        selection: createLandXmlImportReviewSelection(preview),
-      });
-      setFileStatusText(`LandXML import review: ${file.name}.`);
-    } catch (error) {
-      setStagedLandXmlImport(null);
-      setFileStatusText(
-        `LandXML import failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  };
-
-  const handleLandXmlSelectionChange = (selection: LandXmlImportReviewSelection) => {
-    setStagedLandXmlImport((current) => (current == null ? null : { ...current, selection }));
-  };
-
-  // Phase 18M — LandXML production import: commit through ONE deferred
-  // history transaction, then schedule imported TIN builds through the
-  // shared SurfaceBuildService serial queue (never a worker per surface).
-  const handleLandXmlImportSelected = (payload: LandXmlImportCommitPayload) => {
-    const outcome = commitAndScheduleLandXmlImport(
-      {
-        getDrawingId: () => activeDrawing.drawingId,
-        runDeferredCommit: (stagedPayload) =>
-          cadWorkspace.runLandXmlImport(
-            stagedPayload.preview,
-            stagedPayload.fileName,
-            stagedPayload.commitSelection,
-          ),
-        scheduleSurfaces: (surfaceIds) => setPendingImportedSurfaceIds(surfaceIds),
-        notify: (message) => setFileStatusText(message),
-      },
-      payload,
-    );
-    if (outcome.committed) {
-      for (const surfaceId of outcome.scheduledSurfaceIds) {
-        importedSurfaceIdsRef.current.add(surfaceId);
-      }
-    }
-    // Memory hygiene: raw XML/preview-derived refs never outlive the commit.
-    setStagedLandXmlImport(null);
-  };
-
-  // Schedule only after the committed project is visible to the service.
-  useEffect(() => {
-    if (pendingImportedSurfaceIds.length === 0) return;
-    surfaceBuildService.scheduleSurfaces(pendingImportedSurfaceIds);
-    setPendingImportedSurfaceIds([]);
-  }, [pendingImportedSurfaceIds, surfaceBuildService]);
-
-  // Imported surfaces that fail materialization get the explicit
-  // "Imported, but surface materialization failed" notice once; the
-  // authoritative definition stays (FAILED + diagnostic + Rebuild).
-  useEffect(() => {
-    const watched = importedSurfaceIdsRef.current;
-    if (watched.size === 0) return;
-    const diagnostics = surfaceBuildService.sessionDiagnostics();
-    const building = surfaceBuildService.buildingSurfaceIds();
-    for (const surfaceId of [...watched]) {
-      const diagnostic = diagnostics.get(surfaceId);
-      if (diagnostic) {
-        watched.delete(surfaceId);
-        const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
-        setFileStatusText(
-          `Imported, but surface materialization failed: “${surface?.name ?? 'surface'}” — ${diagnostic.error}. Rebuild from the Surface Manager.`,
-        );
-      } else if (!building.has(surfaceId)) {
-        watched.delete(surfaceId);
-      }
-    }
-  }, [surfaceBuildVersion, surfaceBuildService, activeProject.surfaces]);
-
-  // Staged preview is bound to one drawing: switching drawings releases it
-  // (cancel/close likewise; nothing is ever mutated by staging).
-  useEffect(() => {
-    setStagedLandXmlImport(null);
-    importedSurfaceIdsRef.current.clear();
-    setPendingImportedSurfaceIds([]);
-  }, [activeDrawing.drawingId]);
-
-  const hasAdjustmentSource = adjustmentSnapshot != null || (result != null && canFeedDraftingFromResult && resultDependencyIdentity != null);
-  const handleImportAdjustedPoints = () => {
-    // Phase 18A: explicit bridge snapshot first (standalone CAD has no live result).
-    if (adjustmentSnapshot) {
-      const imported = importSnapshotIntoCadDrawing({
-        document: activeDrawing,
-        snapshot: adjustmentSnapshot,
-      });
-      if (!imported.ok) {
-        setFileStatusText(imported.message);
-        return;
-      }
-      replaceActiveDrawing(imported.drawing, 'Imported adjusted points.');
-      return;
-    }
-    if (!result || !canFeedDraftingFromResult || !resultDependencyIdentity) {
-      setFileStatusText(
-        'Import blocked: the adjustment result is not current (stale, failed, or non-production run). Re-run the adjustment, then import again.',
-      );
-      return;
-    }
-    const nextDrawing = importAdjustedPointsIntoCadDrawing({
-      document: activeDrawing,
-      identity: resultDependencyIdentity,
-      result,
-      sourceName: 'Current adjustment',
-    });
-    replaceActiveDrawing(nextDrawing, 'Imported adjusted points.');
-  };
+  // STRUCT-194.3 — LandXML import control plane (stage / select / commit) plus
+  // the three follow-up effects (schedule / diagnostics / cleanup). Called at
+  // the former handler position so their exact dependency arrays and firing
+  // order are preserved.
+  const {
+    handleLandXmlImportChange,
+    handleLandXmlSelectionChange,
+    handleLandXmlImportSelected,
+  } = useSurveyCadLandXmlImportLifecycle({
+    pendingImportedSurfaceIds,
+    setStagedLandXmlImport,
+    setPendingImportedSurfaceIds,
+    importedSurfaceIdsRef,
+    getLiveDrawingId: () => drawingIdForBuildsRef.current,
+    activeDrawingId: activeDrawing.drawingId,
+    surfaceBuildService,
+    surfaceBuildVersion,
+    surfaces: activeProject.surfaces,
+    runLandXmlImport: cadWorkspace.runLandXmlImport,
+    setFileStatusText,
+  });
 
   // Phase 18B shell seam: registry key -> existing workspace starter.
   // Every entry routes to a live starter; absent starters report false.
@@ -1790,6 +1645,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     };
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surfaceEditSessions, surfacePointEditSessions, surfaceBulkSelection, surfaceBulkEditSessions]);
   // Phase 18S/18V overlay: staged current/proposed/affected edges and the
   // selection/bulk previews appended post-filter so they render even when
