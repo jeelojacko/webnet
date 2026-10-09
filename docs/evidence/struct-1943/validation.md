@@ -2,8 +2,7 @@
 
 Branch: `refactor/issue194-cad-drawing-lifecycle-extraction`
 Baseline: `025c0d75273385453c727d3aea879a7dcae45529` (origin/main)
-Working tree only — **not committed** (parent inspects + commits). No branch
-switch, no stash mutation; 14 stashes preserved.
+Committed and pushed to PR #218 (branch `refactor/issue194-cad-drawing-lifecycle-extraction`), **not merged**. HEAD `b15ed31a6e7f18e6966da3689b89ea934eef1856` at the time of the implementation commit; this closeout docs commit records that metadata. No branch switch, no stash mutation; 14 stashes preserved.
 
 ## Static checks
 
