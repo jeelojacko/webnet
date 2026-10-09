@@ -4,12 +4,9 @@ import type {
   CadBounds,
   CadDrawingDocument,
   CadParcelLayoutUiState,
-  CadSampleLineGroup,
   CadSurface,
-  CadSurveyPointEntity,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
-import { evaluatePointGroupMembership } from '../engine/cad/cadPointGroups';
 import {
   assertBrowserFileSize,
   readBrowserFileAsText,
@@ -62,7 +59,6 @@ import {
   analysisAreaUnit,
   analysisVolumeUnit,
   buildCadAnalysisSnapshot,
-  prepareNewAnalysis,
 } from '../cad-app/shell/cadAnalysisSnapshot';
 import { createCadAnalysisControlPlane, queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
 import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
@@ -72,9 +68,7 @@ import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
 import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
 import {
   buildCadSectionSnapshot,
-  estimateSectionViewFrame,
   formatSectionElevationAnswer,
-  layoutSectionViewStack,
   querySectionElevationAtOffset,
 } from '../cad-app/shell/cadSectionSnapshot';
 import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
@@ -107,11 +101,9 @@ import { createCadProfileCache } from '../engine/cad/profileCache';
 import { createCadSectionCache } from '../engine/cad/sectionCache';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
-import { composeSurfaceMeshes } from '../engine/cad/surfaceCompose';
 import {
   buildComposeCopyCommand,
   buildComposePasteCommand,
-  toComposePreview,
   type CadSurfaceComposeMode,
 } from '../cad-app/shell/cadSurfaceCompose';
 import { SurfaceComposeService } from '../workers/surfaceComposeService';
@@ -122,27 +114,13 @@ import {
   toContourGeometrySpec,
 } from '../engine/cad/surfaceContours/contourStyleRevision';
 import type { SurfaceContourDisplayInput } from '../engine/cad/cadSurfaceView';
-import {
-  describeSelectedBoundaryEntity,
-  describeSelectedBreaklineEntity,
-} from '../engine/cad/cadSurfaceView';
 import { surfaceContentRevision } from '../engine/cad/cadSurfaceView';
-import { breaklineEntityRefs } from '../engine/cad/cadSurfaceRevision';
-import {
-  countSurfaceDefinitionReferencesToEntity,
-  surfaceDefinitionReferenceCount,
-} from '../engine/cad/cadSurfaceDefinitionReferences';
-import {
-  validateBoundaryVertexEdit,
-  validateSurfaceBoundaryCandidate,
-} from '../engine/cad/cadBoundaryCandidateValidation';
-import { preflightDesignApply } from '../engine/cad/cadTransactionsDesignSurfaceCommands';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
-import { validateSetCurrent } from './surveyCad/LayerPanel.guards';
 import type { DrawingDependencySummary } from '../engine/cad/cadAdjustmentDependency';
 import { summarizeActiveDrawingDependency } from './surveyCad/cadDependencyDiagnostics';
+import { buildCadWorkspaceShellActions } from './surveyCad/cadWorkspaceShellActions';
 import { useSurveyCadDrawingSource, cloneCadBounds } from '../hooks/surveyCad/useSurveyCadDrawingSource';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import type { SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
@@ -2041,564 +2019,102 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   }, [activeProject.surfaces, surfaceCache, contourService]);
 
   // Phase 18B shell seam (+18F surface actions): shared by the shell link
-  // and workspace-local consumers (surface manager) alike.
-  const shellActions: CadShellActions = {
-      startCommand: (key) => {
-        const starter = shellStarters[key];
-        if (typeof starter !== 'function') return false;
-        starter();
-        return true;
-      },
-      openSurveyTableManager: () => {
-        if (shellLink?.requestSurveyTableManager == null) return;
-        shellLink.requestSurveyTableManager();
-      },
+  // and workspace-local consumers (surface manager) alike. STRUCT-194.2 —
+  // the control plane is composed from cohesive side-effect-free factories
+  // on every render so action closures read the current root state.
+  const shellActions: CadShellActions = buildCadWorkspaceShellActions({
+    core: {
+      link: shellLink,
+      starters: shellStarters,
+      workspace: cadWorkspace,
+      project: activeProject,
+      selectedEntityIds,
       undo,
       redo,
-      selectAll: () => cadWorkspace.selectAll(),
       clearSelection,
       eraseSelection,
-      selectEntities: (entityIds, append) => cadWorkspace.selectEntities(entityIds, append),
-      // Phase 19D — Toolspace Parcel Network "Zoom": fit the viewport to one
-      // parcel's vertex bounds (same mechanism as Zoom Extents, scoped).
-      zoomToParcel: (parcelId) => {
-        const parcel = activeProject.entities.find(
-          (entity) => entity.id === parcelId && entity.type === 'parcel',
-        );
-        if (!parcel || parcel.type !== 'parcel' || parcel.vertices.length === 0) return;
-        const xs = parcel.vertices.map((vertex) => vertex.x);
-        const ys = parcel.vertices.map((vertex) => vertex.y);
-        const bounds = cloneCadBounds({
-          minX: Math.min(...xs),
-          minY: Math.min(...ys),
-          maxX: Math.max(...xs),
-          maxY: Math.max(...ys),
-        });
-        if (!bounds) return;
-        setViewBounds(bounds);
-        applyViewport({ zoom: 1, panX: 0, panY: 0 });
+      handleNewDrawing,
+      handleSaveDrawing,
+      handleEscapeKey,
+      handleEnterKey,
+      setViewBounds,
+      applyViewport,
+      fileInputRef,
+      landXmlImportInputRef,
+      setDraftingPanelOpen,
+      setExportCenterOpen,
+      setDraftingInitialTab,
+      setF2fSection,
+      setSurveyManager,
+      setBlockInsertPick,
+      editSessions: {
+        point: surfacePointEditSessions,
+        bulkEdit: surfaceBulkEditSessions,
+        bulkSelection: surfaceBulkSelection,
       },
-      editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
-      // Phase 21A — Properties palette Shared Boundary rows route through the
-      // same channel the legacy floating panel uses.
-      runParcelLinkAction: (action) => cadWorkspace.runParcelLinkAction(action),
-      startParcelSharedEdit: (linkId) => {
-        cadWorkspace.startParcelSharedEditCommand(linkId);
-        return true;
+    },
+    civil: {
+      project: activeProject,
+      snapshot: shellSnapshot,
+      selectedEntityIds,
+      selectedVolumeId,
+      selectedAnalysisId,
+      surfaceCache,
+      volumeService,
+      analysisPlane,
+      composeService,
+      pendingComposeModeRef,
+      workspace: cadWorkspace,
+      runSurfaceBuild,
+      rebuildAllSurfaces,
+      describeVolumeDifference,
+      describeAnalysisAt,
+      editSessions: {
+        edit: surfaceEditSessions,
+        pointEdit: surfacePointEditSessions,
+        bulkSelection: surfaceBulkSelection,
+        bulkEdit: surfaceBulkEditSessions,
       },
-      runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
-      runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
-      runFeatureLineCommand: (command) => cadWorkspace.runLayerCommand(command),
-      // Phase 20B — grading definition CRUD + Calculate/Extract/Bake. Calculate
-      // dispatches through the session grading service (explicit only);
-      // Extract/Bake pass the CURRENT cached result snapshot to the engine
-      // command (never recomputed in history).
-      runGradingCommand: (command) => cadWorkspace.runLayerCommand(command),
-      selectGrading: (gradingId) => setSelectedGradingId(gradingId),
-      openGradingManager: (selectedId, tab, method) => {
-        if (selectedId != null) setSelectedGradingId(selectedId);
-        setGradingManagerTab(tab ?? 'definition');
-        setGradingManagerMethod(method ?? 'surface');
-        setSurveyManager({ kind: 'gradings', selectedId });
-      },
-      requestGradingCalculate: (gradingId) => {
-        const message = gradingService.requestGrading(gradingId);
-        setGradingVersion((version) => version + 1);
-        return message;
-      },
-      extractGradingDaylight: (gradingId) => {
-        const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
-        if (!row?.extractable) {
-          return row?.extractNotice ?? 'Extract unavailable — needs a CURRENT, single-boundary result.';
-        }
-        if (!row.currentResult || row.revision.length === 0) {
-          return 'Extract needs a CURRENT calculated result.';
-        }
-        const ok = cadWorkspace.runLayerCommand({
-          key: 'GRADINGEXTRACTDAYLIGHT',
-          gradingId,
-          result: row.currentResult,
-          expectedRevision: row.revision,
-          sessionCurrent: true,
-        });
-        return ok
-          ? `Extracted “${row.name} - ${row.boundaryLabel}”.`
-          : row.extractNotice ?? 'Extract rejected — needs a CURRENT result.';
-      },
-      bakeGradingSurface: (gradingId) => {
-        const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
-        if (!row?.bakeable) {
-          return row?.bakeNotice ?? 'Bake unavailable — needs a CURRENT, bakeable result.';
-        }
-        if (!row.currentResult || row.revision.length === 0) {
-          return 'Bake needs a CURRENT calculated result.';
-        }
-        const ok = cadWorkspace.runLayerCommand({
-          key: 'GRADINGBAKE',
-          gradingId,
-          result: row.currentResult,
-          expectedRevision: row.revision,
-          sessionCurrent: true,
-        });
-        return ok
-          ? `Baked “${row.name}” into an explicit-TIN surface.`
-          : row.bakeNotice ?? 'Bake rejected — needs a CURRENT nonzero result.';
-      },
-      // Phase 20C — group definition CRUD + Calculate/Extract/Bake. Calculate
-      // dispatches through the session grading service (explicit only);
-      // Extract/Bake pass the CURRENT cached result snapshot to the engine
-      // command (never recomputed in history).
-      runGradingGroupCommand: (command) => cadWorkspace.runLayerCommand(command),
-      selectGradingGroup: (groupId) => setSelectedGroupId(groupId),
-      openGradingGroupManager: (selectedId, tab) => {
-        if (selectedId != null) setSelectedGroupId(selectedId);
-        setGroupManagerTab(tab ?? 'definition');
-        setSurveyManager({ kind: 'grading-groups', selectedId });
-      },
-      requestGroupGradingCalculate: (groupId) => {
-        const message = gradingService.requestGroupGrading(groupId);
-        setGradingVersion((version) => version + 1);
-        return message;
-      },
-      extractGroupDaylight: (groupId) => {
-        const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
-        if (!row?.extractable) {
-          return row?.extractNotice ?? 'Extract unavailable — needs a CURRENT, single-boundary result.';
-        }
-        if (!row.currentResult || row.revision.length === 0) {
-          return 'Extract needs a CURRENT calculated result.';
-        }
-        const ok = cadWorkspace.runLayerCommand({
-          key: 'GROUPEXTRACTDAYLIGHT',
-          groupId,
-          result: row.currentResult,
-          expectedRevision: row.revision,
-          sessionCurrent: true,
-        });
-        return ok
-          ? `Extracted “${row.name} - ${row.boundaryLabel}”.`
-          : row.extractNotice ?? 'Extract rejected — needs a CURRENT result.';
-      },
-      bakeGroupSurface: (groupId) => {
-        const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
-        if (!row?.bakeable) {
-          return row?.bakeNotice ?? 'Bake unavailable — needs a CURRENT, bakeable result.';
-        }
-        if (!row.currentResult || row.revision.length === 0) {
-          return 'Bake needs a CURRENT calculated result.';
-        }
-        const ok = cadWorkspace.runLayerCommand({
-          key: 'GROUPBAKE',
-          groupId,
-          result: row.currentResult,
-          expectedRevision: row.revision,
-          sessionCurrent: true,
-        });
-        return ok
-          ? `Baked “${row.name}” into an explicit-TIN surface.`
-          : row.bakeNotice ?? 'Bake rejected — needs a CURRENT nonzero result.';
-      },
-      // Phase 18Y — deterministic pre-commit composition of two CURRENT
-      // session meshes; the dialog commits the returned payload through
-      // SURFCOMPOSE / SURFCOMPOSEPASTE (revision-gated at commit).
-      // ponytail: synchronous main-thread engine call; route through the
-      // surfaceComposeService worker if large-mesh UI stalls matter.
-      requestSurfaceCompose: (spec) => {
-        pendingComposeModeRef.current.set(`${spec.baseSurfaceId}|${spec.overlaySurfaceId}`, spec.mode);
-        return composeService.requestCompose({
-          baseSurfaceId: spec.baseSurfaceId,
-          overlaySurfaceId: spec.overlaySurfaceId,
-          policy: { id: spec.policyId },
-        });
-      },
-      previewSurfaceCompose: (baseSurfaceId, overlaySurfaceId) => {
-        if (baseSurfaceId === overlaySurfaceId) return null;
-        const base = (activeProject.surfaces ?? []).find((entry) => entry.id === baseSurfaceId);
-        const overlay = (activeProject.surfaces ?? []).find((entry) => entry.id === overlaySurfaceId);
-        if (!base || !overlay) return null;
-        const baseRevision = computeCadSurfaceSourceRevision(activeProject, base);
-        const overlayRevision = computeCadSurfaceSourceRevision(activeProject, overlay);
-        const baseMesh = surfaceCache.get(base.id, baseRevision);
-        const overlayMesh = surfaceCache.get(overlay.id, overlayRevision);
-        if (!baseMesh || !overlayMesh) return null;
-        return toComposePreview(composeSurfaceMeshes(
-          {
-            surfaceId: base.id,
-            surfaceName: base.name,
-            revision: baseRevision,
-            points: baseMesh.points,
-            triangles: baseMesh.triangles,
-            adjacency: baseMesh.adjacency,
-          },
-          {
-            surfaceId: overlay.id,
-            surfaceName: overlay.name,
-            revision: overlayRevision,
-            points: overlayMesh.points,
-            triangles: overlayMesh.triangles,
-            adjacency: overlayMesh.adjacency,
-          },
-        ));
-      },
-      selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
-      selectVolume: (volumeId) => setSelectedVolumeId(volumeId),
-      selectProfile: (profileId) => setSelectedProfileId(profileId),
-      rebuildProfile: (profileId) => profileService.requestProfile(profileId),
-      createProfileView: (profileId) => {
-        const target = (activeProject.surfaceProfiles ?? []).find(
-          (entry) => entry.id === (profileId ?? selectedProfileId),
-        );
-        if (!target) {
-          setFileStatusText('Select a surface profile first.');
-          return;
-        }
-        const ok = cadWorkspace.runLayerCommand({
-          key: 'PROFILE_VIEW_CREATE',
-          alignmentEntityId: target.alignmentEntityId,
-          profileIds: [target.id],
-        });
-        setFileStatusText(ok ? 'Profile view created.' : 'Profile view rejected — see status/locks.');
-      },
-      selectProfileView: (viewId) => setSelectedProfileViewId(viewId),
-      queryProfileElevation: (profileId, displayStation) =>
-        describeProfileElevation(profileId, displayStation),
-      selectSampleLineGroup: (groupId) => {
-        setSelectedSampleLineGroupId(groupId);
-        if (groupId == null) setSelectedSampleLineId(null);
-      },
-      selectSampleLine: (groupId, lineId) => {
-        if (groupId != null) setSelectedSampleLineGroupId(groupId);
-        setSelectedSampleLineId(lineId);
-      },
-      rebuildSections: (groupId) => sectionService.requestGroup(groupId),
-      rebuildSectionLine: (groupId, lineId) => sectionService.requestLine(groupId, lineId),
-      createSectionViews: (groupId) => {
-        const group = (activeProject.sampleLineGroups ?? []).find((entry) => entry.id === groupId);
-        if (!group) {
-          setFileStatusText('Select a sample-line group first.');
-          return 'Select a sample-line group first.';
-        }
-        const existing = (activeProject.sectionViews ?? []).filter(
-          (entry) => entry.sampleLineGroupId === groupId,
-        );
-        const builtLineIds = new Set(existing.map((entry) => entry.sampleLineId));
-        const missing = group.sampleLines.filter((entry) => !builtLineIds.has(entry.id));
-        if (missing.length === 0) {
-          setFileStatusText(`Section views for “${group.name}” already exist.`);
-          return `Section views for “${group.name}” already exist.`;
-        }
-        // Deterministic single vertical stack below one insertion origin:
-        // origin sits under the lowest existing frame (estimated heights),
-        // then each frame steps down by height + gap — never overlapping
-        // by construction. Placements persist via undoable transactions.
-        const gap = 20;
-        const groupById = new Map((activeProject.sampleLineGroups ?? []).map((entry) => [entry.id, entry]));
-        const estimatedHeight = (ownerGroup: CadSampleLineGroup, lineId: string, ve = 1): number =>
-          estimateSectionViewFrame(activeProject, sectionCache, ownerGroup, lineId, ve, 60).height + 20;
-        // Layout clears EVERY existing section view, not just this group's:
-        // a new group stacks below the current lowest frame so cross-group
-        // frames never overlap.
-        const allViews = activeProject.sectionViews ?? [];
-        const lowest = allViews.length > 0
-          ? Math.min(...allViews.map((entry) => entry.insertionY))
-          : 0;
-        const frames = missing.map((line) => ({
-          lineId: line.id,
-          width: line.leftWidth + line.rightWidth,
-          height: estimatedHeight(group, line.id),
-        }));
-        const clearance = allViews.length > 0
-          ? Math.max(
-              ...allViews.map((view) => {
-                const owner = groupById.get(view.sampleLineGroupId);
-                return owner
-                  ? estimatedHeight(owner, view.sampleLineId, view.verticalExaggeration)
-                  : gap * 4;
-              }),
-              ...frames.map((frame) => frame.height),
-            ) + gap
-          : 0;
-        const placements = layoutSectionViewStack(0, lowest - clearance, frames, gap);
-        let created = 0;
-        for (const placement of placements) {
-          const ok = cadWorkspace.runLayerCommand({
-            key: 'SECTION_VIEW_CREATE',
-            sampleLineGroupId: groupId,
-            sampleLineId: placement.lineId,
-            insertionX: placement.insertionX,
-            insertionY: placement.insertionY,
-          });
-          if (ok) created += 1;
-        }
-        const message =
-          created === placements.length
-            ? `Created ${created} section views for “${group.name}”.`
-            : `Created ${created} of ${placements.length} section views — see status/locks.`;
-        setFileStatusText(message);
-        return message;
-      },
-      selectSectionView: (viewId) => setSelectedSectionViewId(viewId),
-      querySectionElevation: (groupId, lineId, surfaceId, offset) =>
-        describeSectionElevation(groupId, lineId, surfaceId, offset),
-      requestVolume: (volumeId) => volumeService.requestVolume(volumeId),
-      calculateSelectedVolume: () => {
-        if (selectedVolumeId == null) return 'No volume surface selected.';
-        const message = volumeService.requestVolume(selectedVolumeId);
-        setFileStatusText(message);
-      },
-      startVolumePick: (volumeId) => {
-        setSurfacePick(null);
-        setVolumePick(volumeId == null ? null : { volumeId });
-      },
-      queryVolumeDifference: (volumeId, x, y) => describeVolumeDifference(volumeId, x, y),
-      selectAnalysis: (analysisId) => setSelectedAnalysisId(analysisId),
-      selectAnalysisLegend: (legendId) => setSelectedAnalysisLegendId(legendId),
-      createAnalysis: (kind) => {
-        const plan = prepareNewAnalysis(
-          activeProject,
-          surfaceCache,
-          kind,
-          shellSnapshot?.surface?.selectedSurfaceId ?? null,
-          shellSnapshot?.volume?.selectedVolumeId ?? null,
-        );
-        if ('error' in plan) return `Create analysis blocked — ${plan.error}.`;
-        const ok = cadWorkspace.runLayerCommand({
-          key: 'ANALYSIS_MAP_CREATE',
-          name: plan.name,
-          source: plan.source,
-          bands: plan.bands,
-          layerId: resolveCurrentCadLayerId(activeProject),
-        });
-        return ok
-          ? `Analysis “${plan.name}” created — Calculate to measure bands.`
-          : 'Create rejected — check the source, name, and layer lock.';
-      },
-      requestAnalysis: (analysisId) => analysisPlane.requestCalculate(analysisId),
-      calculateSelectedAnalysis: () => {
-        if (selectedAnalysisId == null) {
-          setFileStatusText('No analysis map selected.');
-          return;
-        }
-        setFileStatusText(analysisPlane.requestCalculate(selectedAnalysisId));
-      },
-      startAnalysisPick: (analysisId) => {
-        setSurfacePick(null);
-        setVolumePick(null);
-        setAnalysisPickAnswer(null);
-        setAnalysisPick(analysisId == null ? null : { analysisId });
-      },
-      queryAnalysis: (analysisId, x, y) => describeAnalysisAt(analysisId, x, y),
-      startSurfacePick: (surfaceId, mode) => {
-        setVolumePick(null);
-        setSurfacePick(surfaceId == null ? null : { surfaceId, mode: mode ?? 'elevation' });
-      },
-      querySurfaceElevation: (surfaceId, x, y) => {
-        const text = querySurfaceElevationText(activeProject, surfaceCache, surfaceId, x, y);
-        if (text != null) {
-          const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
-          setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
-        }
-        return text;
-      },
-      querySurfaceSlope: (surfaceId, x, y) => {
-        const text = querySurfaceSlopeText(activeProject, surfaceCache, surfaceId, x, y);
-        if (text != null) {
-          const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
-          setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
-        }
-        return text;
-      },
-      rebuildSurface: (surfaceId) => runSurfaceBuild(surfaceId),
-      rebuildAllSurfaces: () => rebuildAllSurfaces(),
-      startSurfaceEditSession: (mode) => {
-        // 18S/18T/18V sessions never overlap: starting one ends the others.
-        surfaceBulkSelection.cancel();
-        surfaceBulkEditSessions.cancel();
-        if (mode === 'swap' || mode === 'add-line' || mode === 'delete-line') {
-          surfacePointEditSessions.cancel();
-          return surfaceEditSessions.start(mode);
-        }
-        surfaceEditSessions.cancel();
-        return surfacePointEditSessions.start(mode);
-      },
-      cancelSurfaceEditSession: () => {
-        surfaceEditSessions.cancel();
-        surfacePointEditSessions.cancel();
-        surfaceBulkSelection.cancel();
-        surfaceBulkEditSessions.cancel();
-      },
-      // Phase 18V — session point/region selection (SURFSELECTPOINTS).
-      selectSurfacePoints: (mode) => {
-        surfaceEditSessions.cancel();
-        surfacePointEditSessions.cancel();
-        surfaceBulkEditSessions.cancel();
-        return surfaceBulkSelection.startSelection(mode);
-      },
-      setSurfacePointSelectionFilter: (filter) => surfaceBulkSelection.setFilter(filter),
-      clearSurfacePointSelection: () => surfaceBulkSelection.clearSelection(),
-      startSurfaceBulkEditSession: (mode) => {
-        surfaceEditSessions.cancel();
-        surfacePointEditSessions.cancel();
-        surfaceBulkSelection.cancel();
-        return surfaceBulkEditSessions.startBulk(mode);
-      },
-      describeBreaklineSource: (allowF2F) =>
-        describeSelectedBreaklineEntity(activeProject, selectedEntityIds, { allowF2F }),
-      describeBoundarySource: () =>
-        describeSelectedBoundaryEntity(activeProject, selectedEntityIds),
-      // Phase 18W — read-only definition detail (membership/vertices/shared
-      // uses resolve here where the project is live; the shell never sees it).
-      describeBreaklineChain: (surfaceId, breaklineId) => {
-        const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
-        const breakline = surface?.definition.breaklines?.find((entry) => entry.id === breaklineId);
-        if (!surface || !breakline) return null;
-        const chainSource = breakline.source;
-        if (chainSource.kind === 'point-chain') {
-          return {
-            sourceKind: chainSource.kind,
-            memberIds: [...chainSource.pointEntityIds],
-            sourceEntityId: null,
-            sourceLabel: null,
-          };
-        }
-        const entity = activeProject.entities.find((entry) => entry.id === chainSource.entityId);
-        return {
-          sourceKind: 'entity' as const,
-          memberIds: entity ? breaklineEntityRefs(entity) : [],
-          sourceEntityId: chainSource.entityId,
-          sourceLabel: entity ? getCadEntityDisplayLabel(entity) : chainSource.entityId,
-        };
-      },
-      describeSurveyPointCoords: (refs) =>
-        refs.map((ref) => {
-          const direct = activeProject.entities.find(
-            (entry) => entry.type === 'survey-point' && entry.id === ref,
-          );
-          const point = direct ?? activeProject.entities.find(
-            (entry) => entry.type === 'survey-point' && entry.stationId === ref,
-          );
-          return point != null && point.type === 'survey-point'
-            ? { ref, entityId: point.id, stationId: point.stationId, x: point.x, y: point.y, z: point.z ?? null }
-            : { ref, entityId: null, stationId: ref, x: NaN, y: NaN, z: null };
-        }),
-      describeBoundarySourceDetail: (sourceEntityId) => {
-        const entity = activeProject.entities.find((entry) => entry.id === sourceEntityId);
-        if (!entity || (entity.type !== 'polyline' && entity.type !== 'polygon' && entity.type !== 'parcel')) {
-          return null;
-        }
-        const refs = countSurfaceDefinitionReferencesToEntity(activeProject, sourceEntityId);
-        const surfaceIds = [
-          ...refs.boundaryUses.map((use) => use.surfaceId),
-          ...refs.breaklineUses.map((use) => use.surfaceId),
-        ].filter((id, index, all) => all.indexOf(id) === index);
-        return {
-          entityType: entity.type,
-          label: getCadEntityDisplayLabel(entity),
-          isParcel: entity.type === 'parcel',
-          vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
-          sharedUses: surfaceDefinitionReferenceCount(refs),
-          sharedSurfaceIds: surfaceIds,
-        };
-      },
-      preflightBoundaryVertexEdit: (surfaceId, sourceEntityId, vertices) =>
-        validateBoundaryVertexEdit(activeProject, surfaceId, sourceEntityId, vertices),
-      preflightBoundaryCandidate: (surfaceId, kind, ring) => {
-        const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
-        if (!surface) return 'SURFACE_REFERENCE_MISSING';
-        return validateSurfaceBoundaryCandidate(activeProject, surface, kind, [...ring]);
-      },
-      preflightDesignApply: (targetId, targetRev, patchId, patchRev, sessionCurrent) => {
-        try {
-          return preflightDesignApply(activeProject, targetId, patchId, targetRev, patchRev, sessionCurrent);
-        } catch {
-          return null;
-        }
-      },
-      openSurveyManager: (kind, selectedId) => {
-        if (kind === 'points') {
-          shellLink?.requestToolspaceTab?.('survey');
-          return;
-        }
-        if (kind === 'f2f') {
-          setDraftingInitialTab('FIELD_TO_FINISH');
-          setF2fSection(selectedId ?? null);
-          setDraftingPanelOpen(true);
-          return;
-        }
-        setSurveyManager({ kind, selectedId });
-      },
-      selectAllSurveyPoints: () => {
-        cadWorkspace.selectEntities(
-          activeProject.entities.filter((entity) => entity.type === 'survey-point').map((entity) => entity.id),
-        );
-      },
-      selectSurveyGroupPoints: (groupId) => {
-        const group = (activeProject.pointGroups ?? []).find((entry) => entry.id === groupId);
-        if (!group) return;
-        cadWorkspace.selectEntities(
-          activeProject.entities.filter(
-            (entity): entity is CadSurveyPointEntity =>
-              entity.type === 'survey-point' && evaluatePointGroupMembership(entity, group),
-          ).map((entity) => entity.id),
-        );
-      },
-      setCurrentLayer: (layerId) => {
-        // SET_CURRENT guard (spec §3): must exist, be ON, not frozen.
-        if (validateSetCurrent(activeProject.layers, layerId) != null) return false;
-        return cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
-      },
-      openLayerManager: () => shellLink?.requestLayerManager?.(),
-      openBlockManager: (tab) => shellLink?.requestBlockManager?.(tab),
-      openAnnotationManager: (tab) => shellLink?.requestAnnotationManager?.(tab),
-      runAnnotationOp: (op) => cadWorkspace.runAnnotationOp(op),
-      runBlockOp: (op) => cadWorkspace.runBlockOp(op),
-      ensureBlockSymbols: () => cadWorkspace.ensureBlockSymbols(),
-      armInsertPick: (definitionId, scale, rotationDeg, repeat) =>
-        setBlockInsertPick({ definitionId, scale, rotationDeg, repeat }),
-      cancelInsertPick: () => setBlockInsertPick(null),
-      explodeSelectedBlocks: () => {
-        const refs = activeProject.entities.filter(
-          (entity) => entity.type === 'block-reference' && selectedEntityIds.includes(entity.id),
-        );
-        if (refs.length === 0) {
-          window.alert('Select one or more block references first.');
-          return 0;
-        }
-        let exploded = 0;
-        refs.forEach((entity) => {
-          if (cadWorkspace.runBlockOp({ kind: 'explode', entityId: entity.id }).applied) exploded += 1;
-        });
-        return exploded;
-      },
-      setSnapPreference: (kind, enabled) => cadWorkspace.setSnapPreference(kind, enabled),
-      newDrawing: () => handleNewDrawing(),
-      openDrawingFile: () => fileInputRef.current?.click(),
-      requestLandXmlImport: () => landXmlImportInputRef.current?.click(),
-      saveDrawing: () => void handleSaveDrawing(),
-      toggleDraftingPanel: () => setDraftingPanelOpen((current) => !current),
-      toggleExportCenter: () => setExportCenterOpen((current) => !current),
-      cancelCommand: () => handleEscapeKey(),
-      confirmCommandInput: () => {
-        // Phase 18T/18V — dock Enter with empty text commits a fully-staged
-        // point/bulk edit or selection; otherwise the active command.
-        if (surfacePointEditSessions.handleEnter()) return;
-        if (surfaceBulkEditSessions.handleEnter()) return;
-        if (surfaceBulkSelection.handleEnter()) return;
-        handleEnterKey();
-      },
-      // Phase 18O — dock text entry for the live session (MTEXT/LEADER).
-      submitSessionText: (text) => {
-        // Phase 18T/18V — a point/bulk session awaiting a number consumes
-        // dock text first (Elevation / ΔZ); anything else keeps the 18O path.
-        if (surfacePointEditSessions.session && surfacePointEditSessions.submitValueText(text)) return;
-        if (surfaceBulkEditSessions.session && surfaceBulkEditSessions.submitValueText(text)) return;
-        cadWorkspace.setCommandInputValue(text);
-        handleEnterKey();
-      },
-      // Phase B2 — single-buffer dock: direct edits replace the live session
-      // input verbatim (no-op outside an editable session).
-      setSessionInputValue: (text) => cadWorkspace.setCommandInputValue(text),
-    };
+      setSelectedSurfaceId,
+      setSelectedVolumeId,
+      setSelectedAnalysisId,
+      setSelectedAnalysisLegendId,
+      setSurfacePick,
+      setVolumePick,
+      setAnalysisPick,
+      setAnalysisPickAnswer,
+      setLastSurfaceInquiry,
+      setFileStatusText,
+    },
+    linear: {
+      project: activeProject,
+      selectedProfileId,
+      sectionCache,
+      profileService,
+      sectionService,
+      workspace: cadWorkspace,
+      describeProfileElevation,
+      describeSectionElevation,
+      setSelectedProfileId,
+      setSelectedProfileViewId,
+      setSelectedSampleLineGroupId,
+      setSelectedSampleLineId,
+      setSelectedSectionViewId,
+      setFileStatusText,
+    },
+    grading: {
+      snapshot: shellSnapshot,
+      workspace: cadWorkspace,
+      gradingService,
+      setSelectedGradingId,
+      setGradingManagerTab,
+      setGradingManagerMethod,
+      setGradingVersion,
+      setSurveyManager,
+      setSelectedGroupId,
+      setGroupManagerTab,
+    },
+  });
   // Phase 19B QA — actions-channel subscription (see cadShellLink).
   // Registration re-runs every render to keep handlers fresh but never
   // notifies (assignment alone re-renders nobody). Notify fires only on
