@@ -30,39 +30,26 @@ import { buildCadBlockSnapshot } from '../cad-app/shell/cadBlockSnapshot';
 import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
 import {
   buildCadSurfaceSnapshot,
-  querySurfaceElevationText,
-  querySurfaceSlopeText,
   type CadSurfaceInquiry,
 } from '../cad-app/shell/cadSurfaceSnapshot';
-import {
-  buildCadVolumeSnapshot,
-  formatVolumeDifferenceAnswer,
-  queryVolumeDifference,
-} from '../cad-app/shell/cadVolumeSnapshot';
+import { buildCadVolumeSnapshot } from '../cad-app/shell/cadVolumeSnapshot';
 import {
   analysisAreaUnit,
   analysisVolumeUnit,
   buildCadAnalysisSnapshot,
 } from '../cad-app/shell/cadAnalysisSnapshot';
-import { queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
 import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
 import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput';
 import { buildGradingSceneLayers } from '../cad-app/shell/cadGradingDisplay';
 import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
-import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
-import {
-  buildCadSectionSnapshot,
-  formatSectionElevationAnswer,
-  querySectionElevationAtOffset,
-} from '../cad-app/shell/cadSectionSnapshot';
+import { buildCadProfileSnapshot } from '../cad-app/shell/cadProfileSnapshot';
+import { buildCadSectionSnapshot } from '../cad-app/shell/cadSectionSnapshot';
 import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
 import {
   buildSampleLineDisplayLayers,
   buildSectionViewDisplayLayers,
 } from '../engine/cad/cadSectionView';
 import { filterCadDerivedLayersForViewport } from '../engine/cad/cadViewportAppearance';
-import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
-import { cadAlignmentRawStationToDisplayStation, formatCadStation } from '../engine/cad/cadAlignmentStationing';
 import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceEditSessions';
 import { useSurveyCadSurfacePointEditSessions } from '../hooks/surveyCad/useSurveyCadSurfacePointEditSessions';
 import { useSurveyCadSurfaceBulkSelection } from '../hooks/surveyCad/useSurveyCadSurfaceBulkSelection';
@@ -71,7 +58,7 @@ import { useSurveyCadSurfaceBuildLifecycle } from '../hooks/surveyCad/useSurveyC
 import { useSurveyCadContourLifecycle } from '../hooks/surveyCad/useSurveyCadContourLifecycle';
 import { useSurveyCadVolumeGradingAnalysisLifecycle } from '../hooks/surveyCad/useSurveyCadVolumeGradingAnalysisLifecycle';
 import { useSurveyCadProfileSectionLifecycle } from '../hooks/surveyCad/useSurveyCadProfileSectionLifecycle';
-import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
+import { useSurveyCadComposeLifecycle } from '../hooks/surveyCad/useSurveyCadComposeLifecycle';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
 import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
 import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
@@ -79,20 +66,14 @@ import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCa
 import { buildCadGradingGroupSnapshot } from '../cad-app/shell/cadGradingGroupSnapshot';
 import { buildGroupGradingSceneLayers } from '../cad-app/shell/cadGradingGroupDisplay';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
-import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
-import {
-  buildComposeCopyCommand,
-  buildComposePasteCommand,
-  type CadSurfaceComposeMode,
-} from '../cad-app/shell/cadSurfaceCompose';
-import { SurfaceComposeService } from '../workers/surfaceComposeService';
-import { surfaceContentRevision } from '../engine/cad/cadSurfaceView';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
 import type { DrawingDependencySummary } from '../engine/cad/cadAdjustmentDependency';
 import { summarizeActiveDrawingDependency } from './surveyCad/cadDependencyDiagnostics';
 import { buildCadWorkspaceShellActions } from './surveyCad/cadWorkspaceShellActions';
+import { createCadCivilInquiryHandlers } from './surveyCad/cadCivilInquiryHandlers';
+import { createCadSurfacePickDispatch } from './surveyCad/cadSurfacePickDispatch';
 import { useSurveyCadDrawingSource, cloneCadBounds } from '../hooks/surveyCad/useSurveyCadDrawingSource';
 import { useSurveyCadDrawingLifecycleState } from '../hooks/surveyCad/useSurveyCadDrawingLifecycleState';
 import { useSurveyCadDrawingFileLifecycle } from '../hooks/surveyCad/useSurveyCadDrawingFileLifecycle';
@@ -472,76 +453,21 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     undo,
     redo,
   } = cadWorkspace;
-  // Phase 18Y — exact two-surface composition control plane (one per drawing
-  // session). The worker computes the topology off-thread; the UI-owned
-  // `applyCompose` seam dispatches the payload-carrying SURFCOMPOSE /
-  // SURFCOMPOSEPASTE transaction (the service never mutates history).
-  const pendingComposeModeRef = useRef(new Map<string, CadSurfaceComposeMode>());
-  const composeService = useMemo(
-    () =>
-      new SurfaceComposeService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => {},
-        applyCompose: (computed) => {
-          const project = activeProjectForBuildsRef.current;
-          const base = (project.surfaces ?? []).find((entry) => entry.id === computed.baseSurfaceId);
-          const overlay = (project.surfaces ?? []).find((entry) => entry.id === computed.overlaySurfaceId);
-          if (!base || !overlay) return;
-          const key = `${computed.baseSurfaceId}|${computed.overlaySurfaceId}`;
-          const mode = pendingComposeModeRef.current.get(key) ?? 'copy';
-          pendingComposeModeRef.current.delete(key);
-          const payload = { vertices: computed.vertices, faces: computed.faces };
-          const command = mode === 'paste'
-            ? buildComposePasteCommand({
-                id: base.id,
-                name: base.name,
-                revision: computeCadSurfaceSourceRevision(project, base),
-                current: true,
-              }, {
-                id: overlay.id,
-                name: overlay.name,
-                revision: computeCadSurfaceSourceRevision(project, overlay),
-                current: true,
-              }, payload)
-            : buildComposeCopyCommand({
-                id: base.id,
-                name: base.name,
-                revision: computeCadSurfaceSourceRevision(project, base),
-                current: true,
-              }, {
-                id: overlay.id,
-                name: overlay.name,
-                revision: computeCadSurfaceSourceRevision(project, overlay),
-                current: true,
-              }, payload);
-          const ok = cadWorkspace.runLayerCommand(command);
-          setFileStatusText(ok
-            ? (mode === 'paste'
-              ? `Pasted “${overlay.name}” into “${base.name}”.`
-              : `Composite copy created from “${base.name}” + “${overlay.name}”.`)
-            : 'Compose rejected — a source revision moved or the target layer is locked.');
-        },
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache, cadWorkspace],
-  );
-  useEffect(() => () => composeService.dispose(), [composeService]);
+  // STRUCT-194.6 — exact two-surface composition control plane (one per
+  // drawing session). Called once, unconditionally, at the former compose
+  // render position; the hook owns the pending-mode ref + worker service and
+  // disposes the old service on a drawing/cache/workspace change. The worker
+  // computes topology only; the UI-owned APPLY seam dispatches the
+  // payload-carrying SURFCOMPOSE / SURFCOMPOSEPASTE transaction.
+  const { composeService, pendingComposeModeRef } = useSurveyCadComposeLifecycle({
+    drawingId: activeDrawing.drawingId,
+    surfaceCache,
+    activeProjectForBuildsRef,
+    drawingIdForBuildsRef,
+    cadWorkspace,
+    setFileStatusText,
+  });
+
   // Phase 18U — analysis rows + legend rows (derived once per publish).
   // surfaceMeshSessions is a dep (not just an effect trigger): a source
   // rebuild mutates the mesh cache in place, so without it the rows would
@@ -1300,32 +1226,21 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (selectedVolumeId != null && !live.has(selectedVolumeId)) setSelectedVolumeId(null);
   }, [activeProject.volumeSurfaces, volumeService, selectedVolumeId]);
 
-  // Phase 18U — analysis inquiry text (direct source geometry; pure read).
-  const describeAnalysisAt = (analysisId: string, x: number, y: number): string | null => {
-    const map = (activeProject.analysisMaps ?? []).find((entry) => entry.id === analysisId);
-    const row = analysisSnapshot.analyses.find((entry) => entry.id === analysisId) ?? null;
-    if (!map || !row) return null;
-    const inquiry = queryAnalysisAt(activeProject, surfaceCache, map, x, y);
-    if (inquiry == null) {
-      return `“${row.name}” has no ${row.typeLabel} at (${x.toFixed(3)}, ${y.toFixed(3)}) — outside the source domain.`;
-    }
-    const bandText = inquiry.band ? inquiry.band.label : 'UNCLASSIFIED (no band covers this value)';
-    const valueText =
-      inquiry.metric === 'elevation'
-        ? `elevation ${inquiry.elevation.toFixed(3)} ${row.metricUnit}`
-        : inquiry.metric === 'signed-depth'
-          ? `Δ ${inquiry.delta.toFixed(3)} ${row.metricUnit} ${inquiry.side}`
-          : `slope ${inquiry.percent.toFixed(2)}% (${inquiry.degrees.toFixed(2)}°)`;
-    return `“${row.name}” E ${x.toFixed(3)} N ${y.toFixed(3)} ${valueText} — band ${bandText}.`;
-  };
-
-  // Phase 18I — difference inquiry text (live source inquiry; pure read).
-  const describeVolumeDifference = (volumeId: string, x: number, y: number): string | null => {
-    const volume = activeProject.volumeSurfaces?.find((entry) => entry.id === volumeId);
-    const name = volume?.name ?? volumeId;
-    const result = queryVolumeDifference(activeProject, surfaceCache, volumeId, x, y);
-    return formatVolumeDifferenceAnswer(result, name, x, y);
-  };
+  // STRUCT-194.6 — the four civil inquiry helpers are pure closures over the
+  // current project / TIN cache / section cache / analysis snapshot. Built once
+  // per render (a plain function call, never a hook) so the pick handler and
+  // shell actions always read live state.
+  const {
+    describeAnalysisAt,
+    describeVolumeDifference,
+    describeSectionElevation,
+    describeProfileElevation,
+  } = createCadCivilInquiryHandlers({
+    project: activeProject,
+    surfaceCache,
+    sectionCache,
+    analysisSnapshot,
+  });
 
   // Phase 18J — drop session samples for deleted profiles (results never
   // persist; the service cancels in-flight work first). Source surface
@@ -1355,80 +1270,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       setSelectedSampleLineId(null);
     }
   }, [activeProject.sampleLineGroups, sectionService, selectedSampleLineGroupId]);
-
-  // Phase 18K — Section Elevation at Offset (live interpolation inquiry).
-  // Signed offset (+left/−right) resolves to the displayed station +
-  // E/N + interpolated elevation; gaps and outside-coverage answer
-  // honestly (never guessed). Null group/line/surface/result = block.
-  const describeSectionElevation = (
-    groupId: string,
-    lineId: string,
-    surfaceId: string,
-    offset: number,
-  ): string => {
-    const group = (activeProject.sampleLineGroups ?? []).find((entry) => entry.id === groupId);
-    const line = group?.sampleLines.find((entry) => entry.id === lineId) ?? null;
-    const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
-    const alignment = activeProject.entities.find((entry) => entry.id === group?.alignmentEntityId);
-    const viewName = line?.manualName ?? group?.name ?? lineId;
-    if (!group || !line || !surface || !alignment || alignment.type !== 'alignment') {
-      return formatSectionElevationAnswer(viewName, '—', offset, null, false);
-    }
-    const displayed = formatCadStation(
-      cadAlignmentRawStationToDisplayStation(alignment, line.rawStation) ?? line.rawStation,
-    );
-    const hit = querySectionElevationAtOffset(
-      activeProject,
-      sectionCache,
-      groupId,
-      lineId,
-      surfaceId,
-      offset,
-    );
-    if (!hit) {
-      return formatSectionElevationAnswer(viewName, displayed, offset, null, true);
-    }
-    return formatSectionElevationAnswer(viewName, displayed, offset, hit, true);
-  };
-
-  // Phase 18J — Profile Elevation at Station (live interpolation inquiry).
-  // Display station resolves to raw chainage through the shared stationing
-  // semantics; an ambiguous equation gap or unstationed input is surfaced
-  // honestly (never guessed). Null alignment/surface/mesh = honest block.
-  const describeProfileElevation = (profileId: string, displayStation: number): string => {
-    const profile = (activeProject.surfaceProfiles ?? []).find((entry) => entry.id === profileId);
-    if (!profile) return 'Profile not found.';
-    const alignment = activeProject.entities.find((entry) => entry.id === profile.alignmentEntityId);
-    const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === profile.surfaceId);
-    if (!alignment || alignment.type !== 'alignment' || !surface) {
-      return formatProfileElevationAnswer(profile.name, profile.alignmentEntityId, '—', NaN, null, false);
-    }
-    const displayed = formatCadStation(displayStation);
-    const mesh = surfaceCache.get(surface.id, surfaceContentRevision(activeProject, surface));
-    if (!mesh) {
-      return formatProfileElevationAnswer(profile.name, alignment.name, displayed, NaN, null, false);
-    }
-    const raw = resolveProfileStationInput(
-      { elements: alignment.elements, startStation: alignment.startStation, stationEquations: alignment.stationEquations },
-      displayStation,
-    );
-    if (raw == null) {
-      return `Station ${displayed} is ambiguous inside a station equation (or unstationed) on “${profile.name}” — no guess.`;
-    }
-    const answer = queryProfileElevationAt(
-      {
-        alignmentElements: alignment.elements,
-        startStation: alignment.startStation,
-        stationEquations: alignment.stationEquations,
-        mesh: { points: mesh.points, triangles: mesh.triangles, grid: mesh.grid, adjacency: mesh.adjacency, edgeKinds: mesh.edgeKinds },
-      },
-      raw,
-    );
-    if ('gap' in answer) {
-      return `No surface profile elevation at station ${displayed} on “${profile.name}”.`;
-    }
-    return formatProfileElevationAnswer(profile.name, alignment.name, displayed, raw, answer, true);
-  };
 
   // Phase 18F — drop session meshes for deleted surfaces (meshes never
   // persist; the revision index doubles as the known-id set). Phase 18H:
@@ -1718,81 +1559,28 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         cloneBounds={cloneCadBounds}
         shellChrome={shellChrome}
         surfacePickActive={surfacePick != null || volumePick != null || analysisPick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null || surfaceBulkSelection.session != null || surfaceBulkEditSessions.session != null}
-        onSurfacePickPoint={(worldPoint) => {
-          if (surfacePointEditSessions.session) {
-            surfacePointEditSessions.handlePick(worldPoint);
-            return;
-          }
-          if (surfaceBulkSelection.session) {
-            surfaceBulkSelection.handlePick(worldPoint);
-            return;
-          }
-          if (surfaceBulkEditSessions.session) {
-            surfaceBulkEditSessions.handlePick(worldPoint);
-            return;
-          }
-          if (surfaceEditSessions.session) {
-            surfaceEditSessions.handlePick(worldPoint);
-            return;
-          }            if (blockInsertPick) {
-            const outcome = cadWorkspace.runBlockOp({
-              kind: 'insert',
-              definitionId: blockInsertPick.definitionId,
-              x: worldPoint.x,
-              y: worldPoint.y,
-              rotationDeg: blockInsertPick.rotationDeg,
-              scale: blockInsertPick.scale,
-            });
-            // Repeat loop: stay armed for the next point; a rejected
-            // insert also stays armed (user adjusts scale/rotation).
-            // Esc (or Cancel) ends the loop.
-            if (outcome.applied && !blockInsertPick.repeat) setBlockInsertPick(null);
-            return;
-          }
-          if (analysisPick) {
-            const text = describeAnalysisAt(analysisPick.analysisId, worldPoint.x, worldPoint.y);
-            if (text != null) {
-              setAnalysisPickAnswer({ analysisId: analysisPick.analysisId, text });
-            }
-            setAnalysisPick(null);
-            return;
-          }
-          if (volumePick) {
-            const text = describeVolumeDifference(volumePick.volumeId, worldPoint.x, worldPoint.y);
-            if (text != null) {
-              setVolumePickAnswer({ volumeId: volumePick.volumeId, text });
-            }
-            setVolumePick(null);
-            return;
-          }
-          if (!surfacePick) return;
-          const text = surfacePick.mode === 'slope'
-            ? querySurfaceSlopeText(
-              activeProject,
-              surfaceCache,
-              surfacePick.surfaceId,
-              worldPoint.x,
-              worldPoint.y,
-            )
-            : querySurfaceElevationText(
-              activeProject,
-              surfaceCache,
-              surfacePick.surfaceId,
-              worldPoint.x,
-              worldPoint.y,
-            );
-          if (text != null) {
-            const surface = activeProject.surfaces?.find((entry) => entry.id === surfacePick.surfaceId);
-            setLastSurfaceInquiry({
-              surfaceId: surfacePick.surfaceId,
-              surfaceName: surface?.name ?? surfacePick.surfaceId,
-              x: worldPoint.x,
-              y: worldPoint.y,
-              text,
-            });
-          }
-          setSurfacePick(null);
-        }}
+        onSurfacePickPoint={createCadSurfacePickDispatch({
+          editSessions: {
+            pointEdit: surfacePointEditSessions,
+            bulkSelection: surfaceBulkSelection,
+            bulkEdit: surfaceBulkEditSessions,
+            edit: surfaceEditSessions,
+          },
+          picks: { blockInsertPick, analysisPick, volumePick, surfacePick },
+          project: activeProject,
+          surfaceCache,
+          inquiries: { describeAnalysisAt, describeVolumeDifference },
+          runBlockOp: cadWorkspace.runBlockOp,
+          setters: {
+            setBlockInsertPick,
+            setAnalysisPickAnswer,
+            setAnalysisPick,
+            setVolumePickAnswer,
+            setVolumePick,
+            setLastSurfaceInquiry,
+            setSurfacePick,
+          },
+        })}
         selectedSurfaceId={selectedSurfaceId}
         onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
         selectedProfileViewId={selectedProfileViewId}
