@@ -14,10 +14,19 @@
 // project. In-place mutation of a live project/layer/entity is out of
 // contract and test-pinned.
 //
-// Lookup semantics are FIRST-WINS for duplicate ids, matching `.find(...)`
-// selection everywhere in the baseline (`project.entities.find`,
-// `project.layers.find`, style/legend/map `.find`). `new Map(rows.map(...))`
-// would be LAST-wins and is deliberately avoided.
+// Duplicate-id semantics (baseline truth, pinned by
+// tests/cad_viewport_filter_186.test.ts against a verbatim baseline replica):
+//   - Entities: the baseline display path builds its lookup via
+//     `new Map(project.entities.map((entity) => [entity.id, entity]))`, so the
+//     LAST row with a given id decides what is drawn. The baseline
+//     `viewportHiddenEntityIds` traversal instead loops ALL rows and adds the
+//     id when ANY row resolves hidden — a later visible row never removes it.
+//     This index matches both: `visibilityById` is overwritten per row
+//     (LAST-WINS display) while `hiddenEntityIds` only ever gains ids
+//     (ANY-HIDDEN retirement). Every row is resolved (linear in rows) with
+//     O(1) layer/style lookups — no per-row layer scans.
+//   - Layers, styles, analysis legends, and analysis maps resolve FIRST-WINS,
+//     matching the baseline `.find(...)` selection used for each of them.
 import { resolveCadEntityAppearance } from './cadAppearance';
 import type {
   CadAnalysisLegend,
@@ -27,40 +36,6 @@ import type {
   CadProject,
   CadStyle,
 } from './cadTypes';
-
-/** Deterministic operation counters (no wall-clock, no I/O). */
-export interface CadViewportVisibilityCounters {
-  /** Index constructions (WeakMap misses) for an immutable project version. */
-  indexBuilds: number;
-  /** Entity appearance resolutions (one per unique entity per index build). */
-  entityVisibilityResolutions: number;
-  /** O(1) layer queries answered by the index. */
-  layerQueries: number;
-  /** Primitive visibility evaluations in the full-scene filter. */
-  primitiveVisibilityEvaluations: number;
-  /** Full-scene viewport filter invocations. */
-  fullFilterInvocations: number;
-  /** Derived-layer-only filter invocations. */
-  derivedFilterInvocations: number;
-}
-
-export const cadViewportVisibilityCounters: CadViewportVisibilityCounters = {
-  indexBuilds: 0,
-  entityVisibilityResolutions: 0,
-  layerQueries: 0,
-  primitiveVisibilityEvaluations: 0,
-  fullFilterInvocations: 0,
-  derivedFilterInvocations: 0,
-};
-
-export const resetCadViewportVisibilityCounters = (): void => {
-  cadViewportVisibilityCounters.indexBuilds = 0;
-  cadViewportVisibilityCounters.entityVisibilityResolutions = 0;
-  cadViewportVisibilityCounters.layerQueries = 0;
-  cadViewportVisibilityCounters.primitiveVisibilityEvaluations = 0;
-  cadViewportVisibilityCounters.fullFilterInvocations = 0;
-  cadViewportVisibilityCounters.derivedFilterInvocations = 0;
-};
 
 export interface CadEntityVisibility {
   visible: boolean;
@@ -88,8 +63,6 @@ const firstById = <T extends { id: string }>(rows: readonly T[] | undefined): Ma
 };
 
 const buildIndex = (project: CadProject): CadViewportVisibilityIndex => {
-  cadViewportVisibilityCounters.indexBuilds += 1;
-
   const layerById = firstById<CadLayer>(project.layers);
   const styleById = firstById<CadStyle>(project.styleLibrary?.styles);
   const legendById = firstById<CadAnalysisLegend>(project.analysisLegends);
@@ -104,19 +77,18 @@ const buildIndex = (project: CadProject): CadViewportVisibilityIndex => {
     }
   }
 
-  const isLayerHidden = (layerId: string): boolean => {
-    cadViewportVisibilityCounters.layerQueries += 1;
-    return layerHiddenById.get(layerId) === true;
-  };
+  const isLayerHidden = (layerId: string): boolean =>
+    layerHiddenById.get(layerId) === true;
 
-  // First-wins entity visibility: one appearance resolution per unique entity.
+  // Baseline duplicate-entity semantics: every row resolves (linear in rows,
+  // O(1) lookups each); the LAST row with an id wins the display lookup
+  // (matching `new Map(rows.map(...))`), while the hidden set gains the id
+  // when ANY row resolves hidden and is never cleared by a later visible row
+  // (matching the baseline hidden-entity traversal).
   const visibilityById = new Map<CadEntityId, CadEntityVisibility>();
   const hiddenEntityIds = new Set<CadEntityId>();
   for (const entity of project.entities) {
-    if (visibilityById.has(entity.id)) continue;
     const layer = layerById.get(entity.layerId);
-    cadViewportVisibilityCounters.entityVisibilityResolutions += 1;
-    cadViewportVisibilityCounters.layerQueries += 1;
     const { visible } = resolveCadEntityAppearance({
       entity,
       layer,

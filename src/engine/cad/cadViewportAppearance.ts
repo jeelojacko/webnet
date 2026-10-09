@@ -5,7 +5,7 @@
 // to screen space at render time so the scene itself stays zoom-independent
 // and export-scene output (which ignores these viewport-only fields) is
 // untouched.
-import { getCadViewportVisibilityIndex, cadViewportVisibilityCounters, type CadViewportVisibilityIndex } from './cadViewportVisibilityIndex';
+import { getCadViewportVisibilityIndex, type CadViewportVisibilityIndex } from './cadViewportVisibilityIndex';
 import type {
   CadDisplayScene,
   CadEntityId,
@@ -110,12 +110,10 @@ export const filterCadDisplaySceneForViewport = (
   project: CadProject,
   scene: CadDisplayScene,
 ): CadDisplayScene => {
-  cadViewportVisibilityCounters.fullFilterInvocations += 1;
   const index = getCadViewportVisibilityIndex(project);
   return {
     bounds: scene.bounds,
     primitives: scene.primitives.filter((primitive) => {
-      cadViewportVisibilityCounters.primitiveVisibilityEvaluations += 1;
       const backing = index.entityVisibility(primitive.sourceEntityId);
       // No backing entity (transient preview): always visible.
       if (backing === undefined) return true;
@@ -175,7 +173,6 @@ export const filterCadDerivedLayersForViewport = (
   base: CadDisplayScene,
   patch: CadViewportDerivedLayerPatch,
 ): CadDisplayScene => {
-  cadViewportVisibilityCounters.derivedFilterInvocations += 1;
   const index = getCadViewportVisibilityIndex(project);
   return {
     bounds: base.bounds,

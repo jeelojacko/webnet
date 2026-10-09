@@ -1,7 +1,9 @@
 # PERF-186.1 — single viewport visibility filter validation
 
 All numbers are deterministic operation/invocation counts (never wall-clock).
-Full production code paths are measured; nothing is gated on time.
+Full production code paths are measured via test-only spies/proxies around
+the real shipped functions (production carries no counters); nothing is
+gated on time.
 
 ## Root-path invocation counts
 
@@ -31,21 +33,29 @@ Fixture for the count test (`tests/cad_viewport_filter_186.test.ts`): 2000
 line entities on 60 layers, 250 synthesized labels, 1 transient preview
 primitive → **2251 primitives**, 2000 unique entities, 60 layers.
 
-| Counter | Baseline (4-pass pipeline) | After (1 full + 3 derived) |
+Measurement method: production viewport code carries **zero counters and no
+telemetry in hot loops**. All AFTER numbers below are measured externally by
+test-only helpers (`tests/cad_viewport_filter_186_instrument.ts`, imported
+only by tests): invocation spies wrapping the real shipped filters, and
+`.find`-counting proxies on the project's lookup arrays. BEFORE numbers come
+from in-test counters inside the verbatim baseline pipeline replica. Nothing
+is gated on wall-clock.
+
+| Evidence | Baseline (4-pass pipeline) | After (1 full + 3 derived) |
 | --- | ---: | ---: |
-| Full primitive scans | 4 | **1** |
-| Entity-map builds | 4 | 0 (1 indexed build, WeakMap-memoized) |
-| Index builds | 0 | **1** |
-| Entity visibility resolutions | 9004 (per primitive) | **2000** (per unique entity) |
-| Primitive visibility evaluations | 9004 | **2251** |
-| Layer linear finds / index queries | **10000** | **2250** |
+| Full filter invocations (spy) | 4 | **1** |
+| Derived-only filter invocations (spy) | 0 | **3** |
+| Entity-map builds (replica counter) | 4 | 0 (WeakMap-memoized index, reuse pinned by `toBe` identity) |
+| Primitive evaluations (replica counter) | 9004 (4 × 2251) | single `.filter` pass over 2251 primitives in the one full invocation |
+| Linear `.find` scans on project lookup arrays | **≈10000** (replica counter, asserted `>` 4 × primitives) | **0** (counted proxy: every entity/layer/legend/map lookup is O(1)) |
 
 The baseline and the new pipeline produce a **deep-equal final scene**
 (ordered primitive ids/props, all nine derived arrays) — asserted by
 `expect(newFinal).toEqual(legacyFinal)` against a verbatim pre-fix pipeline
-replica.
+replica — and a **deep-equal hidden set** against a verbatim baseline
+ANY-HIDDEN traversal replica.
 
-## Parity coverage (`tests/cad_viewport_filter_186.test.ts`, 14 tests)
+## Parity coverage (`tests/cad_viewport_filter_186.test.ts`, 19 tests)
 
 - OFF layer, FROZEN layer, missing layer, `entity.visible: false`.
 - Full staged 4-pass-vs-new pipeline deep-equal with hidden layers,
@@ -66,12 +76,20 @@ replica.
   section/grading/group) plus the analysis-legend `'general'` fallback for a
   broken reference.
 - `withBlockHoverTitles` adds hover metadata only (ids/segment ids unchanged)
-  and the derived stage reuses the titled list with zero primitive
-  re-evaluations.
+  and the derived stage reuses the titled list with zero full scans
+  (test-only spy: 0 full / 1 derived).
 - Post-filter surface-edit overlay primitives stay visible.
 - Index invalidation: memo per identity, rebuild on replacement with identical
   ids, no strong retention, no id-only stale state, first-wins duplicate
-  layers/entities.
+  layers (both orders, incl. frozen).
+- Baseline duplicate-entity semantics, each compared against the verbatim
+  baseline replicas on the same fixture: first-visible + last-hidden hides
+  (LAST-WINS display); first-hidden + last-visible keeps the primitive but
+  still retires the id (ANY-HIDDEN, with the #189 still-drawn-yet-retired
+  effect); `entity.visible` duplicates and frozen-layer duplicates; duplicate
+  analysis legend/map ids first-wins (both orders).
+- A `.wncad` save/open round-trip preserves both duplicate rows into the
+  viewport with baseline LAST-WINS/ANY-HIDDEN behavior.
 
 ## #189 selection retirement
 
@@ -89,12 +107,12 @@ Backed by the same index, so `viewportHiddenEntityIds` itself is an O(1)
 
 ## Focused / neighbor unit suites
 
-- `tests/cad_viewport_filter_186.test.ts` — 14/14
+- `tests/cad_viewport_filter_186.test.ts` — 19/19
 - `tests/cad_viewport_filter_root_186.test.tsx` — 5/5
 - `tests/cad_render_standards.test.ts`, `tests/cad_section_ui.test.ts`,
   `tests/cad_grading_ui_20b.test.ts`, `tests/cad_surface_contour_ui.test.ts`,
   `tests/evidence/phase19b_sheet_layout_performance.test.ts` — all green
-  (72 tests across the 7 files).
+  (79 tests across the 7 files).
 - #183/#184/#185 pins green: `cad_pointer_culling_183`,
   `cad_pointer_perf_183`, `cad_snap_state_dedupe_183`,
   `cad_command_pointer_seed_183`, `cad_shell_snapshot_memo_184`,
@@ -147,7 +165,7 @@ Pre-existing failures were re-run with the baseline production files restored
 
 ## Commands run
 
-- `npx vitest run tests/cad_viewport_filter_186.test.ts tests/cad_viewport_filter_root_186.test.tsx …` — 72/72.
+- `npx vitest run tests/cad_viewport_filter_186.test.ts tests/cad_viewport_filter_root_186.test.tsx …` — 79/79.
 - `npx vitest run tests/surveyCadWorkspace/` — 144 passed / 1 skipped.
 - `npx tsc --noEmit` — clean.
 - `npm run build` — clean (10.3 s).
@@ -164,6 +182,11 @@ Pre-existing failures were re-run with the baseline production files restored
   must only receive metadata-only primitive rewrites. This is asserted by the
   parity test (`withBlockHoverTitles` preserves the primitive id set) and the
   root mount contract (one full scan per transaction).
-- Duplicate layer/entity/style ids now resolve first-wins (matching
-  `.find(...)`), never the old `new Map` last-wins entity behavior. Real
-  drawings have unique ids; the contract is pinned.
+- Duplicate-id semantics match the baseline exactly (pinned against a verbatim
+  baseline replica): duplicate layers/styles/legends/maps resolve first-wins
+  (matching `.find(...)`); duplicate entities resolve LAST-WINS for display
+  (matching `new Map(rows.map(...))`) with ANY-HIDDEN retirement (a hidden row
+  anywhere retires the id, even under a later visible row — so #189
+  retirement can drop a still-drawn duplicate). A `.wncad` save/open
+  round-trip test proves duplicate rows survive persistence into the viewport.
+  The contract is pinned regardless of id uniqueness.

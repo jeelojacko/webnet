@@ -45,11 +45,19 @@ One small cohesive module builds an index per **immutable project version**:
 
 - `layerHiddenById` — first-wins hidden state per layer id (matches
   `project.layers.find(...)`), so `isLayerHidden` is O(1).
-- `visibilityById` — one `resolveCadEntityAppearance` per unique entity id
-  (first-wins), passing a first-wins `styleById` so the resolver never
-  `.find`s the style list either. Stores `{ visible, layerId }`.
+- `visibilityById` — every entity row resolves through the first-wins
+  layer/style lookups (linear in rows, O(1) each, no per-row layer scan)
+  and overwrites the previous entry, so the LAST row with a duplicated id
+  decides what is drawn — exactly matching the baseline
+  `new Map(project.entities.map((entity) => [entity.id, entity]))` display
+  lookup. Stores `{ visible, layerId }`.
+- `hiddenEntityIds` — gains the id when ANY row resolves hidden and is never
+  cleared by a later visible row, exactly matching the baseline
+  `viewportHiddenEntityIds` traversal (ANY-HIDDEN retirement). A
+  first-hidden + last-visible duplicate therefore stays drawn while still
+  retiring selection (#189 effect, pinned by test).
 - `legendById` / `analysisById` — first-wins, for the analysis-legend
-  parent-map `'general'` fallback.
+  parent-map `'general'` fallback (matching the baseline `.find` lookups).
 - `hiddenEntityIds` — the selection-retirement set, materialized once.
 
 **Immutability contract:** `CadProject` values are replaced per transaction
