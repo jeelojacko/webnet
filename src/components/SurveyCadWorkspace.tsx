@@ -44,7 +44,7 @@ import {
   analysisVolumeUnit,
   buildCadAnalysisSnapshot,
 } from '../cad-app/shell/cadAnalysisSnapshot';
-import { createCadAnalysisControlPlane, queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
+import { queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
 import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
 import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput';
 import { buildGradingSceneLayers } from '../cad-app/shell/cadGradingDisplay';
@@ -69,19 +69,15 @@ import { useSurveyCadSurfaceBulkSelection } from '../hooks/surveyCad/useSurveyCa
 import { useSurveyCadSurfaceBulkEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceBulkEditSessions';
 import { useSurveyCadSurfaceBuildLifecycle } from '../hooks/surveyCad/useSurveyCadSurfaceBuildLifecycle';
 import { useSurveyCadContourLifecycle } from '../hooks/surveyCad/useSurveyCadContourLifecycle';
+import { useSurveyCadVolumeGradingAnalysisLifecycle } from '../hooks/surveyCad/useSurveyCadVolumeGradingAnalysisLifecycle';
+import { useSurveyCadProfileSectionLifecycle } from '../hooks/surveyCad/useSurveyCadProfileSectionLifecycle';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
-import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
-import { SurfaceGradingService } from '../workers/surfaceGradingService';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
 import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
 import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
 import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCache';
 import { buildCadGradingGroupSnapshot } from '../cad-app/shell/cadGradingGroupSnapshot';
 import { buildGroupGradingSceneLayers } from '../cad-app/shell/cadGradingGroupDisplay';
-import { SurfaceProfileService } from '../workers/surfaceProfileService';
-import { SurfaceSectionService } from '../workers/surfaceSectionService';
-import { createCadProfileCache } from '../engine/cad/profileCache';
-import { createCadSectionCache } from '../engine/cad/sectionCache';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
 import {
@@ -357,287 +353,44 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     drawingIdForBuildsRef,
     setFileStatusText,
   });
-  // Phase 18I — volume derivation control plane (one per drawing
-  // session, mirrors SurfaceBuildService ownership). Manual calculation
-  // only: source rebuilds never auto-start volume work; notifyMeshBuilt
-  // cancels in-flight work for affected volumes and lets status derive
-  // stale from the revision. No-Display styles request quantity-only
-  // (includeDisplay false, decided inside the service).
-  const volumeService = useMemo(
-    () =>
-      new SurfaceVolumeService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        volumeCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setVolumeVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache, volumeCache],
-  );
-  useEffect(() => () => volumeService.dispose(), [volumeService]);
-  // Phase 20B — grading derivation control plane (one per drawing session).
-  // Calculate is explicit only; source/target rebuilds re-derive status from
-  // revisions and never auto-start work.
-  const gradingService = useMemo(
-    () =>
-      new SurfaceGradingService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        gradingCache,
-        groupCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setGradingVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache, gradingCache, groupCache],
-  );
-  useEffect(() => () => gradingService.dispose(), [gradingService]);
-  // Phase 20F.2 §§8-12 — pending-request reconciliation seam. Every actual
-  // definition/source edit (Feature Line geometry, criterion/override, span,
-  // target reassignment, delete, Project Transform, Grid/Ground project-level,
-  // undo/redo) moves the resolved `grev1:`/`ggrev1:` revision, so one bounded
-  // sweep retires in-flight work whose revision no longer matches. Keyed on the
-  // project reference — never per render — and idempotent: the service bumps
-  // `gradingVersion` only when the pending set actually changed, so this cannot
-  // loop. It cancels stale work; it never auto-starts Calculate.
-  useEffect(() => {
-    gradingService.reconcilePendingWithProject();
-  }, [cadProject, gradingService]);
-  const gradingInputs = useMemo(
-    () => ({
-      version: gradingVersion,
-      buildingGradingIds: gradingService.buildingGradingIds(),
-      sessionDiagnostics: gradingService.gradingDiagnostics(),
-    }),
-    [gradingService, gradingVersion],
-  );
-  // Phase 20C — group derivation inputs refresh on the same service state
-  // change (pending/diagnostic transitions), never auto-starting work.
-  const groupInputs = useMemo(
-    () => ({
-      version: gradingVersion,
-      buildingGroupIds: gradingService.buildingGroupIds(),
-      sessionDiagnostics: gradingService.groupGradingDiagnostics(),
-    }),
-    [gradingService, gradingVersion],
-  );
-  // Phase 18U — analysis control plane (one per drawing session). Session
-  // results are keyed by `arev1:` (source revision + band thresholds), so a
-  // source rebuild or threshold edit re-derives NEEDS_RECALC/SOURCE_NOT_CURRENT
-  // automatically while color/label/opacity edits never invalidate a result.
-  // Calculate is explicit only.
-  const analysisPlane = useMemo(
-    () =>
-      createCadAnalysisControlPlane({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        // Worker-backed when available; the control plane falls back to the
-        // shared band engines (same cache shape) when workers are unavailable.
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setAnalysisVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache],
-  );
-  useEffect(() => () => analysisPlane.dispose(), [analysisPlane]);
-  // Phase 18J — profile derivation control plane (one per drawing
-  // session, mirrors SurfaceVolumeService ownership). Manual derivation
-  // only: source rebuilds and alignment edits never auto-start profile
-  // work; the notify hooks cancel in-flight work for affected profiles
-  // and status re-derives from the revision. Results never persist.
-  const profileCache = useMemo(
-    () => createCadProfileCache(activeDrawing.drawingId),
-    [activeDrawing.drawingId],
-  );
-  const [profileVersion, setProfileVersion] = useState(0);
-  const profileService = useMemo(
-    () =>
-      new SurfaceProfileService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        profileCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setProfileVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache, profileCache],
-  );
-  useEffect(() => () => profileService.dispose(), [profileService]);
-  // Source-rebuild hookup: only a NEW mesh revision for a surface
-  // cancels in-flight profile work (their revision moved). A ref diff
-  // guards it — notifying on every render would supersede work that was
-  // just requested. Status itself re-derives from revisions every publish.
-  const notifiedProfileMeshRevisionsRef = useRef<Record<string, string[]>>({});
-  useEffect(() => {
-    const previous = notifiedProfileMeshRevisionsRef.current;
-    for (const [surfaceId, revisions] of Object.entries(surfaceMeshSessions)) {
-      const seen = previous[surfaceId] ?? [];
-      if (revisions.length !== seen.length || revisions.some((entry, index) => entry !== seen[index])) {
-        profileService.notifyMeshBuilt(surfaceId);
-      }
-    }
-    notifiedProfileMeshRevisionsRef.current = surfaceMeshSessions;
-  }, [surfaceMeshSessions, profileService]);
-  // Alignment-edit hookup: only a CHANGED alignment entity cancels
-  // in-flight work for bound profiles (revision guard keeps stale
-  // results from CURRENT). Digest diff — not a per-render notify.
-  const notifiedAlignmentDigestsRef = useRef<Record<string, string>>({});
-  useEffect(() => {
-    const previous = notifiedAlignmentDigestsRef.current;
-    const next: Record<string, string> = {};
-    for (const entity of cadProject.entities) {
-      if (entity.type !== 'alignment') continue;
-      const digest = JSON.stringify(entity);
-      next[entity.id] = digest;
-      if (previous[entity.id] != null && previous[entity.id] !== digest) {
-        profileService.notifyAlignmentChanged(entity.id);
-      }
-    }
-    notifiedAlignmentDigestsRef.current = next;
-  }, [cadProject, profileService]);
-  // Scene + snapshot inputs refresh only when the service reports a
-  // state change (pending/diagnostic transitions), not on every render.
-  const surfaceProfileInputs = useMemo(
-    () => ({
-      version: profileVersion,
-      tinCache: surfaceCache,
-      profileCache,
-      buildingProfileIds: profileService.buildingProfileIds(),
-      sessionDiagnostics: profileService.profileDiagnostics(),
-    }),
-    [profileService, profileVersion, surfaceCache, profileCache],
-  );
-  // Phase 18K — section derivation control plane (one per drawing
-  // session, mirrors the profile service). Manual derivation only:
-  // source rebuilds and alignment edits never auto-start section work;
-  // the notify hooks cancel in-flight batches for affected groups and
-  // status re-derives from the revision. Results never persist.
-  const sectionCache = useMemo(
-    () => createCadSectionCache(activeDrawing.drawingId),
-    [activeDrawing.drawingId],
-  );
-  const [sectionVersion, setSectionVersion] = useState(0);
-  const sectionService = useMemo(
-    () =>
-      new SurfaceSectionService({
-        drawingId: activeDrawing.drawingId,
-        getProject: () => activeProjectForBuildsRef.current,
-        getDrawingId: () => drawingIdForBuildsRef.current,
-        tinCache: surfaceCache,
-        sectionCache,
-        createTransport: () => {
-          try {
-            if (typeof Worker === 'undefined') return null;
-            return new SurfaceWorkerClient(
-              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
-                type: 'module',
-              }),
-            );
-          } catch {
-            return null;
-          }
-        },
-        notify: (message) => setFileStatusText(message),
-        onStateChange: () => setSectionVersion((version) => version + 1),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeDrawing.drawingId, surfaceCache, sectionCache],
-  );
-  useEffect(() => () => sectionService.dispose(), [sectionService]);
-  // Source-rebuild + alignment-edit hookups share the profile diff refs'
-  // shape: only NEW mesh revisions / CHANGED alignment digests notify.
-  // A ref diff guards both — notifying on every render would supersede
-  // work that was just requested.
-  const notifiedSectionMeshRevisionsRef = useRef<Record<string, string[]>>({});
-  useEffect(() => {
-    const previous = notifiedSectionMeshRevisionsRef.current;
-    for (const [surfaceId, revisions] of Object.entries(surfaceMeshSessions)) {
-      const seen = previous[surfaceId] ?? [];
-      if (revisions.length !== seen.length || revisions.some((entry, index) => entry !== seen[index])) {
-        sectionService.notifyMeshBuilt(surfaceId);
-      }
-    }
-    notifiedSectionMeshRevisionsRef.current = surfaceMeshSessions;
-  }, [surfaceMeshSessions, sectionService]);
-  const notifiedSectionAlignmentDigestsRef = useRef<Record<string, string>>({});
-  useEffect(() => {
-    const previous = notifiedSectionAlignmentDigestsRef.current;
-    const next: Record<string, string> = {};
-    for (const entity of cadProject.entities) {
-      if (entity.type !== 'alignment') continue;
-      const digest = JSON.stringify(entity);
-      next[entity.id] = digest;
-      if (previous[entity.id] != null && previous[entity.id] !== digest) {
-        sectionService.notifyAlignmentChanged(entity.id);
-      }
-    }
-    notifiedSectionAlignmentDigestsRef.current = next;
-  }, [cadProject, sectionService]);
-  const surfaceSectionInputs = useMemo(
-    () => ({
-      version: sectionVersion,
-      sectionCache,
-      buildingGroupIds: sectionService.buildingGroupIds(),
-    }),
-    [sectionService, sectionVersion, sectionCache],
-  );
+  // STRUCT-194.5 — volume / grading / group / analysis service lifecycles
+  // (one worker-backed service each; manual Calculate only, stale pending work
+  // retires without auto-starting). Extracted at the exact former
+  // `volumeService` position; consumes the early primitive caches/versions
+  // (left in the root) and returns the services the late effects/snapshots use.
+  const {
+    volumeService,
+    gradingService,
+    analysisPlane,
+    gradingInputs,
+    groupInputs,
+  } = useSurveyCadVolumeGradingAnalysisLifecycle({
+    drawingId: activeDrawing.drawingId,
+    project: cadProject,
+    caches: { surfaceCache, volumeCache, gradingCache, groupCache },
+    state: { gradingVersion, setVolumeVersion, setGradingVersion, setAnalysisVersion },
+    activeProjectForBuildsRef,
+    drawingIdForBuildsRef,
+    setFileStatusText,
+  });
+  // STRUCT-194.5 — profile / section service lifecycles, immediately after the
+  // volume/grading/analysis lifecycle at the former `profileCache` position.
+  const {
+    profileCache,
+    profileService,
+    surfaceProfileInputs,
+    sectionCache,
+    sectionService,
+    surfaceSectionInputs,
+  } = useSurveyCadProfileSectionLifecycle({
+    drawingId: activeDrawing.drawingId,
+    project: cadProject,
+    surfaceCache,
+    surfaceMeshSessions,
+    activeProjectForBuildsRef,
+    drawingIdForBuildsRef,
+    setFileStatusText,
+  });
   // Source-rebuild hookup: only a NEW mesh revision for a surface
   // cancels in-flight volume work (their revision moved). A ref diff
   // guards it — notifying on every render would supersede work that was
