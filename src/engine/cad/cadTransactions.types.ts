@@ -1,7 +1,7 @@
 import type { CadSelectionState } from './cadSelectionTypes';
 import type { DraftDocument } from './cadDraftTypes';
 import type { CadTangentSource } from './cadGeometryCircleTangentSolvers';
-import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
+import type { FieldToFinishCadPayload } from '../fieldToFinish/fieldToFinishGenerationTypes';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 import type {
   CadParcelTableCreatePayload,
@@ -63,16 +63,12 @@ import type { CadAnalysisBand, CadAnalysisLegend, CadAnalysisSource } from './ca
 import type {
   ParcelDesignateCommand,
   ParcelNumberCommand,
-} from './cadTransactionsParcelPlanCommands';
-import type {
   ParcelLinkCommand,
   ParcelUnlinkCommand,
-} from './cadTransactionsParcelLinkCommands';
-import type { ParcelSharedEditCommand } from './cadParcelSharedEdit';
-import type {
+  ParcelSharedEditCommand,
   ParcelCheckCommand,
   ParcelScheduleCommand,
-} from './cadTransactionsParcelNetworkCommands';
+} from './cadTransactionsParcelCommandTypes';
 import type { CadProfileStylePatch } from './cadProfileTypes';
 import type {
   CadSampleLinePatch,

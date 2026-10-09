@@ -17,20 +17,18 @@ import { buildCadParcelSchedule } from './cadParcelSchedule';
 import { readCadParcelSharedBoundaries } from './cadParcelSharedBoundary';
 import { createCadSelectionState } from './cadSelection';
 import type {
+  ParcelCheckCommand,
+  ParcelScheduleCommand,
+} from './cadTransactionsParcelCommandTypes';
+import type {
   CadCommandExecutionResult,
   CadWorkspaceSnapshot,
 } from './cadTransactions.types';
 import type { CadEntityId, CadProject } from './cadTypes';
 
-export interface ParcelCheckCommand {
-  key: 'PARCELCHECK';
-  parcelEntityIds?: CadEntityId[];
-}
-
-export interface ParcelScheduleCommand {
-  key: 'PARCELSCHEDULE';
-  parcelEntityIds?: CadEntityId[];
-}
+// STRUCT-195.4: payloads moved to the type-only leaf; re-exported here so the
+// original import paths keep working.
+export type { ParcelCheckCommand, ParcelScheduleCommand } from './cadTransactionsParcelCommandTypes';
 
 const projectLinks = (project: CadProject): LinkedPair[] =>
   readCadParcelSharedBoundaries(project).map((boundary) => ({

@@ -89,3 +89,15 @@ recount; the current scoped baseline is 8 type SCCs / 28 nodes.)
 - The `cadTypes` 4-node annotation/cogo hub and the 9-node transaction/F2F
   cluster (incl. `linkedSync ⇄ cadGeneration`) from 195.2 remain open.
 - Keep `scripts/cadTypeImportGraph.mjs` as the regression entry point.
+
+## Phase-end closeout (parent-recorded, 195.3 merged)
+
+PR #227 merged: reviewed head `a85fcd306918f79cfec32ddc549a7549b54ffa57`,
+main merge SHA `1987a6b801eaeda6c952c538b38c67f2d6a82ac0`. Exact-head GitHub
+CI all 5 jobs green; Chromium 4/4 per the merged PR record. The
+worker-scope caveat in Limitations above ("No `test:agent`, build,
+browser QA, or CI is run or claimed here — parent integration owns
+those") remains the true record of what the workers ran (Worker C never
+ran those suites); this note is the parent-recorded phase closeout, not
+a claim that Worker C ran CI.
+Refs #195 — issue #195 stays OPEN.

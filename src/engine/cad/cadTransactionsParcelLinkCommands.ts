@@ -30,10 +30,11 @@ import {
   readCadParcelSharedBoundaries,
   validateSharedBoundary,
 } from './cadParcelSharedBoundary';
+import type { CadParcelSharedBoundary } from './cadParcelSharedBoundary';
 import type {
-  CadParcelSharedBoundary,
-  CadParcelSharedBoundaryEnd,
-} from './cadParcelSharedBoundary';
+  ParcelLinkCommand,
+  ParcelUnlinkCommand,
+} from './cadTransactionsParcelCommandTypes';
 import type {
   CadCommandExecutionResult,
   CadCommandKey,
@@ -41,16 +42,9 @@ import type {
 } from './cadTransactions.types';
 import type { CadProject } from './cadTypes';
 
-export interface ParcelLinkCommand {
-  key: 'PARCELLINK';
-  first: CadParcelSharedBoundaryEnd;
-  second: CadParcelSharedBoundaryEnd;
-}
-
-export interface ParcelUnlinkCommand {
-  key: 'PARCELUNLINK';
-  boundaryId: string;
-}
+// STRUCT-195.4: payloads moved to the type-only leaf; re-exported here so the
+// original import paths keep working.
+export type { ParcelLinkCommand, ParcelUnlinkCommand } from './cadTransactionsParcelCommandTypes';
 
 /**
  * Local command shape: the keys are not yet members of the central CadCommand

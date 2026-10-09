@@ -22,9 +22,12 @@ import {
   previewParcelNumbering,
   setParcelPlanInfo,
 } from './cadParcelPlanDesignation';
-import type { ParcelNumberingOptions } from './cadParcelPlanDesignation';
 import { replaceCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
+import type {
+  ParcelDesignateCommand,
+  ParcelNumberCommand,
+} from './cadTransactionsParcelCommandTypes';
 import type {
   CadCommandExecutionResult,
   CadCommandKey,
@@ -36,22 +39,9 @@ import type {
   CadParcelPlanRole,
 } from './cadTypes';
 
-export interface ParcelDesignateCommand {
-  key: 'PARCELDESIGNATE';
-  parcelEntityIds: CadEntityId[];
-  designation?: string;
-  role?: CadParcelPlanRole;
-  description?: string;
-  allowLotDuplicates?: boolean;
-}
-
-export interface ParcelNumberCommand {
-  key: 'PARCELNUMBER';
-  parcelEntityIds: CadEntityId[];
-  numbering?: ParcelNumberingOptions;
-  role?: CadParcelPlanRole;
-  allowLotDuplicates?: boolean;
-}
+// STRUCT-195.4: payloads moved to the type-only leaf; re-exported here so the
+// original import paths keep working.
+export type { ParcelDesignateCommand, ParcelNumberCommand } from './cadTransactionsParcelCommandTypes';
 
 const findParcelsInOrder = (
   snapshot: CadWorkspaceSnapshot,
