@@ -13,13 +13,15 @@ block Common modules. The moves are byte-equivalent extractions: no behavior,
 label, guard, ordering, or rounding change. Type-level cycles (135 remaining)
 are explicitly out of scope and deferred to #195.2+.
 
-Integrated Worker state on this branch (uncommitted, parent owns commit):
+Integrated Worker state — merged to `main` via PR #225 (review head
+`2b6616a4957122caf08b775a59dbf7d7448ab38c`, merge commit
+`4796e0ba9da43934e3bba66623c0e58fc0e2e13c`), 5/5 exact-head CI green:
 
 | Worker | Owned change | Status |
 | --- | --- | --- |
-| A (surface) | `cadTransactionsSurfaceCore.ts` (new) + `cadTransactionsSurfaceCommands.ts` + `cadTransactionsSurfaceBoundaryCommands.ts` | integrated, uncommitted |
-| B (block) | `cadBlockUiCommon.ts` (new) + `cadBlockUiCommands.ts` + `cadBlockReferenceOps.ts` | integrated, uncommitted |
-| Shared docs (this mission) | `TODO.md` entry + `docs/evidence/struct-1951/` | this file |
+| A (surface) | `cadTransactionsSurfaceCore.ts` (new) + `cadTransactionsSurfaceCommands.ts` + `cadTransactionsSurfaceBoundaryCommands.ts` | merged |
+| B (block) | `cadBlockUiCommon.ts` (new) + `cadBlockUiCommands.ts` + `cadBlockReferenceOps.ts` | merged |
+| Shared docs (this mission) | `TODO.md` entry + `docs/evidence/struct-1951/` | merged |
 
 This docs mission modifies no `src/*`, `tests/*`, or `scripts/*` file.
 
@@ -144,8 +146,9 @@ Both extractions are verbatim moves, confirmed by the integrated diff:
 - No output wording, row inclusion, ordering, rounding, registry order,
   label, guard, or undo/history change in either cycle.
 - Parity is pinned by the two new cycle tests (AST value-graph + behavior
-  suites); see `validation.md`. Test execution and browser/CI are parent
-  integration steps — no results are claimed here.
+  suites); see `validation.md`. Both suites ran green in the PR #225
+  exact-head CI (5/5 checks); browser QA was not part of this structural
+  change and no browser numbers are claimed.
 
 ## Explicitly NOT fixed here
 
@@ -159,15 +162,15 @@ Both extractions are verbatim moves, confirmed by the integrated diff:
 
 - #195.2+: break the 135 remaining type-level cycles (type-only layering,
   barrel hygiene) — separate scope, separate evidence.
-- Parent integration for 195.1: run `test:agent`, production build, and
-  browser QA; exact-head CI is authoritative.
+- Parent integration for 195.1 is complete: PR #225 merged to `main` at
+  `4796e0ba` after 5/5 exact-head CI green.
 - No `scripts/testTiers.ts` change: the two new cycle tests are fast,
   deterministic, agent-tier suites by construction.
 
 ## File inventory (this mission)
 
 - `docs/evidence/struct-1951/architecture.md` (this file)
-- `docs/evidence/struct-1951/validation.md` (validation + pending steps)
+- `docs/evidence/struct-1951/validation.md` (validation + integration record)
 - `TODO.md`: one STRUCT-195.1 entry + one-line #194.9 status truth fix
 - `docs/evidence/struct-1949/validation.md`: stale-sentence truth fix only
 

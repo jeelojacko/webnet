@@ -3,7 +3,7 @@ import {
   DEFAULT_DRAFT_PAPER_TEXT_HEIGHTS_MM,
   DEFAULT_DRAFT_PRECISION_PROFILE,
 } from './cadStyles';
-import type { CadLayer, CadLineTypeId } from './cadTypes';
+import type { CadLayer, CadLineTypeId } from './cadCorePrimitiveTypes';
 
 export type DraftTextAlignment = 'left' | 'center' | 'right';
 export type DraftSheetOrientation = 'portrait' | 'landscape';

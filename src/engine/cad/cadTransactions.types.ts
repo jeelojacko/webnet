@@ -1,4 +1,4 @@
-import type { CadSelectionState } from './cadSelection';
+import type { CadSelectionState } from './cadSelectionTypes';
 import type { DraftDocument } from './cadDraftTypes';
 import type { CadTangentSource } from './cadGeometryCircleTangentSolvers';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';

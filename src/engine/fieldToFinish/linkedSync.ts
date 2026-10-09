@@ -17,6 +17,17 @@ import type { CadEntity, CadProject } from '../cad/cadTypes';
 import type { FieldToFinishCadPayload, FieldToFinishProvenance } from './cadGeneration';
 import { computeFeatureCatalogRevision } from './catalogRevision';
 import type { FeatureCodeCatalog } from './featureCatalog';
+import type {
+  FieldToFinishLink,
+  FieldToFinishSourceKind,
+  FieldToFinishSyncStatus,
+} from './fieldToFinishLinkTypes';
+
+export type {
+  FieldToFinishLink,
+  FieldToFinishSourceKind,
+  FieldToFinishSyncStatus,
+} from './fieldToFinishLinkTypes';
 
 /** Local F2F-entity check (mirrors isFieldToFinishEntity without the import cycle). */
 const isGenerated = (entity: CadEntity): FieldToFinishProvenance | undefined => {
@@ -25,52 +36,6 @@ const isGenerated = (entity: CadEntity): FieldToFinishProvenance | undefined => 
   if (provenance?.['generatedBy'] !== 'FIELD_TO_FINISH') return undefined;
   return provenance as unknown as FieldToFinishProvenance;
 };
-
-export type FieldToFinishSourceKind = 'adjustment' | 'coordinate-import';
-
-export type FieldToFinishSyncStatus =
-  | 'CURRENT'
-  | 'COORDINATES_CHANGED'
-  | 'SOURCE_TOPOLOGY_CHANGED'
-  | 'FEATURE_METADATA_CHANGED'
-  | 'CATALOG_CHANGED'
-  | 'MANUAL_CONFLICT'
-  | 'MISSING_SOURCE'
-  | 'UNLINKED';
-
-export interface FieldToFinishLink {
-  generationRunId: string;
-  catalogId: string;
-  /**
-   * Phase 18E content revision (computeFeatureCatalogRevision output at
-   * generation time). Legacy links carry the old catalog.version string —
-   * they compare unequal against any derived hash (fail-closed stale),
-   * never false CURRENT.
-   */
-  catalogRevision: string;
-  sourceKind: FieldToFinishSourceKind;
-  /**
-   * Authoritative revision: the adjustment-result fingerprint
-   * (`adjustment-result/v1`) for links stamped with result context;
-   * legacy `<inputFingerprint>:<settingsFingerprint>` composite otherwise.
-   * Empty string = unknown (legacy/auto-stamped without fingerprint context).
-   *
-   * Legacy-composite links NEVER compare CURRENT against a result-fingerprint
-   * snapshot (different shapes always mismatch → COORDINATES_CHANGED,
-   * fail-closed). No silent false CURRENT.
-   */
-  sourceRevision: string;
-  /** Provenance retained alongside the authoritative revision (all optional, additive). */
-  inputFingerprint?: string;
-  settingsFingerprint?: string;
-  resultFingerprint?: string;
-  sourceRecordIds: string[];
-  stationIds: string[];
-  generatedEntityIds: string[];
-  generatedLabelIds: string[];
-  syncPolicy: 'manual';
-  status: FieldToFinishSyncStatus;
-}
 
 /**
  * Authoritative revision: the result fingerprint when known, else the

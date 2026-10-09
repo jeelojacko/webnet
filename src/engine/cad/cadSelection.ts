@@ -1,8 +1,7 @@
 import type { CadEntity, CadEntityId, CadProject } from './cadTypes';
+import type { CadSelectionState } from './cadSelectionTypes';
 
-export interface CadSelectionState {
-  selectedEntityIds: CadEntityId[];
-}
+export type { CadSelectionState } from './cadSelectionTypes';
 
 const normalizeSelectionIds = (
   project: CadProject,

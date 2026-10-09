@@ -9,7 +9,7 @@ Refs #195 / Part of #195 — issue #195 stays OPEN; severity High.
 Docs-worker validation for the STRUCT-195.1 shared-docs mission: confirm the
 integrated Worker A+B code state, record the exact BEFORE/AFTER value edges,
 verify helper/API-export claims by grep, inventory the new cycle tests, and
-state honestly what was NOT run (parent integration owns execution).
+record the integration outcome (PR #225 merged; 5/5 exact-head CI green).
 
 ## Code-state confirmation (docs worker, read-only)
 
@@ -53,16 +53,15 @@ Re-export checks:
 | `commitSurface` re-export retained on C | `export { commitSurface }` present in diff; 3 command modules + barrel still import from C | confirmed |
 | `blockFail`/`blockSiblingNames` re-export removed | export line deleted in diff; grep for consumers hits only a test-file comment | confirmed, zero consumers |
 
-## New cycle-test inventory (as written — NOT executed here)
+## New cycle-test inventory (static, from file)
 
 | Suite | Graph tests | Parity tests | Method |
 | --- | --- | --- | --- |
 | `tests/cad_surface_value_cycle_1951.test.ts` | 4 (no reciprocal/transitive value edge; core-leaf; type-only classification; boundary-first dynamic load) | 10 (labels/registry order, guards, boundaries, breaklines, cache invalidation, undo/redo, save/reopen) | TS-AST value graph + real engine builders |
 | `tests/cad_block_value_cycle_1951.test.ts` | 3 (no value cycle; TDZ-free load both orders) | 7 (envelope shape, lifecycle, uniqueness, rejections, selection, undo/redo) | TS-AST value graph + real block ops |
 
-Counts above are test cases present in the files (static inventory). No
-pass/fail numbers are claimed: execution belongs to the parent integration
-step (see Pending).
+Counts above are test cases present in the files (static inventory). The
+suites ran green in the PR #225 exact-head CI (see Integration outcome).
 
 ### Surface suite — case list (static, from file)
 
@@ -124,22 +123,27 @@ Total static inventory: 24 test cases across 2 files.
 two new evidence files — clean, 0 violations (new paths use only
 portable lowercase-hyphen names under `docs/evidence/struct-1951/`).
 
-## Pending — parent integration (explicitly NOT done here)
+## Integration outcome — PR #225 (merged)
 
-- `npm run test:agent` (includes the two new cycle suites) — parent owns.
-- Production `npm run build` — parent owns (change is engine structural;
-  run when relevant).
-- Browser QA — parent owns; no browser numbers are claimed in this evidence.
-- Exact-head CI — authoritative; no CI numbers are claimed here.
-- Commit/push/PR for Worker A+B code — parent owns. The PR must say
-  `Refs #195` (issue #195 stays OPEN; 135 type cycles deferred to #195.2+).
+- PR #225 merged to `main` (`STRUCT-195.1: eliminate CAD surface and block
+  runtime import cycles`).
+- Review head: `2b6616a4957122caf08b775a59dbf7d7448ab38c`.
+- Merge commit on `main`: `4796e0ba9da43934e3bba66623c0e58fc0e2e13c`.
+- Exact-head CI: 5/5 checks green (the five stable CI jobs: `classify`,
+  `static`, `tests`, `build-smoke`, `numerical`).
+- Browser QA was NOT performed for this change and no browser numbers are
+  claimed: the extraction is a byte-equivalent structural split with no
+  user-facing behavior change.
+- Commit/push/PR completed. The PR said `Refs #195` (issue #195 stays OPEN;
+  135 type cycles deferred to #195.2+).
 
 ## Honest limitations
 
 - BEFORE edges are reconstructed from the integrated diff (removed import
   lines) plus the cycle-test headers — not from a pre-change full AST run.
 - AFTER edges are confirmed by direct grep of the current import blocks
-  and corroborated by the tests' TS-AST graph assertions (unexecuted here).
+  and corroborated by the tests' TS-AST graph assertions (static here; the
+  suites ran green in PR #225 exact-head CI).
 - No `test:wasm`, `parity:industry-reference`, `test:evidence`, or
   `test:full` campaign: engine structural split with byte-equivalent moves,
   no math/worker-protocol/parity change.
