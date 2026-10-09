@@ -22,17 +22,8 @@ import type { CadDrawingLifecycleEvent } from '../cad-app/cadAppTypes';
 import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
-import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
-import { buildCadSurveyTableSnapshot } from '../cad-app/shell/cadSurveyTableSnapshot';
-import { buildCadParcelSnapshot } from '../cad-app/shell/cadParcelSnapshot';
-import { buildCadFeatureLineSnapshot } from '../cad-app/shell/cadFeatureLineSnapshot';
-import { buildCadBlockSnapshot } from '../cad-app/shell/cadBlockSnapshot';
 import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
-import {
-  buildCadSurfaceSnapshot,
-  type CadSurfaceInquiry,
-} from '../cad-app/shell/cadSurfaceSnapshot';
-import { buildCadVolumeSnapshot } from '../cad-app/shell/cadVolumeSnapshot';
+import type { CadSurfaceInquiry } from '../cad-app/shell/cadSurfaceSnapshot';
 import {
   analysisAreaUnit,
   analysisVolumeUnit,
@@ -42,8 +33,6 @@ import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInpu
 import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput';
 import { buildGradingSceneLayers } from '../cad-app/shell/cadGradingDisplay';
 import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
-import { buildCadProfileSnapshot } from '../cad-app/shell/cadProfileSnapshot';
-import { buildCadSectionSnapshot } from '../cad-app/shell/cadSectionSnapshot';
 import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
 import {
   buildSampleLineDisplayLayers,
@@ -61,17 +50,14 @@ import { useSurveyCadProfileSectionLifecycle } from '../hooks/surveyCad/useSurve
 import { useSurveyCadComposeLifecycle } from '../hooks/surveyCad/useSurveyCadComposeLifecycle';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
 import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
-import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
 import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCache';
-import { buildCadGradingGroupSnapshot } from '../cad-app/shell/cadGradingGroupSnapshot';
 import { buildGroupGradingSceneLayers } from '../cad-app/shell/cadGradingGroupDisplay';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
-import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
-import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
-import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
 import type { DrawingDependencySummary } from '../engine/cad/cadAdjustmentDependency';
 import { summarizeActiveDrawingDependency } from './surveyCad/cadDependencyDiagnostics';
 import { buildCadWorkspaceShellActions } from './surveyCad/cadWorkspaceShellActions';
+import { createCadShellCommandStarters } from './surveyCad/cadShellCommandStarters';
+import { buildSurveyCadShellSnapshot } from './surveyCad/cadWorkspaceShellSnapshot';
 import { createCadCivilInquiryHandlers } from './surveyCad/cadCivilInquiryHandlers';
 import { createCadSurfacePickDispatch } from './surveyCad/cadSurfacePickDispatch';
 import { useSurveyCadDrawingSource, cloneCadBounds } from '../hooks/surveyCad/useSurveyCadDrawingSource';
@@ -751,130 +737,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   // Phase 18B shell seam: registry key -> existing workspace starter.
   // Every entry routes to a live starter; absent starters report false.
-  const shellStarters: Record<ActiveCommandKey, (() => void) | undefined> = {
-    POINT: cadWorkspace.startPointCommand,
-    COGO_POINT: cadWorkspace.startCogoPointCommand,
-    LINE: cadWorkspace.startLineCommand,
-    LINE_POINT_RANGE: () => cadWorkspace.startLineL1Command('LINE_POINT_RANGE'),
-    LINE_POINT_OBJECT: () => cadWorkspace.startLineL1Command('LINE_POINT_OBJECT'),
-    LINE_POINT_NAME: () => cadWorkspace.startLineL1Command('LINE_POINT_NAME'),
-    LINE_NE: () => cadWorkspace.startLineL1Command('LINE_NE'),
-    LINE_GRID_NE: () => cadWorkspace.startLineL1Command('LINE_GRID_NE'),
-    LINE_LATLONG: () => cadWorkspace.startLineL1Command('LINE_LATLONG'),
-    LINE_BEARING: () => cadWorkspace.startLineL1Command('LINE_BEARING'),
-    LINE_AZIMUTH: () => cadWorkspace.startLineL1Command('LINE_AZIMUTH'),
-    LINE_ANGLE: () => cadWorkspace.startLineL1Command('LINE_ANGLE'),
-    LINE_DEFLECTION: () => cadWorkspace.startLineL1Command('LINE_DEFLECTION'),
-    LINE_STATION_OFFSET: () => cadWorkspace.startLineL1Command('LINE_STATION_OFFSET'),
-    LINE_SIDE_SHOT: () => cadWorkspace.startLineL1Command('LINE_SIDE_SHOT'),
-    LINE_EXTENSION: () => cadWorkspace.startLineL1Command('LINE_EXTENSION'),
-    LINE_FROM_END: () => cadWorkspace.startLineL1Command('LINE_FROM_END'),
-    LINE_TANGENT_POINT: () => cadWorkspace.startLineL1Command('LINE_TANGENT_POINT'),
-    LINE_PERP_POINT: () => cadWorkspace.startLineL1Command('LINE_PERP_POINT'),
-    RECTANGLE: cadWorkspace.startRectangleCommand,
-    CIRCLE: cadWorkspace.startCircleCommand,
-    CIRCLECD: cadWorkspace.startCircleDiameterCommand,
-    CIRCLE2P: cadWorkspace.startCircleTwoPointCommand,
-    CIRCLE3P: cadWorkspace.startCircleThreePointCommand,
-    CIRCLETTR: cadWorkspace.startCircleTangentTangentRadiusCommand,
-    CIRCLETTT: cadWorkspace.startCircleTangentTangentTangentCommand,
-    POLYGON: cadWorkspace.startPolygonCommand,
-    PLINE: cadWorkspace.startPolylineCommand,
-    PLINEINSERTVERTEX: cadWorkspace.startPlineInsertVertexCommand,
-    PLINEDELETEVERTEX: cadWorkspace.startPlineDeleteVertexCommand,
-    TRAVERSE: cadWorkspace.startTraverseCommand,
-    ARC_3PT: cadWorkspace.startArc3PointCommand,
-    ARC_SCE: cadWorkspace.startArcStartCenterEndCommand,
-    ARC_CSE: cadWorkspace.startArcCenterStartEndCommand,
-    ARC_SCA: cadWorkspace.startArcStartCenterAngleCommand,
-    ARC_CSA: cadWorkspace.startArcCenterStartAngleCommand,
-    ARC_SCL: cadWorkspace.startArcStartCenterChordCommand,
-    ARC_CSL: cadWorkspace.startArcCenterStartChordCommand,
-    ARC_SEA: cadWorkspace.startArcStartEndAngleCommand,
-    ARC_SED: cadWorkspace.startArcStartEndDirectionCommand,
-    ARC_SER: cadWorkspace.startArcStartEndRadiusCommand,
-    CONTINUE_CURVE: cadWorkspace.startContinueCurveCommand,
-    TANGENT_CURVE: cadWorkspace.startTangentCurveCommand,
-    CURVE_BETWEEN_TWO_LINES: cadWorkspace.startCurveBetweenTwoLinesCommand,
-    CURVE_ON_TWO_LINES: cadWorkspace.startCurveOnTwoLinesCommand,
-    CURVE_THROUGH_POINT: cadWorkspace.startCurveThroughPointCommand,
-    MULTIPLE_CURVES: cadWorkspace.startMultipleCurvesCommand,
-    CURVE_FROM_END: cadWorkspace.startCurveFromEndCommand,
-    REVERSE_OR_COMPOUND: cadWorkspace.startReverseOrCompoundCommand,
-    BESTFITLINE: cadWorkspace.startBestFitLineCommand,
-    BESTFITARC: cadWorkspace.startBestFitArcCommand,
-    BESTFITPARABOLA: cadWorkspace.startBestFitParabolaCommand,
-    INVERSE: cadWorkspace.startInverseCommand,
-    MULTI_INVERSE: cadWorkspace.startMultiInverseCommand,
-    AREA: cadWorkspace.startAreaCommand,
-    BEARING_REPORT: cadWorkspace.startBearingReportCommand,
-    DISTANCE_REPORT: cadWorkspace.startDistanceReportCommand,
-    TURNED_POINT: cadWorkspace.startTurnedPointCommand,
-    DEFLECT_POINT: cadWorkspace.startDeflectionPointCommand,
-    POINT_ALONG_LINE: cadWorkspace.startPointAlongLineCommand,
-    EXTEND_LINE: cadWorkspace.startExtendLineCommand,
-    OFFSET_POINT: cadWorkspace.startOffsetPointCommand,
-    ALIGNMENT_OFFSET_CREATE: cadWorkspace.startAlignmentOffsetCreateCommand,
-    ALIGNMENT_STATION_EQUATION: cadWorkspace.startAlignmentStationEquationCommand,
-    ALIGNMENT_OFFSET_POINT: cadWorkspace.startAlignmentOffsetPointCommand,
-    ALIGNMENT_INTERVAL_POINTS: cadWorkspace.startAlignmentIntervalPointsCommand,
-    CURVE_SOLVER: cadWorkspace.startCurveSolverCommand,
-    RADIAL_BEARING: cadWorkspace.startRadialBearingCommand,
-    POINT_ON_CURVE: cadWorkspace.startPointOnCurveCommand,
-    SUBDIVIDE_CURVE: cadWorkspace.startSubdivideCurveCommand,
-    OFFSET_CURVE: cadWorkspace.startOffsetCurveCommand,
-    PI_CURVE: cadWorkspace.startPiCurveCommand,
-    CHORD_BEARING_CURVE: cadWorkspace.startChordBearingCurveCommand,
-    REVERSE_CURVE: cadWorkspace.startReverseCurveCommand,
-    COMPOUND_CURVE: cadWorkspace.startCompoundCurveCommand,
-    BEARING_BEARING_INTX: cadWorkspace.startBearingBearingIntersectionCommand,
-    BEARING_DISTANCE_INTX: cadWorkspace.startBearingDistanceIntersectionCommand,
-    DISTANCE_DISTANCE_INTX: cadWorkspace.startDistanceDistanceIntersectionCommand,
-    LINE_CIRCLE_INTX: cadWorkspace.startLineCircleIntersectionCommand,
-    PERP_INTX: cadWorkspace.startPerpendicularIntersectionCommand,
-    OFFSET_INTX: cadWorkspace.startOffsetIntersectionCommand,
-    SKEW_INTX: cadWorkspace.startSkewIntersectionCommand,
-    BATCH_COGO: cadWorkspace.startBatchCogoCommand,
-    PARCEL_SPLIT_BEARING: cadWorkspace.startParcelSplitBearingCommand,
-    PARCEL_SPLIT_AREA: cadWorkspace.startParcelSplitAreaCommand,
-    PARCELDESIGNATE: cadWorkspace.startParcelDesignateCommand,
-    PARCELNUMBER: cadWorkspace.startParcelNumberCommand,
-    PARCELLINK: cadWorkspace.startParcelLinkCommand,
-    PARCELUNLINK: cadWorkspace.startParcelUnlinkCommand,
-    PARCELCHECK: cadWorkspace.startParcelCheckCommand,
-    PARCELSCHEDULE: cadWorkspace.startParcelScheduleCommand,
-    PARCELSHAREDEDIT: () => cadWorkspace.startParcelSharedEditCommand(),
-    LINETABLE: cadWorkspace.startLineTableCommand,
-    CURVETABLE: cadWorkspace.startCurveTableCommand,
-    PARCELTABLE: cadWorkspace.startParcelTableCommand,
-    POINTTABLE: cadWorkspace.startPointTableCommand,
-    PARCELREPORT: cadWorkspace.startParcelReportCommand,
-    PARCELDESC: cadWorkspace.startParcelDescCommand,
-    SURVEYTABLE: undefined,
-    MTEXT: cadWorkspace.startMTextCommand,
-    LEADER: cadWorkspace.startLeaderCommand,
-    DIM: cadWorkspace.startDimCommand,
-    DIMLINEAR: cadWorkspace.startDimLinearCommand,
-    DIMALIGNED: cadWorkspace.startDimAlignedCommand,
-    DIMANGULAR: cadWorkspace.startDimAngularCommand,
-    DIMRADIUS: cadWorkspace.startDimRadiusCommand,
-    DIMDIAMETER: cadWorkspace.startDimDiameterCommand,
-    BDLABEL: cadWorkspace.startBearingLabelCommand,
-    CURVELABEL: cadWorkspace.startCurveLabelCommand,
-    MOVE: cadWorkspace.startMoveCommand,
-    COPY: cadWorkspace.startCopyCommand,
-    ROTATE: cadWorkspace.startRotateCommand,
-    SCALE: cadWorkspace.startScaleCommand,
-    MIRROR: cadWorkspace.startMirrorCommand,
-    ALIGN2D: cadWorkspace.startAlign2DCommand,
-    HELMERT2D: cadWorkspace.startHelmert2DCommand,
-    GRIDGROUND: cadWorkspace.startGridGroundCommand,
-    PROJECTTRANSFORM: cadWorkspace.startProjectTransformCommand,
-    EXTEND: cadWorkspace.startExtendCommand,
-    TRIM: cadWorkspace.startTrimCommand,
-    FILLET: cadWorkspace.startFilletCommand,
-    PASTE: copiedEntityIds.length > 0 ? () => startPasteFromClipboard(copiedEntityIds) : undefined,
-  };
+  const shellStarters: Record<ActiveCommandKey, (() => void) | undefined> =
+    createCadShellCommandStarters({
+      workspace: cadWorkspace,
+      copiedEntityIds,
+      startPasteFromClipboard,
+    });
   const shellAvailableCommands = useMemo(
     () =>
       (Object.keys(shellStarters) as ActiveCommandKey[]).filter(
@@ -926,92 +794,85 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   const shellSnapshot: CadWorkspaceSnapshot | null = useMemo(() => {
     if (!shellLink) return null;
-    const enabledSnaps = Object.entries(snapPreferences)
-      .filter(([, enabled]) => enabled)
-      .map(([kind]) => kind);
-    const layerEntityCounts: Record<string, number> = {};
-    for (const entity of activeProject.entities) {
-      layerEntityCounts[entity.layerId] = (layerEntityCounts[entity.layerId] ?? 0) + 1;
-    }
-    return {
-      drawingId: activeDrawing.drawingId,
-      drawingName: activeDrawing.name,
+    return buildSurveyCadShellSnapshot({
+      drawing: {
+        id: activeDrawing.drawingId,
+        name: activeDrawing.name,
+        sheets: activeDrawing.draft?.sheets ?? [],
+      },
       units,
-      entityCount: activeProject.entities.length,
-      selectionCount,
-      selectedEntityIds,
-      selectionPreview: selectedEntities
-        .slice(0, 200)
-        .map((entity) => ({ id: entity.id, type: entity.type, label: getCadEntityDisplayLabel(entity) })),
-      layers: activeProject.layers,
-      layerEntityCounts,
-      currentLayerId: resolveCurrentCadLayerId(activeProject),
-      lineTypes: activeProject.styleLibrary.lineTypes,
-      sheets: activeDrawing.draft?.sheets ?? [],
+      project: activeProject,
+      surfaceCache,
+      catalog: { catalog: activeCatalog, status: catalogStatus },
+      selection: {
+        count: selectionCount,
+        entityIds: selectedEntityIds,
+        entities: selectedEntities,
+      },
       properties: propertiesPanelState,
-      activeCommandKey,
-      commandPrompt: statusText,
-      commandInputValue,
-      canUndo,
-      canRedo,
-      historyDepth,
-      redoDepth,
-      snapPreferences,
-      snapStatusText: enabledSnaps.length > 0 ? `SNAP: ${enabledSnaps.join(', ')}` : 'OSNAP off',
-      stationCount: stationIds.size,
+      command: { activeKey: activeCommandKey, prompt: statusText, inputValue: commandInputValue },
+      history: { canUndo, canRedo, historyDepth, redoDepth },
+      snap: { preferences: snapPreferences, stationCount: stationIds.size },
       dependencyStatus: dependencySummary.status,
-      survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
-      surveyTable: buildCadSurveyTableSnapshot(activeProject, selectedEntityIds),
-      parcel: buildCadParcelSnapshot(activeProject, selectedEntityIds),
-      featureLine: buildCadFeatureLineSnapshot(activeProject, selectedEntityIds),
-      grading: buildCadGradingSnapshot(activeProject, surfaceCache, gradingCache, selectedGradingId, {
-        buildingGradingIds: gradingInputs.buildingGradingIds,
-        sessionDiagnostics: gradingInputs.sessionDiagnostics,
-      }),
-      gradingGroups: buildCadGradingGroupSnapshot(activeProject, surfaceCache, groupCache, selectedGroupId, {
-        buildingGroupIds: groupInputs.buildingGroupIds,
-        sessionDiagnostics: groupInputs.sessionDiagnostics,
-      }),
-      blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       annotation: annotationSnapshot,
-      f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
-      surface: buildCadSurfaceSnapshot(activeProject, surfaceCache, selectedSurfaceId, {
-        revisionIndex: surfaceRevisionIndex,
-        lastInquiry: lastSurfaceInquiry,
-        buildingSurfaceIds: surfaceBuildInputs.buildingSurfaceIds,
-        sessionDiagnostics: surfaceBuildInputs.sessionDiagnostics,
-        syncFallbackRevisions: surfaceBuildInputs.syncFallbackRevisions,
-        selection: surfaceBulkSelection.summary,
-      }),
-      volume: buildCadVolumeSnapshot(activeProject, surfaceCache, volumeCache, selectedVolumeId, {
-        buildingVolumeIds: surfaceVolumeInputs.buildingVolumeIds,
-        sessionDiagnostics: surfaceVolumeInputs.sessionDiagnostics,
-      }),
+      grading: {
+        cache: gradingCache,
+        selectedId: selectedGradingId,
+        options: {
+          buildingGradingIds: gradingInputs.buildingGradingIds,
+          sessionDiagnostics: gradingInputs.sessionDiagnostics,
+        },
+      },
+      gradingGroups: {
+        cache: groupCache,
+        selectedId: selectedGroupId,
+        options: {
+          buildingGroupIds: groupInputs.buildingGroupIds,
+          sessionDiagnostics: groupInputs.sessionDiagnostics,
+        },
+      },
+      blocks: { insertPick: blockInsertPick },
+      surface: {
+        selectedId: selectedSurfaceId,
+        options: {
+          revisionIndex: surfaceRevisionIndex,
+          lastInquiry: lastSurfaceInquiry,
+          buildingSurfaceIds: surfaceBuildInputs.buildingSurfaceIds,
+          sessionDiagnostics: surfaceBuildInputs.sessionDiagnostics,
+          syncFallbackRevisions: surfaceBuildInputs.syncFallbackRevisions,
+          selection: surfaceBulkSelection.summary,
+        },
+      },
+      volume: {
+        cache: volumeCache,
+        selectedId: selectedVolumeId,
+        options: {
+          buildingVolumeIds: surfaceVolumeInputs.buildingVolumeIds,
+          sessionDiagnostics: surfaceVolumeInputs.sessionDiagnostics,
+        },
+      },
       analysis: analysisSnapshot,
-      profile: buildCadProfileSnapshot(
-        activeProject,
-        surfaceCache,
-        profileCache,
-        selectedProfileId,
-        selectedProfileViewId,
-        {
+      profile: {
+        cache: profileCache,
+        selectedId: selectedProfileId,
+        viewId: selectedProfileViewId,
+        options: {
           buildingProfileIds: surfaceProfileInputs.buildingProfileIds,
           sessionDiagnostics: surfaceProfileInputs.sessionDiagnostics,
         },
-      ),
-      section: buildCadSectionSnapshot(
-        activeProject,
-        {
+      },
+      section: {
+        deps: {
           sectionCache,
           statusOf: (groupId, lineId, surfaceId) => sectionService.statusOf(groupId, lineId, surfaceId),
           buildingGroupIds: surfaceSectionInputs.buildingGroupIds,
         },
-        selectedSampleLineGroupId,
-        selectedSampleLineId,
-        selectedSectionViewId,
-      ),
+        groupId: selectedSampleLineGroupId,
+        lineId: selectedSampleLineId,
+        viewId: selectedSectionViewId,
+      },
       availableCommands: shellAvailableCommands,
-    };
+    });
   }, [
     shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
     propertiesPanelState, activeCommandKey, statusText, stationIds, dependencySummary, units,

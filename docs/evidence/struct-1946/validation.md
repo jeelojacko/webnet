@@ -2,8 +2,9 @@
 
 Branch: `refactor/issue194-cad-compose-surface-pick-extraction`
 Baseline: `2394060ad68cad11c9a13c30780a8e7dd7eb2f9b` (exact origin/main).
-Committed and pushed to the phase branch (no PR; parent owns PR creation). No
-branch switch, no stash mutation; 14 stashes preserved.
+Correction: the original closeout note here was false — this phase landed via
+**PR #221**, which MERGED at `7d97568b3a6b8b4dcee2838b24022614f65ffc1b` with
+5/5 exact CI green. No branch switch, no stash mutation; 14 stashes preserved.
 
 ## Static checks
 
