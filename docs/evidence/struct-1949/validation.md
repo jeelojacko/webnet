@@ -2,9 +2,11 @@
 
 Branch: `refactor/issue194-cad-analysis-f2f-viewport-state`
 Baseline: `bef47869f7c18ad96c2290b4c2150cf7f014d638` (exact origin/main = PR
-#223 merge). Final HEAD remains the baseline (work left uncommitted for parent
-audit). Refs #194 remains **OPEN** — severity not marked solved. No branch
-switch, no stash mutation; the 14 pre-existing stashes are preserved.
+#223 merge). PR #224 MERGED into main at
+`ee5b2a31064dc180a3f9116512b3c5757f34ffeb` (review head
+`62bd052ed354f7a95f4dda41a9fcb39b2f3d393b`, 5/5 exact-head CI green); issue
+#194 CLOSED as completed. No branch switch, no stash mutation; the 14
+pre-existing stashes are preserved.
 
 ## Static checks
 
@@ -135,5 +137,7 @@ existing spec selector, not a regression from 1949.
   parity-math code.
 - `test:full` was not run; `test:agent` is the pre-push gate and exact-head CI
   is authoritative.
-- Work is left **uncommitted** at baseline HEAD `bef47869f7c18ad96c2290b4c2150cf7f014d638`
-  for parent audit; no commit/push/PR/merge was performed.
+- Post-baseline closeout: PR #224 MERGED into main at
+  `ee5b2a31064dc180a3f9116512b3c5757f34ffeb` (review head
+  `62bd052ed354f7a95f4dda41a9fcb39b2f3d393b`, 5/5 exact-head CI green);
+  issue #194 CLOSED as completed.
