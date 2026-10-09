@@ -1,19 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import type {
-  CadBounds,
   CadDrawingDocument,
   CadParcelLayoutUiState,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
-import type { FeatureCodeCatalog } from '../engine/fieldToFinish/featureCatalog';
-import { cloneFeatureCatalog } from '../engine/fieldToFinish/featureCatalog';
-import { STARTER_CATALOG } from '../engine/fieldToFinish/starterCatalog';
-import {
-  getDrawingCatalogStatus,
-  hasFieldToFinishContent,
-} from '../engine/fieldToFinish/drawingCatalog';
-import { classifyCatalogChange } from '../engine/fieldToFinish/linkedSync';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import type { SuccessfulAdjustmentRunInfo } from '../hooks/useAdjustmentOutcomeApplication';
 import type { ResultDependencyIdentity } from '../engine/resultIntegrity';
@@ -23,14 +14,7 @@ import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
 import type { CadSurfaceInquiry } from '../cad-app/shell/cadSurfaceSnapshot';
-import {
-  analysisAreaUnit,
-  analysisVolumeUnit,
-  buildCadAnalysisSnapshot,
-} from '../cad-app/shell/cadAnalysisSnapshot';
-import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
 import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput';
-import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
 import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceEditSessions';
 import { useSurveyCadSurfacePointEditSessions } from '../hooks/surveyCad/useSurveyCadSurfacePointEditSessions';
 import { useSurveyCadSurfaceBulkSelection } from '../hooks/surveyCad/useSurveyCadSurfaceBulkSelection';
@@ -56,6 +40,9 @@ import { useSurveyCadDrawingLifecycleState } from '../hooks/surveyCad/useSurveyC
 import { useSurveyCadDrawingFileLifecycle } from '../hooks/surveyCad/useSurveyCadDrawingFileLifecycle';
 import { useSurveyCadLandXmlImportLifecycle } from '../hooks/surveyCad/useSurveyCadLandXmlImportLifecycle';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
+import { useSurveyCadViewportLifecycle } from '../hooks/surveyCad/useSurveyCadViewportLifecycle';
+import { useSurveyCadAnalysisPresentation } from '../hooks/surveyCad/useSurveyCadAnalysisPresentation';
+import { useSurveyCadFieldToFinishCatalog } from '../hooks/surveyCad/useSurveyCadFieldToFinishCatalog';
 import { useSurveyCadPreGradingDerivedScene } from '../hooks/surveyCad/useSurveyCadPreGradingDerivedScene';
 import { useSurveyCadGradingEditOverlayScene } from '../hooks/surveyCad/useSurveyCadGradingEditOverlayScene';
 import {
@@ -203,17 +190,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     fileStatusText,
     setFileStatusText,
   } = useSurveyCadDrawingLifecycleState();
-  const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
-  // Monotonic viewport generation: bumped on EVERY viewport transform (zoom,
-  // pan, zoom-extents, programmatic reset). Snap candidates are stamped with
-  // it so a click-less keyboard commit can reject a snap computed before any
-  // transform, including a pan-only reset that leaves zoom/scale unchanged.
-  const viewportGenerationRef = useRef(0);
-  const applyViewport = useCallback<typeof setViewport>((action) => {
-    viewportGenerationRef.current += 1;
-    setViewport(action);
-  }, []);
-  const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneCadBounds(cadProject.bounds));
+  // STRUCT-194.9 — viewport transform + bounds lifecycle (state -> ref ->
+  // callback -> lazy bounds, unchanged). Drawing-switch reset stays below.
+  const {
+    viewport,
+    applyViewport,
+    viewportGenerationRef,
+    viewBounds,
+    setViewBounds,
+  } = useSurveyCadViewportLifecycle({ cadBounds: cadProject.bounds });
   const [parcelLayoutState, setParcelLayoutState] = useState<CadParcelLayoutUiState>(() =>
     cloneParcelLayoutUiState(activeDrawing.parcelLayout),
   );
@@ -450,105 +435,38 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setFileStatusText,
   });
 
-  // Phase 18U — analysis rows + legend rows (derived once per publish).
-  // surfaceMeshSessions is a dep (not just an effect trigger): a source
-  // rebuild mutates the mesh cache in place, so without it the rows would
-  // keep reporting SOURCE_NOT_CURRENT instead of re-deriving NEEDS_RECALC.
-  const analysisSnapshot = useMemo(() => {
-    void analysisVersion;
-    void surfaceMeshSessions;
-    return buildCadAnalysisSnapshot(
-      activeProject,
-      surfaceCache,
-      volumeCache,
-      analysisPlane.cache,
-      selectedAnalysisId,
-      selectedAnalysisLegendId,
-    );
-  }, [
+  // STRUCT-194.9 — analysis/export presentation memos (4 useMemos, exact
+  // deps order) and drawing-owned F2F catalog lifecycle, at the exact former
+  // seams. Both hooks are called unconditionally and only call their own
+  // internal primitives, so the flattened root hook order is unchanged.
+  const {
+    analysisSnapshot,
+    analysisExportInput,
+    exportCivilSources,
+    analysisDisplay,
+  } = useSurveyCadAnalysisPresentation({
     activeProject,
     surfaceCache,
     volumeCache,
+    profileCache,
+    sectionCache,
     analysisPlane,
     analysisVersion,
     surfaceMeshSessions,
     selectedAnalysisId,
     selectedAnalysisLegendId,
-  ]);
-  // Phase 18U — Export Center input from the CURRENT cached results (fills +
-  // legends through the canonical export scene; absent = legacy scene).
-  const analysisExportInput = useMemo(() => {
-    void analysisVersion;
-    void surfaceMeshSessions;
-    return buildAnalysisExportInput(
-      activeProject,
-      analysisSnapshot,
-      surfaceCache,
-      analysisPlane.cache,
-      units,
-    );
-  }, [activeProject, analysisSnapshot, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
-  // Phase 18L/18X — runtime caches for LandXML TIN surface / profile / section
-  // export (session-only; never persisted).
-  const exportCivilSources = useMemo(
-    () => ({ surfaceCache, profileCache, sectionCache }),
-    [surfaceCache, profileCache, sectionCache],
-  );
-  // Phase 18U — band fills + legend geometry from the CURRENT cached results.
-  // Colors/opacity come from the live definition, so a recolor or opacity edit
-  // repaints from cache (the `arev1:` revision excludes appearance).
-  const analysisDisplay = useMemo(() => {
-    // The analysis cache is mutated in place by the control plane, so the
-    // version bump is the only reliable "results changed" trigger.
-    void analysisVersion;
-    void surfaceMeshSessions;
-    return buildAnalysisSceneLayers(activeProject, surfaceCache, analysisPlane.cache, {
-        area: analysisAreaUnit(units),
-      volume: analysisVolumeUnit(units),
-    });
-  }, [activeProject, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
-  // Phase 18E — drawing-owned active feature catalog, derived from the
-  // HISTORY project (same source the F2F panel renders), never workspace
-  // React state. Absent catalog + no F2F content = starter clone as a
-  // panel-local fallback (never written silently — edits adopt it into the
-  // project). Absent catalog + F2F content = MISSING_LEGACY: surfaced,
-  // never silent SAMPLE.
-  const starterFallback = useMemo(() => cloneFeatureCatalog(STARTER_CATALOG), []);
-  const activeCatalog: FeatureCodeCatalog = activeProject.fieldToFinishCatalog ?? starterFallback;
-  const catalogIsFallback = activeProject.fieldToFinishCatalog === undefined;
-  const catalogStatus = getDrawingCatalogStatus(activeProject);
-  const catalogHasLegacyContent = catalogIsFallback && hasFieldToFinishContent(activeProject);
-  const featureCatalogRef = useRef<FeatureCodeCatalog>(activeCatalog);
-  useEffect(() => {
-    featureCatalogRef.current = activeCatalog;
-  }, [activeCatalog]);
-  // Per-definition GENERATED reference counts (from project provenance) for
-  // the manager's delete warning. Geometry is never deleted with a definition.
-  const f2fReferenceCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const entity of activeProject.entities) {
-      const provenance = (entity.metadata as Record<string, unknown> | undefined)?.['provenance'] as
-        | Record<string, unknown>
-        | undefined;
-      if (provenance?.['generatedBy'] !== 'FIELD_TO_FINISH') continue;
-      const defId = provenance?.['featureDefinitionId'];
-      if (typeof defId === 'string' && defId) counts[defId] = (counts[defId] ?? 0) + 1;
-    }
-    return counts;
-  }, [activeProject.entities]);
-  // Catalog edits are PROJECT mutations through history (one
-  // full-catalog-replace transaction, undoable, propagated to the parent
-  // document), not workspace useState. Adopting a fallback writes the
-  // starter clone into the project so the drawing owns it from here on.
-  const handleFeatureCatalogChange = (next: FeatureCodeCatalog) => {
-    const change = classifyCatalogChange(featureCatalogRef.current, next);
-    featureCatalogRef.current = next;
-    cadWorkspace.replaceFieldToFinishCatalog(next, change);
-  };
-  // Drawing-owned F2F control-token aliases (vendor-neutral Token→Canonical).
-  const handleFieldToFinishSettingsChange = (settings: { controlTokenAliases?: Record<string, string> }) => {
-    cadWorkspace.updateFieldToFinishSettings({ ...settings });
-  };
+    units,
+  });
+  const {
+    activeCatalog,
+    catalogIsFallback,
+    catalogStatus,
+    catalogHasLegacyContent,
+    featureCatalogRef,
+    f2fReferenceCounts,
+    handleFeatureCatalogChange,
+    handleFieldToFinishSettingsChange,
+  } = useSurveyCadFieldToFinishCatalog({ activeProject, workspace: cadWorkspace });
   const copiedEntityIdsRef = useRef<string[]>([]);
   const parcelLayoutHydrationKeyRef = useRef<string | null>(null);
   useEffect(() => {
