@@ -1,4 +1,4 @@
-import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
+import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchorTypes';
 import type { CadAnnotationSettings } from './annotation/cadAnnotationSettings';
 import type { CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus } from './cadAnalysisTypes';
 // Phase 18U: re-export the analysis tables so project-level consumers can
@@ -8,7 +8,7 @@ import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '..
 import type { FieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
 import type { FieldToFinishLink } from '../fieldToFinish/fieldToFinishLinkTypes';
-import type { CadCogoComputation } from './cadCogoTypes';
+import type { CadCogoComputation } from './cadCogoRecordTypes';
 import type { CadGrading } from './grading/gradingTypes';
 import type { CadGradingGroup } from './grading/gradingGroupTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
