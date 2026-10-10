@@ -12,8 +12,7 @@ import type {
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
-import type { CadGradingResult, GradingCriterion, GradingSide } from './grading/gradingTypes';
-import type { CadGradingGroupResult, GradingGroupCourse, GradingGroupCourseCriterionOverride } from './grading/gradingGroupTypes';
+import type { CadGradingGroupResult } from './grading/gradingGroupTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
 import type {
@@ -36,6 +35,10 @@ import type {
   CadSectionCommandPayload,
   CadSectionViewDeleteCommand,
 } from './cadTransactionsSectionCommandTypes';
+// STRUCT-195.6: grading and grading-group command payload slices are type-only
+// leaves; the hub splices both unions in the original position.
+import type { CadGradingCommandPayload } from './cadTransactionsGradingCommandTypes';
+import type { CadGradingGroupCommandPayload } from './cadTransactionsGradingGroupCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -1238,167 +1241,9 @@ export type CadCommand =
       name?: string;
     }
   // Phase 20B — grade-to-surface definitions (results/meshes never in history).
-  | {
-      key: 'GRADING_CREATE';
-      name?: string;
-      sourceFeatureLineId: string;
-      vertexAId: string;
-      vertexBId: string;
-      /** Required for fixed/cut-fill; omitted for distance/elevation. */
-      targetSurfaceId?: string;
-      side: GradingSide | 'both';
-      criterion: GradingCriterion;
-      maxSearchDistance: number;
-      curveChordTolerance: number;
-      layerId?: CadLayerId;
-    }
-  | {
-      key: 'GRADING_DELETE';
-      gradingId: string;
-    }
-  | {
-      key: 'GRADING_EDIT_CRITERIA';
-      gradingId: string;
-      criterion: GradingCriterion;
-      /**
-       * Phase 20F: kind-conditional target in the SAME undo entry. A non-empty
-       * id adds/replaces the target for a surface criterion; null clears it.
-       * Analytic criteria always clear the stored id.
-       */
-      targetSurfaceId?: string | null;
-    }
-  | {
-      key: 'GRADING_REASSIGN_TARGET';
-      gradingId: string;
-      targetSurfaceId: string;
-    }
-  | {
-      key: 'GRADINGEXTRACTDAYLIGHT';
-      gradingId: string;
-      /** Cached CURRENT result snapshot (never recomputed here). */
-      result: CadGradingResult;
-      expectedRevision: string;
-      sessionCurrent?: boolean;
-    }
-  | {
-      key: 'GRADINGBAKE';
-      gradingId: string;
-      /** Cached CURRENT result snapshot (never recomputed here). */
-      result: CadGradingResult;
-      expectedRevision: string;
-      sessionCurrent?: boolean;
-    }
+  | CadGradingCommandPayload
   // Phase 20C — grading groups (single side only; definitions + snapshots).
-  | {
-      key: 'GROUP_CREATE';
-      name?: string;
-      sourceFeatureLineId: string;
-      sourceCourses: GradingGroupCourse[];
-      /** Required for surface-family criteria; omitted for distance/elevation. */
-      targetSurfaceId?: string;
-      side: GradingSide;
-      criterion: GradingCriterion;
-      maxSearchDistance: number;
-      curveChordTolerance: number;
-      cornerMode?: 'miter';
-      closed?: boolean;
-      layerId?: CadLayerId;
-      /** Phase 20E sparse per-course overrides (validated on create). */
-      courseCriteria?: GradingGroupCourseCriterionOverride[];
-    }
-  | {
-      key: 'GROUP_DELETE';
-      groupId: string;
-    }
-  | {
-      key: 'GROUP_EDIT_CRITERIA';
-      groupId: string;
-      criterion?: GradingCriterion;
-      /** Phase 20F: kind-conditional target in the SAME undo entry (null clears). */
-      targetSurfaceId?: string | null;
-      maxSearchDistance?: number;
-      curveChordTolerance?: number;
-    }
-  | {
-      key: 'GROUP_REASSIGN_TARGET';
-      groupId: string;
-      targetSurfaceId: string;
-    }
-  | {
-      key: 'GROUP_EDIT_SPAN';
-      groupId: string;
-      sourceCourses: GradingGroupCourse[];
-      closed?: boolean;
-    }
-  | {
-      key: 'GROUP_ADD_COURSE';
-      groupId: string;
-      course: GradingGroupCourse;
-    }
-  | {
-      key: 'GROUP_REMOVE_END_COURSE';
-      groupId: string;
-      which: 'first' | 'last';
-    }
-  | {
-      key: 'GROUP_SET_COURSE_CRITERIA';
-      groupId: string;
-      /** One undo step applies `criterion` to every named course. */
-      courses: GradingGroupCourse[];
-      criterion: GradingCriterion;
-      /**
-       * Phase 20J: criterion+target in the SAME undo entry. A non-empty id
-       * assigns the live target (must exist); null clears (all-analytic
-       * results only); omitted keeps the retained target. A
-       * surface-effective result with no live target rejects (never a
-       * silent first-surface pick). Rejected ops mutate nothing.
-       */
-      targetSurfaceId?: string | null;
-    }
-  | {
-      key: 'GROUP_RESET_COURSE_CRITERIA';
-      groupId: string;
-      courses: GradingGroupCourse[];
-      /** Phase 20J: same atomic target rule as GROUP_SET_COURSE_CRITERIA. */
-      targetSurfaceId?: string | null;
-    }
-  | {
-      key: 'GROUP_SET_TRANSITION';
-      groupId: string;
-      /** One explicit transition intent (width/law user-owned, refs stable). */
-      intent: {
-        policyVersion: string;
-        jointId: string;
-        memberIds: readonly string[];
-        width: number;
-        lawKind: string;
-        lawVersion: string;
-        criterionFamily: string;
-        side: string;
-      };
-    }
-  | {
-      key: 'GROUP_CLEAR_TRANSITION';
-      groupId: string;
-      /** Named joint only; omitted clears every transition (legacy callers). */
-      jointId?: string;
-    }
-  | {
-      key: 'GROUPEXTRACTDAYLIGHT';
-      groupId: string;
-      /** Cached CURRENT result snapshot (never recomputed here). */
-      result: CadGradingGroupResult;
-      expectedRevision: string;
-      sessionCurrent?: boolean;
-    }
-  | {
-      key: 'GROUPBAKE';
-      groupId: string;
-      /** Cached CURRENT result snapshot (never recomputed here). */
-      result: CadGradingGroupResult;
-      expectedRevision: string;
-      sessionCurrent?: boolean;
-    }
+  | CadGradingGroupCommandPayload
   // Phase 20D Wave-1A — design surface workflow (engine only).
   | {
       key: 'SURFPURPOSE';
