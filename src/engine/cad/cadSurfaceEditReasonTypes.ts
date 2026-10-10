@@ -1,0 +1,26 @@
+/**
+ * Phase 18S/18T TIN surface-edit failure reasons (ENGINE ONLY, type-only leaf).
+ *
+ * Zero imports, no runtime values: this module exists purely to break the
+ * type-only dependency of the edit-mesh kernel on the applicator. Callers
+ * keep importing via the `cadSurfaceEdits` re-export.
+ */
+
+export type CadSurfaceEditReason =
+  | 'SURFACE_EDIT_VERTEX_MISSING'
+  | 'SURFACE_EDIT_EDGE_MISSING'
+  | 'SURFACE_EDIT_NOT_APPLICABLE'
+  | 'SURFACE_EDIT_BLOCKED_CONSTRAINT'
+  | 'SURFACE_EDIT_SYNTHETIC_VERTEX'
+  | 'SURFACE_EDIT_INTERMEDIATE_VERTEX'
+  | 'SURFACE_EDIT_POINT_OUTSIDE_DOMAIN'
+  | 'SURFACE_EDIT_POINT_ON_BOUNDARY'
+  | 'SURFACE_EDIT_POINT_ALREADY_EXISTS'
+  | 'SURFACE_EDIT_DELETE_POINT_CONSTRAINED'
+  | 'SURFACE_EDIT_DELETE_POINT_BOUNDARY'
+  | 'SURFACE_EDIT_DELETE_POINT_CAVITY_INVALID'
+  | 'SURFACE_EDIT_MOVE_POINT_CONSTRAINED'
+  | 'SURFACE_EDIT_MOVE_POINT_BOUNDARY'
+  | 'SURFACE_EDIT_MOVE_POINT_INVALID_STAR'
+  | 'SURFACE_EDIT_MOVE_POINT_INTERSECTION'
+  | 'SURFACE_EDIT_ELEVATION_INVALID';

@@ -2,7 +2,7 @@ import { findBlockDefinition } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
 import type { CadBlockChild, CadEntity, CadProject } from '../cadTypes';
 import { resolveCadPolylineCourses } from '../cadPolylineCourses';
-import type { DxfPoint, DxfPolylineVertex } from './dxfExportModel';
+import type { DxfPoint, DxfPolylineVertex } from './dxfPointTypes';
 
 export interface DxfBlockChildLine {
   layer: string;

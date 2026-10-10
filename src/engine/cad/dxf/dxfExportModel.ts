@@ -16,6 +16,8 @@ import {
   collectReferencedBlockIds,
 } from './dxfBlockExport';
 import type { DxfBlockEntry, DxfInsert } from './dxfBlockExport';
+import type { DxfPoint, DxfPolylineVertex } from './dxfPointTypes';
+export type { DxfPoint, DxfPolylineVertex } from './dxfPointTypes';
 export type {
   DxfBlockChildArc,
   DxfBlockChildLine,
@@ -56,24 +58,6 @@ import {
 // effective hex resolved through the shared resolver (style → layer →
 // default); the serializers map hex → ACI, omitting group 62/420/6/370 when
 // the entity matches its layer (BYLAYER by omission).
-export interface DxfPoint {
-  x: number;
-  y: number;
-}
-
-/**
- * Phase C2: LWPOLYLINE vertex with optional per-course metadata. Group 42
- * (bulge) rides on the START vertex of an arc course; groups 40/41
- * (startWidth/endWidth) ride on the START vertex of a course with a nonzero
- * centred band width. The open final vertex carries nothing; the closed
- * final stored vertex carries the last→first metadata. Absent = legacy
- * straight zero-width vertex (byte-identical 10/20 only).
- */
-export interface DxfPolylineVertex extends DxfPoint {
-  bulge?: number;
-  startWidth?: number;
-  endWidth?: number;
-}
 
 /** Phase 20A: true 3D vertex (DXF POLYLINE/VERTEX form, real group 30). */
 export interface DxfPoint3D {
