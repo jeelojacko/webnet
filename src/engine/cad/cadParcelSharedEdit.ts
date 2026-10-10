@@ -30,6 +30,7 @@ import { ensureParcelCourseIds, resolveCadParcelCourses } from './cadParcelCours
 import { replaceCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
 import type { CadHistoryState } from './cadUndoRedo';
+import type { ParcelSharedEditCommand } from './cadTransactionsParcelCommandTypes';
 import type {
   CadCommandExecutionResult,
   CadCommandKey,
@@ -257,15 +258,9 @@ export const linkedComponentSelectionBlockReason = (
 
 export const PARCEL_SHARED_EDIT_KEY = 'PARCELSHAREDEDIT' as CadCommandState['key'];
 
-export type ParcelSharedEditEdit =
-  | { kind: 'move-endpoint'; end: 'from' | 'to'; x: number; y: number }
-  | { kind: 'course-geometry'; geometry: CadParcelCourseGeometry };
-
-export interface ParcelSharedEditCommand {
-  key: 'PARCELSHAREDEDIT';
-  linkId: string;
-  edit: ParcelSharedEditEdit;
-}
+// STRUCT-195.4: payloads moved to the type-only leaf; re-exported here so the
+// original import paths keep working.
+export type { ParcelSharedEditCommand, ParcelSharedEditEdit } from './cadTransactionsParcelCommandTypes';
 
 interface LocatedCourse {
   parcel: CadParcelEntity;

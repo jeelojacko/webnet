@@ -23,7 +23,13 @@ import { computeFeatureCatalogRevision } from './catalogRevision';
 import type { FeatureCodeCatalog, FeatureDefinition } from './featureCatalog';
 import { FieldLineworkControl, type ParsedFeatureCode } from './featureMetadata';
 import { generateLinework, type CodedPointInput } from './linework';
-import { linkOfPayload, type LinkOfPayloadSource } from './linkedSync';
+import { linkOfPayload } from './linkedSync';
+import type {
+  FieldToFinishCadPayload,
+  FieldToFinishEntityState,
+  FieldToFinishProvenance,
+  LinkOfPayloadSource,
+} from './fieldToFinishGenerationTypes';
 import { stampAdjustmentDependency } from '../cad/cadAdjustmentDependency';
 import type { ResultDependencyIdentity } from '../resultIntegrity';
 import { formatDraftCoordinate } from '../cad/cadLabelEngine';
@@ -52,23 +58,13 @@ export const FIELD_TO_FINISH_GENERATOR = 'FIELD_TO_FINISH' as const;
 export const F2F_UNMAPPED_LAYER_NAME = 'F2F-UNMAPPED';
 export const F2F_UNMAPPED_LAYER_ID = 'f2f-layer-unmapped';
 
-export type FieldToFinishEntityState = 'GENERATED' | 'MANUAL_OVERRIDE' | 'DETACHED';
-
-export interface FieldToFinishProvenance {
-  generatedBy: typeof FIELD_TO_FINISH_GENERATOR;
-  sourceImportId?: string;
-  sourceFileHash?: string;
-  sourceRecordId?: string;
-  sourceStationId?: string;
-  featureDefinitionId?: string;
-  catalogId?: string;
-  /** Legacy display string (catalog.version at generation time). */
-  catalogVersion?: string;
-  /** Phase 18E content revision (computeFeatureCatalogRevision at generation time). */
-  catalogRevision?: string;
-  generationRunId?: string;
-  state: FieldToFinishEntityState;
-}
+// STRUCT-195.4: the generation provenance/payload shapes now live in the pure
+// type leaf; re-exported here so `./cadGeneration` stays the public path.
+export type {
+  FieldToFinishCadPayload,
+  FieldToFinishEntityState,
+  FieldToFinishProvenance,
+};
 
 export interface FieldToFinishCadCode {
   code: string;
@@ -131,27 +127,6 @@ export interface FieldToFinishStyleChoice {
 }
 
 /** Serializable payload applied by the F2F_GENERATE command (one transaction). */
-export interface FieldToFinishCadPayload {
-  layersToAdd: CadLayer[];
-  stylesToAdd: CadStyle[];
-  upsertEntities: CadEntity[];
-  removeEntityIds: string[];
-  label: string;
-  /**
-   * Link source context stamped by linkOfPayload. Only set when the caller
-   * provides it; absent = coordinate import (the historical default).
-   * Adjustment-backed generations set sourceKind 'adjustment' plus run
-   * fingerprints so rerun auto-sync applies to the resulting link.
-   */
-  source?: LinkOfPayloadSource;
-  /**
-   * Phase 17E: commit-time result identity, carried through the undoable
-   * command so generated entities stamp CURRENT on apply. Set only for
-   * adjustment-backed generations; absent = unstamped (fail-closed).
-   */
-  resultDependencyIdentity?: ResultDependencyIdentity | null;
-}
-
 export interface FieldToFinishCadResult {
   project: CadProject;
   payload: FieldToFinishCadPayload;

@@ -54,3 +54,14 @@ test, or script file was edited here. Workers A+B own the landed code:
   tests, and scripts untouched by this worker.
 - `TODO.md` entry uses only "Refs #195"; #195 stays open with severity
   High until fully closed.
+
+## Phase-end closeout (parent-recorded, 195.3 merged)
+
+PR #227 merged: reviewed head `a85fcd306918f79cfec32ddc549a7549b54ffa57`,
+main merge SHA `1987a6b801eaeda6c952c538b38c67f2d6a82ac0`. Exact-head GitHub
+CI all 5 jobs green; Chromium 4/4 per the merged PR record. The "Not run
+(honest status)" section above stays the true worker-local record
+(Worker-C-local: test:agent/build/browser/CI pending at the time of
+writing — Worker C never ran those suites); this note is the
+parent-recorded phase closeout, not a claim that Worker C ran CI.
+Refs #195 — issue #195 stays OPEN.

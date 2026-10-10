@@ -14,7 +14,13 @@
  * result-fingerprint snapshot.
  */
 import type { CadEntity, CadProject } from '../cad/cadTypes';
-import type { FieldToFinishCadPayload, FieldToFinishProvenance } from './cadGeneration';
+// STRUCT-195.4: the F2F payload/provenance/link-source types live in the pure
+// leaf so this module no longer type-depends on the cadGeneration runtime.
+import type {
+  FieldToFinishCadPayload,
+  FieldToFinishProvenance,
+  LinkOfPayloadSource,
+} from './fieldToFinishGenerationTypes';
 import { computeFeatureCatalogRevision } from './catalogRevision';
 import type { FeatureCodeCatalog } from './featureCatalog';
 import type {
@@ -223,18 +229,8 @@ export const buildStationEntityIndex = (project: CadProject): StationEntityIndex
   return index;
 };
 
-export interface LinkOfPayloadSource {
-  /** Which source produced this generation: adjustment-backed generations stamp 'adjustment' so rerun auto-sync applies; coordinate imports keep the default. */
-  sourceKind?: FieldToFinishSourceKind;
-  /**
-   * Fingerprint context: resultFingerprint is authoritative for the
-   * sourceRevision (new runs); input/settings are retained as provenance.
-   * When absent the prior link revision is preserved.
-   */
-  inputFingerprint?: string;
-  settingsFingerprint?: string;
-  resultFingerprint?: string;
-}
+// Original public path preserved: LinkOfPayloadSource moved to the leaf.
+export type { LinkOfPayloadSource };
 
 /**
  * Derive the F2F source link stamped on every F2F_GENERATE apply.
