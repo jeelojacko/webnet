@@ -5,9 +5,9 @@
  * (PROFILE_CREATE through PROFILE_STYLE_DELETE) and the shared
  * `CadProfileViewUpdatePatch` interface, extracted verbatim (key literals,
  * field names, optionality, ordering, unions, and comments unchanged) from
- * the `CadCommand` union in `cadTransactions.types.ts`, so the transaction hub
- * can depend on this leaf WITHOUT the command-family cycle that previously
- * tied the profile payloads into the transaction SCC.
+ * the `CadCommand` union in `cadTransactions.types.ts`. This shrinks the
+ * hub while preserving its command contract; the extracted inline members
+ * were not a separate dependency cycle, so no SCC reduction is claimed.
  *
  * Contract: type-only imports only. It imports the primitive identity alias
  * from the zero-import core leaf, the profile structure type from `cadTypes`,
