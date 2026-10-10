@@ -111,11 +111,26 @@ import type {
  * proved in tests/cad_cogo_parcel_runtime_cycle_19512.test.ts. This guard
  * keeps all 195.9 payload/type/purity/singleton assertions intact and only
  * rolls the global golden forward; any further pair/edge/SHA change fails.
+ *
+ * STRUCT-195.13 roll-forward (2026-10-10, THIRD authorized runtime value-graph
+ * change): cadParcelArcGeometry.ts repoints { buildCadInverseSummary,
+ * formatCadBearing } from './cadCogoMath' to './cadCogoSummaries', removing
+ * exactly one VALUE edge
+ * (src/engine/cad/cadParcelArcGeometry.ts -> src/engine/cad/cadCogoMath.ts)
+ * and adding exactly one (src/engine/cad/cadParcelArcGeometry.ts ->
+ * src/engine/cad/cadCogoSummaries.ts). Node/edge/pair totals are unchanged
+ * (482 / 1584 / 1566), but the VALUE SCC tally drops 2 SCC / 12 nodes ->
+ * 1 SCC / 7 nodes as the 5-node cogo-arc cycle dissolves; SHA
+ * 0feb1dc8…->76838237…. The 195.12 golden (1566/1584/0feb1dc8…) survives in
+ * git history and the complete removal/addition allowlist is proved in
+ * tests/cad_project_transform_runtime_cycle_19511.test.ts. This guard keeps
+ * all 195.9 payload/type/purity/singleton assertions intact and only rolls
+ * the global golden forward; any further pair/edge/SHA change fails.
  */
 const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1566;
 const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1584;
 const EXPECTED_BASELINE_VALUE_PAIRS_SHA256 =
-  '0feb1dc83004ac635b001471ff5c7e68cc0eb7de82f3c9a38483ead342f33df5';
+  '76838237ec49987ae9c64b11b97a3d72537b2fda2b806b1bcf73a4a22e1300f0';
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const abs = (relative: string): string => path.resolve(REPO_ROOT, relative);
 const rel = (absolute: string): string => path.relative(REPO_ROOT, absolute);
