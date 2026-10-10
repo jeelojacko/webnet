@@ -42,7 +42,7 @@ parcel-diagnostics 4 — all pre-existing, unrelated).
 - Emit parity (identical esbuild settings): kernel bodies/constants
   identical modulo the relocated 2 request re-exports; request emit
   identical modulo import specifier.
-- 4 historical guards rolled forward (7 failing tests -> 0): value golden
+- 5 historical guards rolled forward (1954, 1957, 1958, 1959, 19510) (7 failing tests -> 0): value golden
   1561/1579/`2bf18…` -> 1562/1580/`3d7284d…` with explicit 195.11
   roll-forward comments + frozen-fixture reference; TYPE pins -> ZERO
   (1959 cumulative, 19510 pair-dissolved + new facade/core/request
@@ -68,8 +68,22 @@ parcel-diagnostics 4 — all pre-existing, unrelated).
 
 ## Review / PR
 
-- Independent reviewer (`openai-codex/gpt-6-sol` per routing): PENDING on
-  final integrated diff; findings -> correction worker(s) -> fresh review.
+- Independent reviewer (`openai-codex/gpt-6-sol` per routing): APPROVE on
+  integrated implementation diff (reported in PR handoff). Controller independently
+  verified the moved kernel and request body against exact baseline.
 - PR: `refactor/issue19511-project-transform-runtime-cycle`, title
   'STRUCT-195.11: break project-transform runtime and type cycle',
   'Refs #195' only. DO NOT merge; issue #195 stays OPEN.
+
+
+## Controller CI review correction (after original PR)
+
+- Initial exact-head GitHub Actions run 38054533047: classify, static,
+  build-smoke and numerical passed; agent tests reported 9985 pass, 34 skipped,
+  **one 5-second timeout** on the first cold graph calculation in
+  `tests/cad_project_transform_runtime_cycle_19511.test.ts:320`.
+  The SCC assertion did not return an incorrect graph result; this was a
+  full-suite load/test timeout, not evidence of a CAD behavioral regression.
+- Controller increased ONLY that cold-graph Vitest test's timeout to 30s,
+  keeping the graph construction, SCC assertion and all other tests unchanged.
+- GitHub CI must pass on the corrected final PR head before merge.
