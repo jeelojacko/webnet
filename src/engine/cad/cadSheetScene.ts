@@ -14,7 +14,8 @@ import type {
 } from './cadDraftTypes';
 import type { SheetTokenContext } from './cadSheets';
 import { expandSheetTokens, northArrowAngleDeg } from './cadSheets';
-import type { ExportItem, ExportWarning } from './cadExportScene';
+import type { ExportItem } from './cadExportItemTypes';
+import type { ExportWarning } from './exportResult';
 
 // The arrow triangle rotates clockwise by rotationDeg about its base point so
 // it agrees with rotated viewport geometry; the scale bar is pure paper
