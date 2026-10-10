@@ -39,6 +39,10 @@ import type {
 // leaves; the hub splices both unions in the original position.
 import type { CadGradingCommandPayload } from './cadTransactionsGradingCommandTypes';
 import type { CadGradingGroupCommandPayload } from './cadTransactionsGradingGroupCommandTypes';
+// STRUCT-241.1: layer and survey command payload slices are type-only
+// leaves; the hub splices both unions in the original position.
+import type { CadLayerCommandPayload } from './cadTransactionsLayerCommandTypes';
+import type { CadSurveyCommandPayload } from './cadTransactionsSurveyCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -782,201 +786,12 @@ export type CadCommand =
       scaleY?: number;
       mirrored?: boolean;
     }
-  | {
-      key: 'LAYER_CREATE';
-      name: string;
-      color?: string;
-      role?:
-        | 'points'
-        | 'control-points'
-        | 'observation-lines'
-        | 'error-ellipses'
-        | 'labels'
-        | 'parcels'
-        | 'surfaces'
-        | 'planning';
-    }
-  | {
-      key: 'LAYER_RENAME';
-      layerId: string;
-      name: string;
-    }
-  | {
-      key: 'LAYER_VISIBILITY';
-      layerId: string;
-      visible: boolean;
-    }
-  | {
-      key: 'LAYER_LOCKED';
-      layerId: string;
-      locked: boolean;
-    }
-  | {
-      key: 'LAYER_PRINTABLE';
-      layerId: string;
-      printable: boolean;
-    }
-  | {
-      key: 'LAYER_COLOR';
-      layerId: string;
-      color: string;
-    }
-  | {
-      key: 'LAYER_LINETYPE';
-      layerId: string;
-      lineTypeId: string;
-    }
-  | {
-      key: 'LAYER_LINEWEIGHT';
-      layerId: string;
-      /** Undefined = Default. */
-      lineweightMm?: number;
-    }
-  | {
-      key: 'LAYER_TRANSPARENCY';
-      layerId: string;
-      transparency: number;
-    }
-  | {
-      key: 'LAYER_FROZEN';
-      layerId: string;
-      frozen: boolean;
-    }
-  | {
-      key: 'LAYER_DESCRIPTION';
-      layerId: string;
-      description: string;
-    }
-  | {
-      key: 'LAYER_SET_CURRENT';
-      layerId: string;
-    }
-  | {
-      key: 'LAYER_MOVE_OBJECTS';
-      fromLayerId: string;
-      toLayerId: string;
-    }
-  | {
-      key: 'LAYER_DELETE';
-      layerId: string;
-    }
+  | CadLayerCommandPayload
   | {
       key: 'F2F_GENERATE';
       payload: FieldToFinishCadPayload;
     }
-  | {
-      key: 'SURVEY_POINT_OVERRIDE';
-      entityIds: CadEntityId[];
-      /** undefined = leave, null = clear, id = set (must exist in its table). */
-      pointStyleOverrideId?: CadPointStyleId | null;
-      /** undefined = leave, null = clear, id = set (must exist in its table). */
-      pointLabelStyleOverrideId?: CadPointLabelStyleId | null;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'point';
-      op: 'create';
-      style: CadPointStyle;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'point';
-      op: 'duplicate';
-      styleId: CadPointStyleId;
-      newId: CadPointStyleId;
-      name: string;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'point';
-      op: 'rename';
-      styleId: CadPointStyleId;
-      name: string;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'point';
-      op: 'update';
-      styleId: CadPointStyleId;
-      patch: Partial<CadPointStyle>;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'point';
-      op: 'delete';
-      styleId: CadPointStyleId;
-      /** Required when points/groups reference the style; refs rewire to it. */
-      replacementId?: CadPointStyleId;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'label';
-      op: 'create';
-      style: CadPointLabelStyle;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'label';
-      op: 'duplicate';
-      styleId: CadPointLabelStyleId;
-      newId: CadPointLabelStyleId;
-      name: string;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'label';
-      op: 'rename';
-      styleId: CadPointLabelStyleId;
-      name: string;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'label';
-      op: 'update';
-      styleId: CadPointLabelStyleId;
-      patch: Partial<CadPointLabelStyle>;
-    }
-  | {
-      key: 'SURVEY_STYLE_TABLE';
-      table: 'label';
-      op: 'delete';
-      styleId: CadPointLabelStyleId;
-      /** Required when points/groups reference the style; refs rewire to it. */
-      replacementId?: CadPointLabelStyleId;
-    }
-  | {
-      key: 'SURVEY_GROUP_TABLE';
-      op: 'create';
-      group: CadPointGroup;
-    }
-  | {
-      key: 'SURVEY_GROUP_TABLE';
-      op: 'rename';
-      groupId: CadPointGroupId;
-      name: string;
-    }
-  | {
-      key: 'SURVEY_GROUP_TABLE';
-      op: 'update';
-      groupId: CadPointGroupId;
-      query?: Partial<CadPointGroupQuery>;
-      description?: string | null;
-      /** undefined = leave, null = clear, id = set (must exist in its table). */
-      pointStyleOverrideId?: CadPointStyleId | null;
-      /** undefined = leave, null = clear, id = set (must exist in its table). */
-      pointLabelStyleOverrideId?: CadPointLabelStyleId | null;
-    }
-  | {
-      key: 'SURVEY_GROUP_TABLE';
-      op: 'move';
-      groupId: CadPointGroupId;
-      direction: 'up' | 'down';
-    }
-  | {
-      key: 'SURVEY_GROUP_TABLE';
-      op: 'delete';
-      groupId: CadPointGroupId;
-    }
+  | CadSurveyCommandPayload
   | CadSurfaceCommandPayload
   | CadVolumeCommandPayload
   | CadProfileCommandPayload
