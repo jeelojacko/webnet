@@ -502,16 +502,18 @@ describe('STRUCT-241.7 hub facade re-exports', () => {
   it('re-exports all 5 parcel-layout names from the new layout leaf', () => {
     const source = hubSource();
     expect(source).toContain(`} from '${LAY_SPECIFIER}';`);
+    const exportBlock = facadeBlockTextOf(source, LAY_SPECIFIER, 'export');
     for (const name of MOVED_LAYOUT) {
-      expect(source).toContain(`  ${name},`);
+      expect(exportBlock).toContain(`  ${name},`);
     }
   });
 
   it('re-exports all 6 grip/snap names from the new grip leaf', () => {
     const source = hubSource();
     expect(source).toContain(`} from '${GRIP_SPECIFIER}';`);
+    const exportBlock = facadeBlockTextOf(source, GRIP_SPECIFIER, 'export');
     for (const name of MOVED_GRIP_SNAP) {
-      expect(source).toContain(`  ${name},`);
+      expect(exportBlock).toContain(`  ${name},`);
     }
   });
 
@@ -891,6 +893,8 @@ describe('STRUCT-241.7 negative controls (in-memory mutations only)', () => {
     expect(facadeBlockTextOf(mutated, GRIP_SPECIFIER, 'import')).toContain('  CadSnapKind,');
     const mutatedExport = facadeBlockTextOf(mutated, GRIP_SPECIFIER, 'export');
     expect(mutatedExport).not.toContain('  CadSnapKind,');
+    // The positive facade pin (export-block scoped) now fails on this mutation.
+    expect(() => expect(facadeBlockTextOf(mutated, GRIP_SPECIFIER, 'export')).toContain('  CadSnapKind,')).toThrow();
     for (const name of MOVED_GRIP_SNAP) {
       if (name === 'CadSnapKind') continue;
       expect(mutatedExport).toContain(`  ${name},`);
