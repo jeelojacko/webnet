@@ -746,9 +746,10 @@ describe('STRUCT-241.2 CAD+F2F graph pins', () => {
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
     // Post-241.1 baseline 485 / 2404; the 241.2 leaf adds +1 node / +2 type
-    // edges; STRUCT-241.3 adds +2 nodes / +6 type edges (documented roll-forward).
-    expect(graph.nodes.length).toBe(488);
-    expect(graph.edges.length).toBe(2412);
+    // edges; STRUCT-241.3 adds +2 nodes / +6 type edges (documented roll-forward);
+    // STRUCT-241.4 adds +1 node / +4 type edges (documented roll-forward).
+    expect(graph.nodes.length).toBe(489);
+    expect(graph.edges.length).toBe(2416);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -793,9 +794,10 @@ describe('STRUCT-241.2 full-src graph pins', () => {
     expect(typeCycles.cyclic.length).toBe(7);
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // Post-241.1 baseline 1657 / 7514; 241.2 adds +1 node / +2 edges;
-    // STRUCT-241.3 adds +2 nodes / +6 edges (documented roll-forward).
-    expect(graph.nodes.length).toBe(1660);
-    expect(graph.edges.length).toBe(7522);
+    // STRUCT-241.3 adds +2 nodes / +6 edges (documented roll-forward);
+    // STRUCT-241.4 adds +1 node / +5 edges (documented roll-forward).
+    expect(graph.nodes.length).toBe(1661);
+    expect(graph.edges.length).toBe(7527);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
