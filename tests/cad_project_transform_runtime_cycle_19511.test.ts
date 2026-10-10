@@ -317,12 +317,14 @@ describe('STRUCT-195.11 no project-transform SCC in VALUE or TYPE graphs', () =>
       (component) => component.length > 1 || (adjacency.get(component[0]!) ?? []).includes(component[0]!),
     );
 
+  // The first graph read parses the entire CAD/Field-to-Finish scope (~481 TS files).
+  // CI's parallel full-suite load can exceed Vitest's 5s default; do not weaken the SCC assertion.
   it('VALUE graph has no non-trivial component containing the relocated trio', () => {
     const graph = currentGraph();
     const offenders = cyclicComponents(graph.nodes, graph.value)
       .filter((component) => component.some((member) => RELOCATED_TRIO.has(rel(member))));
     expect(offenders, `project-transform VALUE SCC still present: ${offenders.flat().map(rel).join(', ')}`).toEqual([]);
-  });
+  }, 30_000);
 
   it('TYPE graph has no non-trivial component containing the relocated trio', () => {
     const graph = currentGraph();
