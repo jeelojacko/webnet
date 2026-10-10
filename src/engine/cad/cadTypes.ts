@@ -173,6 +173,43 @@ export type {
   CadSurveyTableTagSettings,
 } from './cadSurveyTableEntityTypes';
 
+// STRUCT-241.6: the six linear-design (alignment + feature-line) contracts
+// and the six parcel entity contracts live in dedicated type-only leaves.
+// They are imported here for local use and re-exported so existing
+// `from './cadTypes'` consumers keep compiling unchanged.
+import type {
+  CadAlignmentElement,
+  CadAlignmentEntity,
+  CadFeatureLineEntity,
+  CadFeatureLineSegmentGeometry,
+  CadFeatureLineVertex,
+  CadStationEquation,
+} from './cadLinearDesignEntityTypes';
+export type {
+  CadAlignmentElement,
+  CadAlignmentEntity,
+  CadFeatureLineEntity,
+  CadFeatureLineSegmentGeometry,
+  CadFeatureLineVertex,
+  CadStationEquation,
+} from './cadLinearDesignEntityTypes';
+import type {
+  CadParcelCourseGeometry,
+  CadParcelEntity,
+  CadParcelPlanInfo,
+  CadParcelPlanRole,
+  CadParcelSharedBoundary,
+  CadParcelSharedBoundaryEnd,
+} from './cadParcelEntityTypes';
+export type {
+  CadParcelCourseGeometry,
+  CadParcelEntity,
+  CadParcelPlanInfo,
+  CadParcelPlanRole,
+  CadParcelSharedBoundary,
+  CadParcelSharedBoundaryEnd,
+} from './cadParcelEntityTypes';
+
 export interface CadSurveyPointEntity extends CadBaseEntity {
   type: 'survey-point';
   stationId: StationId;
@@ -192,152 +229,6 @@ export interface CadSurveyPointEntity extends CadBaseEntity {
   pointLabelStyleId?: CadPointLabelStyleId;
   /** Phase 18D MANUAL label override (undefined = By Default). Never stores resolved output. */
   pointLabelStyleOverrideId?: CadPointLabelStyleId;
-}
-
-export type CadAlignmentElement =
-  | {
-      kind: 'line';
-      start: CadDisplayPoint;
-      end: CadDisplayPoint;
-      sourceEntityId?: CadEntityId;
-    }
-  | {
-      kind: 'arc';
-      center: CadDisplayPoint;
-      radius: number;
-      startAngleDeg: number;
-      endAngleDeg: number;
-      sourceEntityId?: CadEntityId;
-    };
-
-export interface CadStationEquation {
-  backStation: number;
-  aheadStation: number;
-  rawStation?: number;
-}
-
-export interface CadAlignmentEntity extends CadBaseEntity {
-  type: 'alignment';
-  name: string;
-  elements: CadAlignmentElement[];
-  startStation: number;
-  stationEquations?: CadStationEquation[];
-}
-
-/**
- * Phase 20A first-class 3D feature-line vertex: plan position (metres) +
- * owned elevation (metres, never defaulted — absent Z fails closed
- * downstream, never 0). Ids follow
- * `feature-vertex:<featureLineId>:<stableId>` (see cadFeatureLines).
- */
-export interface CadFeatureLineVertex {
-  id: string;
-  x: number;
-  y: number;
-  z: number;
-}
-
-/**
- * Phase 20A feature-line segment geometry: endpoint-owned, same signed
- * CAD-standard bulge convention as CadParcelCourseGeometry
- * (b = tan(sweepRad/4); positive = CCW = center-left; |b| > 1 = major
- * arc). Entry [index] describes the course starting at vertices[index].
- * Absent array = all-line (straight grade legs).
- */
-export type CadFeatureLineSegmentGeometry = { kind: 'line' } | { kind: 'arc'; bulge: number };
-
-/**
- * Phase 20A first-class 3D feature line: ordered XYZ vertices with
- * optional per-course plan line/arc geometry. Stations derive at read
- * time from cumulative horizontal (plan) length, station 0 at the first
- * vertex; grades derive from dZ over plan length. ADDITIVE ONLY — no
- * other entity changes, no migration of old entities.
- */
-export interface CadFeatureLineEntity extends CadBaseEntity {
-  type: 'feature-line';
-  vertices: CadFeatureLineVertex[];
-  /**
-   * Contract: when present, segmentGeometry.length === course count
-   * (vertices.length - 1 open, vertices.length closed). Absent = all-line.
-   */
-  segmentGeometry?: CadFeatureLineSegmentGeometry[];
-  closed?: boolean;
-  name?: string;
-  description?: string;
-}
-
-/**
- * Phase 19C mixed line/arc parcel course geometry (endpoint-owned bulge).
- * Signed CAD-standard bulge b = tan(sweepRad/4): sign carries left/right
- * (positive = CCW = center-left), magnitude carries minor/major
- * (|b| > 1 = major arc). Translation/rotation/uniform-scale leave it
- * unchanged; reflection flips the sign; no stale center/radius (derived
- * per course from endpoints + bulge by cadParcelArcGeometry).
- */
-export type CadParcelCourseGeometry = { kind: 'line' } | { kind: 'arc'; bulge: number };
-
-/**
- * Phase 19D plan role: user-assigned DISPLAY metadata only ("Plan Role").
- * NEVER infer legal meaning from this field. No owner/PID/deed/tenement
- * fields live on the parcel entity.
- */
-export type CadParcelPlanRole =
-  | 'lot'
-  | 'remainder'
-  | 'road'
-  | 'right-of-way'
-  | 'easement'
-  | 'other';
-
-/** Phase 19D plan designation: display metadata only, never legal meaning. */
-export interface CadParcelPlanInfo {
-  designation?: string;
-  role?: CadParcelPlanRole;
-  description?: string;
-}
-
-/** Phase 19D shared-boundary end: a ref to one parcel course (never geometry). */
-export interface CadParcelSharedBoundaryEnd {
-  parcelId: string;
-  courseId: string;
-}
-
-/**
- * Phase 19D shared-boundary relationship: two parcel-course refs, nothing
- * derived (lengths/geometry resolve at read time, never persisted).
- */
-export interface CadParcelSharedBoundary {
-  id: string;
-  first: CadParcelSharedBoundaryEnd;
-  second: CadParcelSharedBoundaryEnd;
-}
-
-export interface CadParcelEntity extends CadBaseEntity {
-  type: 'parcel';
-  vertices: CadDisplayPoint[];
-  vertexLabels: string[];
-  parcelName: string;
-  /**
-   * Phase 19A stable course identity: courseIds[index] names the course
-   * starting at vertices[index] (ring order, closing leg included).
-   * Contract: when present, courseIds.length === vertices.length.
-   * Absent/short on legacy drawings: load paths backfill deterministically.
-   */
-  courseIds?: string[];
-  /**
-   * Phase 19C mixed line/arc courses. Contract: when present,
-   * courseGeometry.length === vertices.length (entry [index] describes the
-   * course starting at vertices[index]). Absent = all-line legacy parcel
-   * (byte-compatible, no migration write; load backfill untouched).
-   */
-  courseGeometry?: CadParcelCourseGeometry[];
-  areaSquareMeters?: number;
-  perimeterMeters?: number;
-  closureDeltaX?: number;
-  closureDeltaY?: number;
-  closureDistanceMeters?: number;
-  /** Phase 19D plan designation (display metadata only). Trailing key. */
-  planInfo?: CadParcelPlanInfo;
 }
 
 export interface CadTextEntity extends CadBaseEntity {
