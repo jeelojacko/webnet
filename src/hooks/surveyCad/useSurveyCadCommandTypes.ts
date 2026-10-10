@@ -2,7 +2,7 @@ import type { CadBatchCogoDraft } from '../../engine/cad/cadBatchCogo';
 import type { CadLineSegmentInput, CadLineSide } from '../../engine/cad/cadLineTypes';
 import type { RegularPolygonMode } from '../../engine/cad/cadGeometryShapeBuilders';
 import type { CadCurveMetricMode } from '../../engine/cad/cadCurveMetricsSolver';
-import type { CadCurveF1ExtentMode } from './useSurveyCadCurveF1Session';
+import type { CadCurveF1ExtentMode } from './useSurveyCadCurveF1ExtentTypes';
 import type { CadLineL1CommandKey } from './useSurveyCadLineL1Keys';
 import type { CadTangentSource } from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import type {
