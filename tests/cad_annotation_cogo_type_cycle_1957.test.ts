@@ -56,6 +56,7 @@
  *
  * Uses only the TypeScript compiler API + the repo graph script (no new deps).
  */
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,7 +66,6 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   buildGraphs,
   collectTypeScriptFiles,
-  loadSourcesFromGit,
   reachableFrom,
   tarjanSCC,
 } from '../scripts/cadTypeImportGraph.mjs';
@@ -117,7 +117,42 @@ import type {
   CadCogoWarning as LeafCadCogoWarning,
 } from '../src/engine/cad/cadCogoRecordTypes';
 
-const BASELINE_REF = '517de78af6b151d0cd6776ec768d21c2668ea8cf';
+/**
+ * CI-shallow-checkout-safe baseline fingerprint (STRUCT-195.7 correction).
+ *
+ * The committed test must NOT call loadSourcesFromGit(BASELINE_REF): CI
+ * checks out shallow history without the baseline commit, so `git ls-tree
+ * 517de78...` fails with exit 128. Instead the baseline VALUE graph is
+ * pinned here as immutable constants, generated ONE TIME from the real
+ * baseline via loadSourcesFromGit('517de78...') on a full-history checkout
+ * (one-off script /tmp/fp1957.mjs; baseline and worktree hashes verified
+ * MATCH before pinning — a mismatch would have meant substantive drift,
+ * not a golden to update).
+ *
+ * Pin semantics — scope GRAPH_DIRS, edge kinds value|mixed (mixed counts
+ * toward both tallies, matching scripts/cadTypeImportGraph.mjs):
+ *  - EXPECTED_BASELINE_VALUE_PAIRS_SHA256: sha256 over
+ *    JSON.stringify(sortedUniquePairs) where each pair is
+ *    `<relPosix(from)>\n<relPosix(to)>` (repo-relative POSIX paths,
+ *    deterministically sorted, duplicates collapsed by Set). Pins full
+ *    edge MEMBERSHIP with cryptographically negligible collision risk.
+ *  - EXPECTED_BASELINE_VALUE_PAIR_COUNT (1561): guards the Set size so a
+ *    hash implementation slip cannot hide behind a constant.
+ *  - EXPECTED_BASELINE_VALUE_EDGE_COUNT (1579): total value|mixed edges
+ *    WITH multiplicity, so collapsing two same-pair edges into one is
+ *    still caught.
+ * Limitations: keys are from->to pair strings, so any change that
+ * preserves the pair multiset is invisible: two same-pair edges swapping
+ * specifiers, or one value edge replaced 1:1 by another value edge on the
+ * SAME pair, changes neither the hash nor either count (same residual
+ * risk as the pre-correction membership test, which keyed on the same
+ * pair strings). The edge count only adds protection against pair
+ * collapsing/merging (two same-pair edges becoming one, or vice versa).
+ */
+const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1561;
+const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1579;
+const EXPECTED_BASELINE_VALUE_PAIRS_SHA256 =
+  '2bf1817d3978bf7a0b6e82f03008c4e10750983c293b1f7a75da60ae3fb6323f';
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const abs = (relative: string): string => path.resolve(REPO_ROOT, relative);
 const rel = (absolute: string): string => path.relative(REPO_ROOT, absolute);
@@ -928,24 +963,29 @@ describe('STRUCT-195.7 cycle-break graph guard (parent hub splice)', () => {
     expect(kindsBetween(workGraph, HUB, OLD_COGO)).toEqual([]);
   });
 
-  // NOTE (parent fix): explicit timeout — loadSourcesFromGit spawns one git
-  // show per file (~470); under full-suite CPU contention it exceeds the
-  // 5 s default and flakes. Assertion logic unchanged.
-  it('keeps the VALUE edge membership byte-identical vs baseline (added/removed empty)', () => {
-    const baseEntries = loadSourcesFromGit(BASELINE_REF, { paths: GRAPH_DIRS, cwd: REPO_ROOT })
-      .map((entry) => ({ path: abs(entry.path), source: entry.source }));
-    const baseGraph = buildGraphs(baseEntries);
-    const pairs = (graph: ReturnType<typeof buildGraphs>): Set<string> =>
-      new Set(
-        graph.edges
-          .filter((edge) => edge.kind === 'value' || edge.kind === 'mixed')
-          .map((edge) => `${rel(edge.from)}\n${rel(edge.to)}`),
-      );
-    const base = pairs(baseGraph);
-    const work = pairs(workGraph);
-    const added = [...work].filter((pair) => !base.has(pair)).sort();
-    const removed = [...base].filter((pair) => !work.has(pair)).sort();
-    expect({ added, removed }).toEqual({ added: [], removed: [] });
-  }, 120000);
+  it('keeps the VALUE edge membership byte-identical vs baseline (pinned fingerprint)', () => {
+    const toPosix = (p: string): string => p.split(path.sep).join('/');
+    const pairs = [...new Set(
+      workGraph.edges
+        .filter((edge) => edge.kind === 'value' || edge.kind === 'mixed')
+        .map((edge) => `${toPosix(rel(edge.from))}\n${toPosix(rel(edge.to))}`),
+    )].sort();
+    const edgeCount = workGraph.edges.filter(
+      (edge) => edge.kind === 'value' || edge.kind === 'mixed',
+    ).length;
+    const actualHash = createHash('sha256').update(JSON.stringify(pairs)).digest('hex');
+    expect(
+      `value pairs ${pairs.length} (want ${EXPECTED_BASELINE_VALUE_PAIR_COUNT}), ` +
+        `value edges ${edgeCount} (want ${EXPECTED_BASELINE_VALUE_EDGE_COUNT}), ` +
+        `pairs sha256 ${actualHash} (want ${EXPECTED_BASELINE_VALUE_PAIRS_SHA256})`,
+    ).toBe(
+      `value pairs ${EXPECTED_BASELINE_VALUE_PAIR_COUNT} ` +
+        `(want ${EXPECTED_BASELINE_VALUE_PAIR_COUNT}), ` +
+        `value edges ${EXPECTED_BASELINE_VALUE_EDGE_COUNT} ` +
+        `(want ${EXPECTED_BASELINE_VALUE_EDGE_COUNT}), ` +
+        `pairs sha256 ${EXPECTED_BASELINE_VALUE_PAIRS_SHA256} ` +
+        `(want ${EXPECTED_BASELINE_VALUE_PAIRS_SHA256})`,
+    );
+  });
 });
 

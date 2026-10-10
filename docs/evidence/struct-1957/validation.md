@@ -101,6 +101,35 @@ verified with `sha256sum` + `diff` byte-identical
    re-forms the exact 4-node SCC (`true`), confirming the committed guard
    is sensitive to the severed edges themselves.
 
+## Correction (parent, post-PR): CI shallow-checkout portability fix
+
+Final-head CI (run 38022050336) failed exactly ONE test out of 9894:
+'keeps the VALUE edge membership byte-identical vs baseline'. Root cause is
+a TEST HARNESS portability bug, not a CAD regression: the test called
+loadSourcesFromGit('517de78...'), and the CI checkout is shallow without
+that historical commit (`git ls-tree` exits 128, 'fatal: not a tree
+object'). No source file changed in this correction.
+
+Fix: the committed test no longer shells out to git. The baseline VALUE
+graph is pinned as immutable constants generated ONE TIME from the real
+baseline on a full-history checkout (one-off script; baseline vs worktree
+hashes verified MATCH before pinning): EXPECTED_BASELINE_VALUE_PAIR_COUNT
+= 1561 unique from->to pairs, EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1579
+total value|mixed edges, EXPECTED_BASELINE_VALUE_PAIRS_SHA256 = sha256
+over JSON.stringify(sortedPairs) with repo-relative POSIX keys. The test
+recomputes the same canonical fingerprint from current sources and
+asserts all three, with expected-vs-actual diagnostics on mismatch.
+
+Proof recorded by parent:
+- New suite 27/27 green; fingerprint test runs in ~35 ms (was ~7 s).
+- Negative control: temporary side-effect value import added to
+  src/engine/cad/cadDisplayTypes.ts -> fingerprint failed exactly
+  (1562 pairs / 1580 edges / changed hash); reverted byte-identical,
+  suite green again. No transient files left.
+- Shallow-clone proof: fresh `git clone --depth 1` (baseline object
+  confirmed absent, same exit 128 as CI) + fixed test file -> 27/27
+green. The committed suite makes zero git subprocess calls.
+
 ## Honest pending items (NOT measured in this workstream)
 
 - Neighbouring suites / `test:agent` / `build` / `check:portable-paths`:

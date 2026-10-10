@@ -138,6 +138,15 @@ touched files are TYPE singletons (`cadAnnotationAnchors.ts`,
 export-scene 5-node plus the five 2-node pairs, members unchanged. Zero
 value-graph delta; no new value SCCs.
 
+Correction note (parent, post-PR): the committed VALUE-membership guard no
+longer diffs against a live `loadSourcesFromGit` baseline (CI shallow
+checkouts lack the 517de78 object). It pins the baseline as constants:
+1561 unique value pairs with sha256
+`2bf1817d3978bf7a0b6e82f03008c4e10750983c293b1f7a75da60ae3fb6323f`
+(JSON of sorted repo-relative POSIX pairs) plus 1579 total value|mixed
+edges — generated one-time from the real baseline and verified MATCH
+before pinning. See validation.md.
+
 ## Residual roadmap (out of scope for 195.7, tracked honestly)
 
 - Export-scene 5-node TYPE SCC (`cadAnalysisExportScene`,
