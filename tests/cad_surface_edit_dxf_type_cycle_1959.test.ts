@@ -81,11 +81,25 @@ import type {
  * 2bf1817d3978bf7a0b6e82f03008c4e10750983c293b1f7a75da60ae3fb6323f;
  * see docs/evidence/struct-1959/validation.md). The refactor moves only
  * type-only bindings, so VALUE membership is untouched by construction.
+ *
+ * STRUCT-195.11 roll-forward (FIRST authorized runtime value-graph change
+ * after the type-only 195.7-195.10 series): the project-transform kernel
+ * split (new src/engine/cad/cadProjectTransformCore.ts; facade + request
+ * repoint to core) removes 14 value edges and adds 15, every one incident
+ * to {cadProjectTransform, cadProjectTransformCore,
+ * cadProjectTransformRequest} — nodes 480->481, value|mixed 1579->1580,
+ * unique pairs 1561->1562, SHA 2bf1817d…->3d7284db…. The pre-split golden
+ * (1561/1579/2bf1817d…) survives frozen in
+ * tests/cad_project_transform_runtime_delta_19511.guard.ts and the complete
+ * removal/addition allowlist is proved in
+ * tests/cad_project_transform_runtime_cycle_19511.test.ts. This guard keeps
+ * all 195.9 payload/type/purity/singleton assertions intact and only rolls
+ * the global golden forward; any further pair/edge/SHA change still fails.
  */
-const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1561;
-const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1579;
+const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1562;
+const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1580;
 const EXPECTED_BASELINE_VALUE_PAIRS_SHA256 =
-  '2bf1817d3978bf7a0b6e82f03008c4e10750983c293b1f7a75da60ae3fb6323f';
+  '3d7284dbb0d33d8ba7afaad3dc2c0a7136945e98910ac026eebd03c0fbdc835e';
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const abs = (relative: string): string => path.resolve(REPO_ROOT, relative);
 const rel = (absolute: string): string => path.relative(REPO_ROOT, absolute);
@@ -445,13 +459,13 @@ describe('STRUCT-195.9 cycle-break graph guard', () => {
     }
   });
 
-  it('the cumulative TYPE graph is now 1 SCC / 2 nodes (195.9 landed at 3 SCC / 6 nodes, 195.10 reduced it to 1 / 2)', () => {
+  it('the cumulative TYPE graph is now ZERO nontrivial SCCs (195.11 dissolved the last projectTransform pair; 195.9 landed at 3 SCC / 6 nodes, 195.10 at 1 / 2)', () => {
     const components = tarjanSCC(workGraph.nodes, workGraph.type);
     const cyclic = components.filter((component) => component.length > 1);
     const cyclicNodes = cyclic.reduce((sum, component) => sum + component.length, 0);
     expect(
-      `type SCCs ${cyclic.length} (want 1), cyclic nodes ${cyclicNodes} (want 2)`,
-    ).toBe('type SCCs 1 (want 1), cyclic nodes 2 (want 2)');
+      `type SCCs ${cyclic.length} (want 0), cyclic nodes ${cyclicNodes} (want 0)`,
+    ).toBe('type SCCs 0 (want 0), cyclic nodes 0 (want 0)');
   });
 
   it('each leaf has no edges of any kind back to its hub or consumer', () => {
@@ -467,7 +481,7 @@ describe('STRUCT-195.9 cycle-break graph guard', () => {
     }
   });
 
-  it('keeps the VALUE edge membership byte-identical vs baseline (pinned fingerprint)', () => {
+  it('matches the post-195.11 golden VALUE fingerprint (pre-split baseline frozen in the 19511 guard fixture)', () => {
     const toPosix = (p: string): string => p.split(path.sep).join('/');
     const pairs = [...new Set(
       workGraph.edges

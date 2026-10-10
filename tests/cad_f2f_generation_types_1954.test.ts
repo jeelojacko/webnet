@@ -282,10 +282,16 @@ describe('STRUCT-195.4 F2F type-edge severance (AST graph)', () => {
     expect(leafValueEdges).toEqual([]);
   });
 
-  it('adds no runtime value cycle (still 4 SCCs / 18 nodes)', () => {
+  // STRUCT-195.11 roll-forward: the project-transform kernel split dissolved
+  // the 2-node projectTransform VALUE SCC, so the cumulative VALUE graph is
+  // now 3 SCCs / 16 nodes (geometry 7 + cogo-arc 5 + parcel-diagnostics 4).
+  // This 195.4 leaf still adds no runtime value cycle of its own — the full
+  // authorized delta is proved in
+  // tests/cad_project_transform_runtime_cycle_19511.test.ts.
+  it('adds no runtime value cycle (3 SCCs / 16 nodes after 195.11 dissolved the projectTransform pair)', () => {
     const cycles = findCycles(graph.nodes, graph.value);
-    expect(cycles.cyclic).toHaveLength(4);
-    expect(cycles.cyclicNodes.size).toBe(18);
+    expect(cycles.cyclic).toHaveLength(3);
+    expect(cycles.cyclicNodes.size).toBe(16);
   });
 });
 

@@ -16,7 +16,7 @@ import {
 import {
   applyCadProjectCoordinateTransform,
   type ProjectTransformAffectedCounts,
-} from './cadProjectTransform';
+} from './cadProjectTransformCore';
 import type { CadProject } from './cadTypes';
 import { isExplicitTopologyDefinition } from './cadTypes';
 import type { DraftDocument } from './cadDraftTypes';
