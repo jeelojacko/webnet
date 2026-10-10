@@ -581,7 +581,7 @@ const fullSrcGraph = (): ReturnType<typeof buildGraphs> => (fullSrcCache ??= bui
 
 describe('STRUCT-241.3 CAD+F2F graph pins', () => {
   it('keeps VALUE/TYPE acyclic and the VALUE|mixed digest identical', () => {
-    const graph = cadF2fGraph();
+    const graph = cadF2fGraph(); // first/cold scoped build; 30 s tolerates full-suite CI load
     const valueCycles = findCycles(graph.nodes, graph.value);
     const typeCycles = findCycles(graph.nodes, graph.type);
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
@@ -596,7 +596,7 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
       uniqPairs: 1567,
       sha: '0bc9bae1f87e81161f250fd5852730e56b9bdd1311b02257cdecf39dd4d2fcb7',
     });
-  });
+  }, 30_000);
 
   it('adds exactly the six allow-listed TYPE edges incident to the new leaves', () => {
     const graph = cadF2fGraph();
