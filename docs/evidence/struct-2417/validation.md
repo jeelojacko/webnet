@@ -55,9 +55,12 @@ reset/force; 14 stashes preserved; `.pi/lsp.json` untouched).
 ## Independent review
 
 Reviewer: independent read-only reviewer on the exact final integrated diff
-(per current role/model routing). Disposition: PENDING at evidence-write
-time; APPROVE required before PR is declared ready. Findings (if any) are
-resolved in this same phase/context with re-review to APPROVE.
+(per current role/model routing). Round 1 verdict BLOCKED on one P2 (facade
+re-export positive pin searched the whole hub, so withdrawing only the
+export-type entry could not fail it); remediated in-phase by scoping both
+facade pins to the export-block text and asserting the positive pin throws
+on the mutated hub (88/88 green). Round 2 FRESH re-review of head
+a9892464: APPROVE, no actionable findings, nothing merged.
 
 ## Remaining risks
 
