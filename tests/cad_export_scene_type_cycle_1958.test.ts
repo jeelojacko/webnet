@@ -100,6 +100,22 @@ import type { ExportWarning as ResultExportWarning } from '../src/engine/cad/exp
  * all 195.8 payload/type/purity/singleton assertions intact and only rolls
  * the global golden forward; any further pair/edge/SHA change still fails.
  *
+ * STRUCT-195.12 roll-forward (SECOND authorized runtime value-graph change):
+ * the parcel-diagnostics cycle break (new
+ * src/engine/cad/cadCogoParcelLineworkTopology.ts owning
+ * buildParcelLineCandidate/buildParcelNodeMap; SourceDraft + Linework import
+ * helpers from topology; Diagnostics imports summaries/overlap/primitives/
+ * types leaves directly, dropping the broad facade edge) removes 4 value
+ * edges and adds 11, every one incident to {cadCogoParcelDiagnostics,
+ * cadCogoParcelGeometry, cadCogoParcelGeometrySourceDraft,
+ * cadCogoParcelLineworkDiagnostics, cadCogoParcelLineworkTopology} — nodes
+ * 481->482, value|mixed 1580->1584, unique pairs 1562->1566, SHA
+ * 3d7284db…->0feb1dc8…. The 195.11 golden (1562/1580/3d7284db…) survives in
+ * git history at c132c428 and the complete removal/addition allowlist is
+ * proved in tests/cad_cogo_parcel_runtime_cycle_19512.test.ts. This guard
+ * keeps all 195.8 payload/type/purity/singleton assertions intact and only
+ * rolls the global golden forward; any further pair/edge/SHA change fails.
+ *
  * Pin semantics:
  *  - EXPECTED_BASELINE_VALUE_PAIRS_SHA256: sha256 over
  *    JSON.stringify(sortedUniquePairs). Pins full edge MEMBERSHIP.
@@ -110,10 +126,10 @@ import type { ExportWarning as ResultExportWarning } from '../src/engine/cad/exp
  * Limitations: keys are from->to pair strings, so a change that preserves
  * the pair multiset is invisible (same residual risk as the 195.7 guard).
  */
-const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1562;
-const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1580;
+const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1566;
+const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1584;
 const EXPECTED_BASELINE_VALUE_PAIRS_SHA256 =
-  '3d7284dbb0d33d8ba7afaad3dc2c0a7136945e98910ac026eebd03c0fbdc835e';
+  '0feb1dc83004ac635b001471ff5c7e68cc0eb7de82f3c9a38483ead342f33df5';
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const abs = (relative: string): string => path.resolve(REPO_ROOT, relative);
 const rel = (absolute: string): string => path.relative(REPO_ROOT, absolute);

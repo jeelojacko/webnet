@@ -283,15 +283,20 @@ describe('STRUCT-195.4 F2F type-edge severance (AST graph)', () => {
   });
 
   // STRUCT-195.11 roll-forward: the project-transform kernel split dissolved
-  // the 2-node projectTransform VALUE SCC, so the cumulative VALUE graph is
-  // now 3 SCCs / 16 nodes (geometry 7 + cogo-arc 5 + parcel-diagnostics 4).
-  // This 195.4 leaf still adds no runtime value cycle of its own — the full
-  // authorized delta is proved in
-  // tests/cad_project_transform_runtime_cycle_19511.test.ts.
-  it('adds no runtime value cycle (3 SCCs / 16 nodes after 195.11 dissolved the projectTransform pair)', () => {
+  // the 2-node projectTransform VALUE SCC, so the cumulative VALUE graph was
+  // 3 SCCs / 16 nodes (geometry 7 + cogo-arc 5 + parcel-diagnostics 4).
+  // STRUCT-195.12 roll-forward: the parcel-diagnostics cycle break dissolved
+  // the 4-node parcel VALUE SCC (helpers moved to cadCogoParcelLineworkTopology;
+  // Diagnostics imports the geometry leaves directly), so the cumulative VALUE
+  // graph is now 2 SCCs / 12 nodes (geometry 7 + cogo-arc 5). This 195.4 leaf
+  // still adds no runtime value cycle of its own — the 195.11 authorized delta
+  // is proved in tests/cad_project_transform_runtime_cycle_19511.test.ts and
+  // the 195.12 authorized delta in
+  // tests/cad_cogo_parcel_runtime_cycle_19512.test.ts.
+  it('adds no runtime value cycle (2 SCCs / 12 nodes after 195.12 dissolved the parcel-diagnostics quad)', () => {
     const cycles = findCycles(graph.nodes, graph.value);
-    expect(cycles.cyclic).toHaveLength(3);
-    expect(cycles.cyclicNodes.size).toBe(16);
+    expect(cycles.cyclic).toHaveLength(2);
+    expect(cycles.cyclicNodes.size).toBe(12);
   });
 });
 

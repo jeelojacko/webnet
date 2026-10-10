@@ -11,7 +11,7 @@ import type {
 import {
   buildParcelLineCandidate,
   buildParcelNodeMap,
-} from './cadCogoParcelDiagnostics';
+} from './cadCogoParcelLineworkTopology';
 import {
   compareParcelPoints,
   normalizeParcelSourceVertexLabels,
