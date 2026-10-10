@@ -1,16 +1,18 @@
 import { cadSegmentIntersection, type CadWorldPoint } from './cadGeometry';
 import type { CadEntityId, CadParcelEntity } from './cadTypes';
+import { cadBuildParcelClosureSummary } from './cadCogoParcelGeometrySummaries';
+import { cadBuildParcelOverlapAreaSquareMeters } from './cadCogoParcelGeometryOverlap';
 import {
-  cadBuildParcelClosureSummary,
-  cadBuildParcelOverlapAreaSquareMeters,
   cadPointInPolygon,
   normalizeParcelPolygonVertices,
   normalizeParcelVertexLabel,
-  type CadAreaUnitSummary,
-  type CadParcelClosureSummary,
   parcelPointKey,
   parcelPointsMatch,
-} from './cadCogoParcelGeometry';
+} from './cadCogoParcelGeometryPrimitives';
+import type {
+  CadAreaUnitSummary,
+  CadParcelClosureSummary,
+} from './cadCogoParcelGeometryTypes';
 import { cadClassifyParcelBoundaryPoint } from './cadParcelContainment';
 
 export * from './cadCogoParcelLineworkDiagnostics';

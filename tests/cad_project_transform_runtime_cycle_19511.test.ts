@@ -78,6 +78,50 @@ const REQUEST = 'src/engine/cad/cadProjectTransformRequest.ts';
 const RELOCATED_TRIO = new Set([FACADE, KERNEL, REQUEST]);
 const GRAPH_DIRS = ['src/engine/cad', 'src/engine/fieldToFinish'];
 
+// STRUCT-195.12 cumulative scope: the parcel-diagnostics cycle break adds one
+// node (cadCogoParcelLineworkTopology) and repoints value edges among the 5
+// parcel modules below. The 195.11 assertions keep proving the original
+// trio-relocation delta on the non-parcel remainder; the parcel remainder is
+// pinned separately against PARCEL_19512_REMOVED/PARCEL_19512_ADDED so neither
+// authorized change can hide behind the other.
+const PARCEL_DIAGNOSTICS = 'src/engine/cad/cadCogoParcelDiagnostics.ts';
+const PARCEL_GEOMETRY = 'src/engine/cad/cadCogoParcelGeometry.ts';
+const PARCEL_SOURCE_DRAFT = 'src/engine/cad/cadCogoParcelGeometrySourceDraft.ts';
+const PARCEL_LINEWORK = 'src/engine/cad/cadCogoParcelLineworkDiagnostics.ts';
+const PARCEL_TOPOLOGY = 'src/engine/cad/cadCogoParcelLineworkTopology.ts';
+const PARCEL_19512_SET = new Set([
+  PARCEL_DIAGNOSTICS,
+  PARCEL_GEOMETRY,
+  PARCEL_SOURCE_DRAFT,
+  PARCEL_LINEWORK,
+  PARCEL_TOPOLOGY,
+]);
+const parcelTouches = (key: string): boolean => {
+  const [, from, to] = key.split('|');
+  return PARCEL_19512_SET.has(from!) || PARCEL_19512_SET.has(to!);
+};
+/** Independently verified STRUCT-195.12 removal allowlist (4 edges). */
+const PARCEL_19512_REMOVED = [
+  `mixed|${PARCEL_DIAGNOSTICS}|${PARCEL_GEOMETRY}`,
+  `mixed|${PARCEL_LINEWORK}|src/engine/cad/cadGeometry.ts`,
+  `value|${PARCEL_SOURCE_DRAFT}|${PARCEL_DIAGNOSTICS}`,
+  `value|${PARCEL_LINEWORK}|${PARCEL_GEOMETRY}`,
+].sort();
+/** Independently verified STRUCT-195.12 addition allowlist (11 edges). */
+const PARCEL_19512_ADDED = [
+  `mixed|${PARCEL_LINEWORK}|${PARCEL_TOPOLOGY}`,
+  `type|${PARCEL_DIAGNOSTICS}|src/engine/cad/cadCogoParcelGeometryTypes.ts`,
+  `type|${PARCEL_TOPOLOGY}|src/engine/cad/cadGeometry.ts`,
+  `type|${PARCEL_TOPOLOGY}|src/engine/cad/cadTypes.ts`,
+  `value|${PARCEL_DIAGNOSTICS}|src/engine/cad/cadCogoParcelGeometryOverlap.ts`,
+  `value|${PARCEL_DIAGNOSTICS}|src/engine/cad/cadCogoParcelGeometryPrimitives.ts`,
+  `value|${PARCEL_DIAGNOSTICS}|src/engine/cad/cadCogoParcelGeometrySummaries.ts`,
+  `value|${PARCEL_SOURCE_DRAFT}|${PARCEL_TOPOLOGY}`,
+  `value|${PARCEL_LINEWORK}|${PARCEL_SOURCE_DRAFT}`,
+  `value|${PARCEL_LINEWORK}|src/engine/cad/cadGeometry.ts`,
+  `value|${PARCEL_TOPOLOGY}|src/engine/cad/cadCogoParcelGeometryPrimitives.ts`,
+].sort();
+
 /** 12 kernel dependency modules whose imports moved facade → core. */
 const KERNEL_DEPS = [
   'cadAdjustmentDependency',
@@ -333,12 +377,12 @@ describe('STRUCT-195.11 no project-transform SCC in VALUE or TYPE graphs', () =>
     expect(offenders, `project-transform TYPE SCC still present: ${offenders.flat().map(rel).join(', ')}`).toEqual([]);
   });
 
-  it('reports the expected SCC shape: VALUE 3 SCC / 16 nodes, TYPE 0', () => {
+  it('reports the expected SCC shape: VALUE 2 SCC / 12 nodes, TYPE 0 (195.12 dissolved the parcel quad)', () => {
     const graph = currentGraph();
     const valueCycles = findCycles(graph.nodes, graph.value);
     const typeCycles = findCycles(graph.nodes, graph.type);
-    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(3);
-    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(16);
+    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(2);
+    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(12);
     expect(valueCycles.largest.length, 'largest VALUE SCC').toBe(7);
     expect(typeCycles.cyclic.length, 'TYPE SCC count').toBe(0);
     expect(typeCycles.cyclicNodes.size, 'TYPE cyclic nodes').toBe(0);
@@ -433,19 +477,27 @@ describe('STRUCT-195.11 module boundary (static parse)', () => {
 // ===========================================================================
 // 5. Graph delta allowlist vs frozen fixture.
 // ===========================================================================
-describe('STRUCT-195.11 graph delta allowlist', () => {
-  it('touches only the relocated trio on every removed/added VALUE edge', () => {
+describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 parcel delta)', () => {
+  it('touches only the relocated trio or the authorized 195.12 parcel set on every removed/added VALUE edge', () => {
     const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
     const movedValue = [...removed, ...added].filter(isValueEdgeKey);
     expect(movedValue.length).toBeGreaterThan(0);
     for (const key of movedValue) {
       const [, from, to] = key.split('|');
-      expect(RELOCATED_TRIO.has(from!) || RELOCATED_TRIO.has(to!), `${key} escapes the trio`).toBe(true);
+      const trio = RELOCATED_TRIO.has(from!) || RELOCATED_TRIO.has(to!);
+      expect(trio || parcelTouches(key), `${key} escapes the trio and the parcel set`).toBe(true);
     }
   });
 
-  it('removes exactly the facade kernel imports and the request->facade edge', () => {
-    const removedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).removed.filter(isValueEdgeKey).sort();
+  it('carries exactly the authorized STRUCT-195.12 parcel delta (all kinds)', () => {
+    const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
+    expect(removed.filter(parcelTouches).sort()).toEqual(PARCEL_19512_REMOVED);
+    expect(added.filter(parcelTouches).sort()).toEqual(PARCEL_19512_ADDED);
+  });
+
+  it('removes exactly the facade kernel imports and the request->facade edge (non-parcel remainder)', () => {
+    const removedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).removed
+      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key)).sort();
     const expected = [
       ...KERNEL_DEPS.map((name) => `value|${FACADE}|${depPath(name)}`),
       `mixed|${FACADE}|${depPath('cadTransform2D')}`,
@@ -454,8 +506,9 @@ describe('STRUCT-195.11 graph delta allowlist', () => {
     expect(removedValue).toEqual(expected);
   });
 
-  it('adds exactly the core kernel imports, facade->core, and request->core edges', () => {
-    const addedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).added.filter(isValueEdgeKey).sort();
+  it('adds exactly the core kernel imports, facade->core, and request->core edges (non-parcel remainder)', () => {
+    const addedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).added
+      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key)).sort();
     const expected = [
       `value|${FACADE}|${KERNEL}`,
       ...KERNEL_DEPS.map((name) => `value|${KERNEL}|${depPath(name)}`),
@@ -477,13 +530,13 @@ describe('STRUCT-195.11 graph delta allowlist', () => {
     }
   });
 
-  it('adds exactly one node/edge and forms no new or expanded VALUE SCC', () => {
+  it('adds exactly two nodes/edges cumulatively and forms no new or expanded VALUE SCC', () => {
     const graph = currentGraph();
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 1);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 1);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8);
     const valueCycles = findCycles(graph.nodes, graph.value);
-    expect(valueCycles.cyclic.length).toBe(3);
-    expect(valueCycles.cyclicNodes.size).toBe(16);
+    expect(valueCycles.cyclic.length).toBe(2);
+    expect(valueCycles.cyclicNodes.size).toBe(12);
   });
 });
 
