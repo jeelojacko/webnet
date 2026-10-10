@@ -739,6 +739,7 @@ let fullSrcCache: ReturnType<typeof buildGraphs> | undefined;
 const fullSrcGraph = (): ReturnType<typeof buildGraphs> => (fullSrcCache ??= buildScopeGraph(['src']));
 
 describe('STRUCT-241.2 CAD+F2F graph pins', () => {
+  // First cold graph parse in this file; allow headroom under full-suite CI contention.
   it('keeps VALUE/TYPE acyclic and the VALUE|mixed digest identical', () => {
     const graph = cadF2fGraph();
     const valueCycles = findCycles(graph.nodes, graph.value);
@@ -755,7 +756,7 @@ describe('STRUCT-241.2 CAD+F2F graph pins', () => {
       uniqPairs: 1567,
       sha: '0bc9bae1f87e81161f250fd5852730e56b9bdd1311b02257cdecf39dd4d2fcb7',
     });
-  });
+  }, 30_000);
 
   it('adds exactly the two allow-listed TYPE edges incident to the block leaf', () => {
     const graph = cadF2fGraph();
