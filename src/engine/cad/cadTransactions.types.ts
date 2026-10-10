@@ -43,6 +43,12 @@ import type { CadGradingGroupCommandPayload } from './cadTransactionsGradingGrou
 // leaves; the hub splices both unions in the original position.
 import type { CadLayerCommandPayload } from './cadTransactionsLayerCommandTypes';
 import type { CadSurveyCommandPayload } from './cadTransactionsSurveyCommandTypes';
+// STRUCT-241.2: block prelude (2) + definition (7) payload slices are
+// type-only leaves; the hub splices both unions at their disjoint positions.
+import type {
+  CadBlockDefinitionCommandPayload,
+  CadBlockPreludeCommandPayload,
+} from './cadTransactionsBlockCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -773,19 +779,7 @@ export type CadCommand =
       definitionId: string;
       values: Record<string, string>;
     }
-  | {
-      key: 'BLOCK_SEED';
-    }
-  | {
-      key: 'BLOCK_EDIT';
-      referenceId: CadEntityId;
-      x?: number;
-      y?: number;
-      rotationDeg?: number;
-      scaleX?: number;
-      scaleY?: number;
-      mirrored?: boolean;
-    }
+  | CadBlockPreludeCommandPayload
   | CadLayerCommandPayload
   | {
       key: 'F2F_GENERATE';
@@ -817,49 +811,7 @@ export type CadCommand =
       surfaces: Array<{ name: string; payload: ImportedTinPayload }>;
     }
   | CadSectionViewDeleteCommand
-  | {
-      key: 'BLOCK_CREATE';
-      name: string;
-      sourceEntityIds: CadEntityId[];
-      basePoint?: { x: number; y: number };
-      description?: string;
-    }
-  | {
-      key: 'BLOCK_INSERT';
-      definitionId: string;
-      x: number;
-      y: number;
-      rotationDeg?: number;
-      scaleX?: number;
-      scaleY?: number;
-      mirrored?: boolean;
-      layerId?: CadLayerId;
-    }
-  | {
-      key: 'BLOCK_EXPLODE';
-      referenceId: CadEntityId;
-    }
-  | {
-      key: 'BLOCK_REDEFINE';
-      definitionId: string;
-      sourceEntityIds: CadEntityId[];
-    }
-  | {
-      key: 'BLOCK_RENAME';
-      definitionId: string;
-      name: string;
-    }
-  | {
-      key: 'BLOCK_DUPLICATE';
-      definitionId: string;
-      name: string;
-    }
-  | {
-      key: 'BLOCK_DELETE';
-      definitionId: string;
-      force?: boolean;
-      deleteRefs?: boolean;
-    }
+  | CadBlockDefinitionCommandPayload
   | {
       key: 'CREATE_MTEXT';
       x: number;

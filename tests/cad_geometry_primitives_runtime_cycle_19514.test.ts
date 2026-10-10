@@ -119,8 +119,14 @@ const EXPECTED_VALUE_PAIRS_SHA256 =
 // with four type edges; the golden VALUE fingerprint above is untouched.
 const STRUCT_2411_ADDED_NODES = 2;
 const STRUCT_2411_ADDED_EDGES = 4;
-const EXPECTED_NODE_COUNT = 483 + STRUCT_2411_ADDED_NODES;
-const EXPECTED_EDGE_COUNT = 2400 + STRUCT_2411_ADDED_EDGES;
+// STRUCT-241.2 adds exactly one type-only leaf node
+// (cadTransactionsBlockCommandTypes.ts) with two type edges
+// (hub -> leaf + leaf -> primitive types); the golden VALUE fingerprint
+// above is untouched.
+const STRUCT_2412_ADDED_NODES = 1;
+const STRUCT_2412_ADDED_EDGES = 2;
+const EXPECTED_NODE_COUNT = 483 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES;
+const EXPECTED_EDGE_COUNT = 2400 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES;
 
 /** Independently measured STRUCT-195.14 removal allowlist (6 edges, all kinds). */
 const EXPECTED_REMOVED = [

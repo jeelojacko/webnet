@@ -53,7 +53,7 @@ authoritative.)
 
 ## 5. Tests (parent-run)
 
-- New `tests/cad_survey_layer_command_type_leaves_2411.test.ts`: **37/37**.
+- New `tests/cad_survey_layer_command_type_leaves_2411.test.ts`: **40/40** (final after two review corrections; was 37/37 at initial landing).
   Pins: 14 layer keys + 16 survey (key,table,op) discriminants in order;
   `Extract<CadCommand>` equivalence for all 30 (table/op narrowing for
   repeats; key-alone 5-member unions for point/label/group tables);

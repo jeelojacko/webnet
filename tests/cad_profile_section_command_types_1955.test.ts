@@ -749,18 +749,21 @@ describe('STRUCT-195.5 independent baseline pins: section payloads', () => {
 
 describe('STRUCT-195.5 literal hub CadCommand union order', () => {
   it('orders profile -> section -> LANDXML -> delete -> block with no gaps', () => {
+    // STRUCT-241.2 roll-forward: the 7 later block members moved verbatim into
+    // CadBlockDefinitionCommandPayload; the hub splices that ref where
+    // BLOCK_CREATE used to sit inline. Order otherwise unchanged.
     const members = hubMemberOrder();
     const profileAt = members.indexOf('CadProfileCommandPayload');
     const sectionAt = members.indexOf('CadSectionCommandPayload');
     const landxmlAt = members.indexOf('LANDXML_IMPORT');
     const deleteAt = members.indexOf('CadSectionViewDeleteCommand');
-    const blockAt = members.indexOf('BLOCK_CREATE');
+    const blockAt = members.indexOf('CadBlockDefinitionCommandPayload');
     for (const [name, at] of [
       ['CadProfileCommandPayload', profileAt],
       ['CadSectionCommandPayload', sectionAt],
       ['LANDXML_IMPORT', landxmlAt],
       ['CadSectionViewDeleteCommand', deleteAt],
-      ['BLOCK_CREATE', blockAt],
+      ['CadBlockDefinitionCommandPayload', blockAt],
     ] as const) {
       expect(at, name).toBeGreaterThanOrEqual(0);
     }
