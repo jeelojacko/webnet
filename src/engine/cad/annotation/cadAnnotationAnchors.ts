@@ -15,62 +15,26 @@
  */
 import { cadArcEndPoint, cadArcStartPoint } from '../cadGeometryArcPrimitives';
 import type { CadProjectLookup } from '../cadProjectLookup';
-import type { CadEntity, CadEntityId, CadProject } from '../cadTypes';
+import type { CadEntity, CadProject } from '../cadTypes';
+import type {
+  CadAnnotationAnchor,
+  CadAnnotationAnchorPoint,
+  CadAnnotationAnchorRef,
+  CadAnnotationAnchorResolution,
+  CadAnnotationFixedAnchor,
+} from './cadAnnotationAnchorTypes';
 
-export interface CadAnnotationFixedAnchor {
-  kind: 'fixed';
-  x: number;
-  y: number;
-}
-
-export interface CadAnnotationSurveyPointAnchor {
-  kind: 'survey-point';
-  entityId: CadEntityId;
-  fallbackX: number;
-  fallbackY: number;
-}
-
-export interface CadAnnotationLineEndpointAnchor {
-  kind: 'line-endpoint';
-  entityId: CadEntityId;
-  endpoint: 'start' | 'end';
-  fallbackX: number;
-  fallbackY: number;
-}
-
-export interface CadAnnotationArcPointAnchor {
-  kind: 'arc-point';
-  entityId: CadEntityId;
-  point: 'center' | 'start' | 'end';
-  fallbackX: number;
-  fallbackY: number;
-}
-
-export interface CadAnnotationBlockInsertionAnchor {
-  kind: 'block-insertion';
-  entityId: CadEntityId;
-  fallbackX: number;
-  fallbackY: number;
-}
-
-/** Any entity-bound (non-fixed) annotation anchor. */
-export type CadAnnotationAnchorRef =
-  | CadAnnotationSurveyPointAnchor
-  | CadAnnotationLineEndpointAnchor
-  | CadAnnotationArcPointAnchor
-  | CadAnnotationBlockInsertionAnchor;
-
-/** Annotation point binding: a frozen point or an associative entity reference. */
-export type CadAnnotationAnchor = CadAnnotationFixedAnchor | CadAnnotationAnchorRef;
-
-export interface CadAnnotationAnchorPoint {
-  x: number;
-  y: number;
-}
-
-export type CadAnnotationAnchorResolution =
-  | { ok: true; x: number; y: number }
-  | { ok: false; fallbackX: number; fallbackY: number; reason: 'BROKEN_REFERENCE' };
+export type {
+  CadAnnotationAnchor,
+  CadAnnotationAnchorPoint,
+  CadAnnotationAnchorRef,
+  CadAnnotationAnchorResolution,
+  CadAnnotationArcPointAnchor,
+  CadAnnotationBlockInsertionAnchor,
+  CadAnnotationFixedAnchor,
+  CadAnnotationLineEndpointAnchor,
+  CadAnnotationSurveyPointAnchor,
+} from './cadAnnotationAnchorTypes';
 
 /** Fallback point persisted alongside every anchor (the raw point for `fixed`). */
 export function anchorFallbackPoint(anchor: CadAnnotationAnchor): CadAnnotationAnchorPoint {
