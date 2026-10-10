@@ -18,7 +18,7 @@ import { evaluatePointGroupMembership } from './cadPointGroups';
 import { dedupeTinPoints } from './tin/tinDedupe';
 import { pointInRing } from './tin/tinPredicates';
 import { validateRingRelations } from './tin/tinBoundaries';
-import type { CadSurfaceReasonCode, CadSurfaceSourcePoint } from './cadSurfaces';
+import type { CadSurfaceReasonCode, CadSurfaceSourcePoint } from './cadSurfaceSourceTypes';
 
 export interface CollectedSources {
   brokenRefs: string[];

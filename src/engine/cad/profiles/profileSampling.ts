@@ -15,7 +15,7 @@ import type {
   ProfileExtractionMesh,
   ProfileSample,
   ProfileSampleEventKind,
-} from './profileExtraction';
+} from './profileSampleTypes';
 
 /**
  * Phase 18J alignment walkers (engine only, pure).

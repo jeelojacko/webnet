@@ -1,5 +1,5 @@
+import type { CadSurfaceReasonCode, CadSurfaceSourcePoint } from './cadSurfaceSourceTypes';
 import type {
-  CadEntityId,
   CadProject,
   CadSurface,
   CadSurfaceDefinition,
@@ -18,6 +18,7 @@ import { computeSurfaceFaceStats } from './surfaceAnalysis';
 export { computeCadSurfaceSourceRevision } from './cadSurfaceRevision';
 export { buildSurfaceGrid, getSurfaceElevationAt } from './cadSurfaceInterpolation';
 export type { CollectedSources } from './cadSurfaceRevision';
+export type { CadSurfaceReasonCode, CadSurfaceSourcePoint } from './cadSurfaceSourceTypes';
 
 /**
  * Phase 18F TIN surface model — ENGINE ONLY (no UI, no persistence, no worker).
@@ -38,26 +39,6 @@ export type { CollectedSources } from './cadSurfaceRevision';
  *   recovery (see docs/evidence/phase18f-triangulation-decision.md and
  *   src/engine/cad/tin/).
  */
-
-export type CadSurfaceReasonCode =
-  | 'SURFACE_TOO_FEW_POINTS'
-  | 'SURFACE_COLLINEAR_POINTS'
-  | 'SURFACE_POINT_MISSING_Z'
-  | 'SURFACE_DUPLICATE_XY_CONFLICT'
-  | 'SURFACE_BREAKLINE_INVALID'
-  | 'SURFACE_BREAKLINE_MISSING_Z'
-  | 'SURFACE_BREAKLINES_INTERSECT_WITHOUT_VERTEX'
-  | 'SURFACE_BOUNDARY_INVALID'
-  | 'SURFACE_VOID_INVALID'
-  | 'SURFACE_REFERENCE_MISSING'
-  | 'SURFACE_TRIANGULATION_FAILED';
-
-export interface CadSurfaceSourcePoint {
-  entityId: CadEntityId;
-  x: number;
-  y: number;
-  z: number;
-}
 
 export interface CadSurfaceBuildStats {
   resolvedPointCount: number;

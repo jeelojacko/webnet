@@ -1,9 +1,10 @@
 import { alignmentElementLength, getAlignmentElements } from '../cadAlignmentElements';
 import { cadAlignmentRawStationToDisplayStation } from '../cadAlignmentStationing';
 import { endSegment, pointOnElement, walkArc, walkLine, type Walker } from './profileSampling';
-import type { CadSurfaceGrid } from '../cadSurfaces';
 import type { CadAlignmentElement, CadStationEquation } from '../cadTypes';
-import type { TinAdjacency, TinEdgeKinds } from '../tin/tinTypes';
+import type { ProfileExtractionMesh, ProfileSample } from './profileSampleTypes';
+
+export type { ProfileExtractionMesh, ProfileSample, ProfileSampleEventKind } from './profileSampleTypes';
 
 /**
  * Phase 18J surface-profile extraction (engine only, pure + deterministic).
@@ -24,26 +25,6 @@ const PLANE_AGREEMENT_EPS = 1e-9;
 const RAW_EPS_REL = 1e-9;
 const MAX_ARC_DEPTH = 12;
 
-export type ProfileSampleEventKind =
-  | 'edge-crossing'
-  | 'vertex'
-  | 'boundary-entry'
-  | 'boundary-exit'
-  | 'void-entry'
-  | 'void-exit'
-  | 'plane-break';
-
-export interface ProfileSample {
-  rawChainage: number;
-  displayStation: number | null;
-  x: number;
-  y: number;
-  elevation: number;
-  alignmentElementIndex?: number;
-  surfaceTriangleIndex?: number;
-  eventKind?: ProfileSampleEventKind;
-}
-
 export interface ProfileSegment {
   samples: ProfileSample[];
 }
@@ -59,14 +40,6 @@ export interface CadSurfaceProfileResult {
   coveredLength: number;
   gapLength: number;
   diagnostics: string[];
-}
-
-export interface ProfileExtractionMesh {
-  points: Array<{ x: number; y: number; z: number }>;
-  triangles: Array<[number, number, number]>;
-  grid: CadSurfaceGrid;
-  adjacency?: TinAdjacency[];
-  edgeKinds?: TinEdgeKinds[];
 }
 
 export interface ExtractSurfaceProfileInput {
