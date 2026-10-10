@@ -63,6 +63,11 @@ after two review corrections); no other historical evidence modified.
 - Independent final reviewer: `openai-codex/gpt-6-sol` (per active routing
   policy) on the full exact integrated diff — PENDING at time of writing;
   substantive findings will be fixed in this context with rerun + re-review.
+- Post-merge closeout: reviewer returned APPROVE; final head
+  728dac306c88944b9f76a6c28c256ef67c66926f; GitHub Actions run 38072487530
+  all five jobs SUCCESS on first attempt; merged as PR #244 at
+  fa71437e82b87907016f20968c48308964c6c698. Numerical/graph evidence above
+  is unchanged by the merge.
 - Commit + push branch `refactor/issue2412-block-command-type-leaf`; create ONE
   PR "STRUCT-241.2: extract CAD Block command payload family" against exact
   verified main with final SHA, graph/test evidence, reviewer, risk, honest CI

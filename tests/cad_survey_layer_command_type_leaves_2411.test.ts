@@ -1553,14 +1553,17 @@ describe('STRUCT-241.1 no leaf back-edge to the transaction hub', () => {
   });
 
   it('keeps the CAD scope value/type graphs acyclic', () => {
-    const scoped = buildGraphs(files.map((file) => ({ path: file, source: fs.readFileSync(file, 'utf8') })));
-    const valueCycles = findCycles(scoped.nodes, scoped.value);
-    const typeCycles = findCycles(scoped.nodes, scoped.type);
+    // Reuses the describe-scoped `graph`: identical input snapshot (same
+    // `files` array, same on-disk sources — no test mutates disk) through
+    // the same pure `buildGraphs`, so the result is equivalent to rebuilding
+    // without paying a second cold parse under full-suite CI load.
+    const valueCycles = findCycles(graph.nodes, graph.value);
+    const typeCycles = findCycles(graph.nodes, graph.type);
     expect(valueCycles.cyclic.length).toBe(0);
     expect(valueCycles.cyclicNodes.size).toBe(0);
     expect(typeCycles.cyclic.length).toBe(0);
     expect(typeCycles.cyclicNodes.size).toBe(0);
-  });
+  }, 30_000);
 });
 
 describe('STRUCT-241.1 negative controls (in-memory mutations only)', () => {
