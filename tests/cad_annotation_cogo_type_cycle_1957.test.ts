@@ -1020,7 +1020,13 @@ describe('STRUCT-195.7 cycle-break graph guard (parent hub splice)', () => {
   });
 
   it('repoints the hub type imports to the two leaves', () => {
-    expect(kindsBetween(workGraph, HUB, LEAF_ANCHORS)).toContain('type');
+    // STRUCT-241.5 roll-forward: the hub's last direct anchor-leaf uses
+    // (CadLeaderEntity/CadDimensionEntity) moved into the new annotation
+    // type leaf, so the hub no longer references the anchor leaf directly.
+    // The reference chain is now hub -> annotation leaf -> anchor leaf
+    // (both type-only); the hub -> cogo leaf edge is unchanged.
+    expect(kindsBetween(workGraph, HUB, LEAF_ANCHORS)).toEqual([]);
+    expect(kindsBetween(workGraph, HUB, 'src/engine/cad/cadAnnotationEntityStyleTypes.ts')).toContain('type');
     expect(kindsBetween(workGraph, HUB, LEAF_COGO)).toContain('type');
     expect(kindsBetween(workGraph, HUB, OLD_ANCHORS)).toEqual([]);
     expect(kindsBetween(workGraph, HUB, OLD_COGO)).toEqual([]);

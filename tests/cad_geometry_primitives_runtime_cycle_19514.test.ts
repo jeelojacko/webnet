@@ -138,8 +138,16 @@ const STRUCT_2413_ADDED_EDGES = 6;
 // VALUE fingerprint above is untouched.
 const STRUCT_2414_ADDED_NODES = 1;
 const STRUCT_2414_ADDED_EDGES = 4;
-const EXPECTED_NODE_COUNT = 483 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES;
-const EXPECTED_EDGE_COUNT = 2400 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES;
+// STRUCT-241.5 adds exactly two type-only leaf nodes
+// (cadAnnotationEntityStyleTypes.ts + cadSurveyTableEntityTypes.ts) with
+// eight scoped type edges (annotation 3 out + hub import-type + hub
+// export-type, survey 2 out + hub import-type + hub export-type, minus the
+// retired hub -> anchor import-type edge); the golden VALUE fingerprint
+// above is untouched.
+const STRUCT_2415_ADDED_NODES = 2;
+const STRUCT_2415_ADDED_EDGES = 8;
+const EXPECTED_NODE_COUNT = 483 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES;
+const EXPECTED_EDGE_COUNT = 2400 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES;
 
 /** Independently measured STRUCT-195.14 removal allowlist (6 edges, all kinds). */
 const EXPECTED_REMOVED = [

@@ -409,11 +409,13 @@ describe('STRUCT-241.3 hub facade re-exports', () => {
     expect(typeImports).toContain('./cadSurveyPresentationTypes');
   });
 
-  it('shrinks the hub to the measured line count (1923 -> 1780 lines; 241.4 -> 1694 lines)', () => {
+  it('shrinks the hub to the measured line count (1923 -> 1780 lines; 241.4 -> 1694 lines; 241.5 -> 1549 lines)', () => {
     // STRUCT-241.4 roll-forward: extracting the 8 primitive/geometry entity
     // contracts drops the hub from 1781 split-lines to 1695 split-lines
-    // (1694 wc lines + trailing newline).
-    expect(fs.readFileSync(HUB, 'utf8').split('\n').length).toBe(1695);
+    // (1694 wc lines + trailing newline). STRUCT-241.5 roll-forward:
+    // extracting the 12 annotation + 7 survey-table contracts (plus the
+    // retired hub -> anchor import) drops the hub to 1550 split-lines.
+    expect(fs.readFileSync(HUB, 'utf8').split('\n').length).toBe(1550);
   });
 });
 
@@ -600,9 +602,12 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     // (hub import-type + hub export-type per leaf, plus one leaf-to-core edge
     // per leaf; each statement is one graph edge). STRUCT-241.4 adds +1 node
     // / +4 type edges (hub import-type + hub export-type + two owner-leaf
-    // edges from the new primitive/geometry leaf).
-    expect(graph.nodes.length).toBe(489);
-    expect(graph.edges.length).toBe(2416);
+    // edges from the new primitive/geometry leaf). STRUCT-241.5 adds +2 nodes
+    // / +8 type edges (documented roll-forward: annotation 3 out + hub import
+    // + hub export, survey 2 out + hub import + hub export, minus the retired
+    // hub -> anchor import-type edge).
+    expect(graph.nodes.length).toBe(491);
+    expect(graph.edges.length).toBe(2424);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -610,7 +615,7 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     });
   }, 30_000);
 
-  it('adds exactly the ten allow-listed TYPE edges incident to the leaves (6 + 4 for 241.4)', () => {
+  it('adds exactly the twelve allow-listed TYPE edges incident to the leaves (6 + 4 for 241.4 + 2 for 241.5)', () => {
     const graph = cadF2fGraph();
     const foundation = path.resolve(FOUNDATION_LEAF);
     const survey = path.resolve(SURVEY_LEAF);
@@ -626,9 +631,16 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     const hubToSurvey = { from: path.resolve(HUB), to: survey, specifier: './cadSurveyPresentationTypes', kind: 'type' };
     // STRUCT-241.4 roll-forward: the new primitive/geometry leaf imports its
     // foundation dependency, so the hub->foundation pair gains one sibling.
+    // STRUCT-241.5 roll-forward: the annotation + survey-table leaves import
+    // the same foundation leaf, adding two further siblings (alphabetical
+    // by source path: annotation, primitive/geometry, survey-table, hub).
+    const annotationToFoundation = { from: path.resolve(path.join(CAD_DIR, 'cadAnnotationEntityStyleTypes.ts')), to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
+    const surveyTableToFoundation = { from: path.resolve(path.join(CAD_DIR, 'cadSurveyTableEntityTypes.ts')), to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
     const primitiveGeometryToFoundation = { from: primitiveGeometry, to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
     expect(graph.edges.filter((edge) => edge.to === foundation)).toEqual([
+      annotationToFoundation,
       primitiveGeometryToFoundation,
+      surveyTableToFoundation,
       hubToFoundation,
       hubToFoundation,
     ]);
@@ -683,8 +695,9 @@ describe('STRUCT-241.3 full-src graph pins', () => {
     // Post-241.2 baseline 1658 / 7516; type-only extraction adds +2 nodes / +6 edges.
     // STRUCT-241.4 adds +1 node / +5 edges (hub import + hub export +
     // foundation + display + src/types; documented roll-forward).
-    expect(graph.nodes.length).toBe(1661);
-    expect(graph.edges.length).toBe(7527);
+    // STRUCT-241.5 adds +2 nodes / +8 edges (documented roll-forward).
+    expect(graph.nodes.length).toBe(1663);
+    expect(graph.edges.length).toBe(7535);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

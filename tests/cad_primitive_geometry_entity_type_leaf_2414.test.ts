@@ -568,8 +568,11 @@ describe('STRUCT-241.4 CAD+F2F graph pins', () => {
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
     // 241.3 baseline 488 / 2412; the type-only 241.4 leaf adds +1 node and
     // four type edges (hub import + hub export + two owner-leaf edges).
-    expect(graph.nodes.length).toBe(489);
-    expect(graph.edges.length).toBe(2416);
+    // STRUCT-241.5 adds +2 nodes / +8 type edges (documented roll-forward:
+    // annotation 3 out + hub import + hub export, survey 2 out + hub import
+    // + hub export, minus the retired hub -> anchor import-type edge).
+    expect(graph.nodes.length).toBe(491);
+    expect(graph.edges.length).toBe(2424);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -620,8 +623,9 @@ describe('STRUCT-241.4 full-src graph pins', () => {
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // 241.3 baseline 1660 / 7522; the 241.4 leaf adds +1 node and five type
     // edges (hub import + hub export + foundation + display + src/types).
-    expect(graph.nodes.length).toBe(1661);
-    expect(graph.edges.length).toBe(7527);
+    // STRUCT-241.5 adds +2 nodes / +8 type edges (documented roll-forward).
+    expect(graph.nodes.length).toBe(1663);
+    expect(graph.edges.length).toBe(7535);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
