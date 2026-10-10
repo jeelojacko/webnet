@@ -129,6 +129,12 @@ describe('STRUCT-195.2 CAD primitive leaves sever the agreed type edges', () => 
     ).toBe(false);
   });
 
+  it('keeps the blocks slice type-acyclic (STRUCT-195.15 audit pin)', () => {
+    // Cheap reuse of the already-built GRAPH_DIRS graph (cad + fieldToFinish
+    // + cad-app/blocks): no TYPE SCC anywhere in this scope at HEAD.
+    expect(findCycles(graph.nodes, graph.type).cyclic).toEqual([]);
+  });
+
   it('resolves historical snapshot edges purely from the supplied in-memory set', () => {
     // Regression pin: snapshot entries (e.g. from `git show <ref>:<path>`)
     // may reference files since removed from the working tree, so none of
