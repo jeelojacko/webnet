@@ -14,6 +14,7 @@ import {
 import { buildCadCurveReverseOrCompound } from '../../engine/cad/cadCurvesReverseCompound';
 import type { CadArcEntity, CadCircleEntity, CadLineEntity, CadProject } from '../../engine/cad/cadTypes';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
+import type { CadCurveF1ExtentMode } from './useSurveyCadCurveF1ExtentTypes';
 
 export const CURVE_F1_SESSION_KEYS = [
   'CURVE_BETWEEN_TWO_LINES',
@@ -26,8 +27,7 @@ export const CURVE_F1_SESSION_KEYS = [
 
 export type CurveF1SessionKey = (typeof CURVE_F1_SESSION_KEYS)[number];
 
-/** Extent metric modes (radius excluded: the radius is carried separately). */
-export type CadCurveF1ExtentMode = Exclude<CadCurveMetricMode, 'radius'>;
+export type { CadCurveF1ExtentMode } from './useSurveyCadCurveF1ExtentTypes';
 
 export type CurveF1Session = Extract<CommandSession, { key: CurveF1SessionKey }>;
 
