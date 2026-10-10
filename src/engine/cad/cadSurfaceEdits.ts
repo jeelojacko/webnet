@@ -1,4 +1,5 @@
 import type { CadSurfaceEdit } from './cadTypes';
+import type { CadSurfaceEditReason } from './cadSurfaceEditReasonTypes';
 import { TIN_EDGE_FREE, type TinAdjacency, type TinEdgeKindCode, type TinEdgeKinds } from './tin/tinTypes';
 import { buildTinTopology, tinEdgeKey } from './tin/tinTopology';
 import { applyAddLine } from './cadSurfaceEditAddLine';
@@ -49,24 +50,7 @@ export type CadSurfaceEditStatus =
   | 'not-applicable'
   | 'blocked-constraint';
 
-export type CadSurfaceEditReason =
-  | 'SURFACE_EDIT_VERTEX_MISSING'
-  | 'SURFACE_EDIT_EDGE_MISSING'
-  | 'SURFACE_EDIT_NOT_APPLICABLE'
-  | 'SURFACE_EDIT_BLOCKED_CONSTRAINT'
-  | 'SURFACE_EDIT_SYNTHETIC_VERTEX'
-  | 'SURFACE_EDIT_INTERMEDIATE_VERTEX'
-  | 'SURFACE_EDIT_POINT_OUTSIDE_DOMAIN'
-  | 'SURFACE_EDIT_POINT_ON_BOUNDARY'
-  | 'SURFACE_EDIT_POINT_ALREADY_EXISTS'
-  | 'SURFACE_EDIT_DELETE_POINT_CONSTRAINED'
-  | 'SURFACE_EDIT_DELETE_POINT_BOUNDARY'
-  | 'SURFACE_EDIT_DELETE_POINT_CAVITY_INVALID'
-  | 'SURFACE_EDIT_MOVE_POINT_CONSTRAINED'
-  | 'SURFACE_EDIT_MOVE_POINT_BOUNDARY'
-  | 'SURFACE_EDIT_MOVE_POINT_INVALID_STAR'
-  | 'SURFACE_EDIT_MOVE_POINT_INTERSECTION'
-  | 'SURFACE_EDIT_ELEVATION_INVALID';
+export type { CadSurfaceEditReason } from './cadSurfaceEditReasonTypes';
 
 export interface CadSurfaceEditBaseline {
   /** Owning surface id (scopes `edit:<surfaceId>:<editId>` keys; absent = legacy stacks without point edits). */

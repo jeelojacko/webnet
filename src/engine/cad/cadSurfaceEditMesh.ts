@@ -1,7 +1,7 @@
 import { orient2d } from 'robust-predicates';
 import { TIN_EDGE_FREE, type TinEdgeKindCode } from './tin/tinTypes';
 import { tinEdgeKey } from './tin/tinTopology';
-import type { CadSurfaceEditReason } from './cadSurfaceEdits';
+import type { CadSurfaceEditReason } from './cadSurfaceEditReasonTypes';
 
 /**
  * Phase 18S edit-mesh kernel (ENGINE ONLY). Mutable triangle table +
