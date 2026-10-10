@@ -5,9 +5,9 @@
  * command payload variants (SAMPLE_GROUP_CREATE through SECTION_VIEW_UPDATE)
  * extracted verbatim (key literals, field names, optionality, ordering, and
  * comments unchanged) from the `CadCommand` union in
- * `cadTransactions.types.ts`, so the transaction hub can depend on this leaf
- * WITHOUT the command-family cycle that previously tied the section payloads
- * into the transaction SCC.
+ * `cadTransactions.types.ts`. This shrinks the hub without changing the
+ * command contract; these inline members were not a separate dependency
+ * cycle, so no SCC reduction is claimed.
  *
  * `SECTION_VIEW_DELETE` is exported separately as `CadSectionViewDeleteCommand`
  * because it sits AFTER the inline `LANDXML_IMPORT` variant in the hub union;
