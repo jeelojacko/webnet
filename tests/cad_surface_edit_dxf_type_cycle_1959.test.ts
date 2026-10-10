@@ -26,7 +26,9 @@
  *  - leaf purity: both leaves contain ZERO import statements and no
  *    runtime value exports (AST scan);
  *  - graph guard: both exact 2-node TYPE components dissolve into
- *    singletons (TYPE 5 SCC/10 nodes -> 3 SCC/6 nodes), and the VALUE edge
+ *    singletons (TYPE 5 SCC/10 nodes -> 3 SCC/6 nodes after 195.9; the
+ *    cumulative TYPE graph then fell to 1 SCC/2 nodes in 195.10, leaving
+ *    only the untouched projectTransform pair), and the VALUE edge
  *    membership is byte-identical vs baseline (pinned fingerprint, not
  *    just equal counts).
  *
@@ -443,13 +445,13 @@ describe('STRUCT-195.9 cycle-break graph guard', () => {
     }
   });
 
-  it('the TYPE graph drops from 5 SCC / 10 nodes to 3 SCC / 6 nodes', () => {
+  it('the cumulative TYPE graph is now 1 SCC / 2 nodes (195.9 landed at 3 SCC / 6 nodes, 195.10 reduced it to 1 / 2)', () => {
     const components = tarjanSCC(workGraph.nodes, workGraph.type);
     const cyclic = components.filter((component) => component.length > 1);
     const cyclicNodes = cyclic.reduce((sum, component) => sum + component.length, 0);
     expect(
-      `type SCCs ${cyclic.length} (want 3), cyclic nodes ${cyclicNodes} (want 6)`,
-    ).toBe('type SCCs 3 (want 3), cyclic nodes 6 (want 6)');
+      `type SCCs ${cyclic.length} (want 1), cyclic nodes ${cyclicNodes} (want 2)`,
+    ).toBe('type SCCs 1 (want 1), cyclic nodes 2 (want 2)');
   });
 
   it('each leaf has no edges of any kind back to its hub or consumer', () => {
