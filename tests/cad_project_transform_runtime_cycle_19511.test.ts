@@ -78,6 +78,10 @@ const REQUEST = 'src/engine/cad/cadProjectTransformRequest.ts';
 const RELOCATED_TRIO = new Set([FACADE, KERNEL, REQUEST]);
 const GRAPH_DIRS = ['src/engine/cad', 'src/engine/fieldToFinish'];
 
+// STRUCT-241.1 measured delta (type-only leaves, no VALUE/MIXED change).
+const STRUCT_2411_ADDED_NODES = 2;
+const STRUCT_2411_ADDED_EDGES = 4;
+
 // STRUCT-195.12 cumulative scope: the parcel-diagnostics cycle break adds one
 // node (cadCogoParcelLineworkTopology) and repoints value edges among the 5
 // parcel modules below. The 195.11 assertions keep proving the original
@@ -607,8 +611,12 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
 
   it('adds exactly three nodes and eight edges cumulatively (195.13 and 195.14 are total-net-zero) and forms no new/expanded VALUE SCC', () => {
     const graph = currentGraph();
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8);
+    // STRUCT-241.1 adds exactly two type-only leaf nodes
+    // (cadTransactionsLayerCommandTypes.ts +
+    // cadTransactionsSurveyCommandTypes.ts) with four type edges, all
+    // outside the transform slice; VALUE SCC expectations below are untouched.
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES);
     // STRUCT-195.13 is a net-zero value-edge repoint and STRUCT-195.14 is a
     // net-zero total-edge relocation (-6/+6), so the cumulative edge count
     // is unchanged from the 195.12 measurement; nodes gain exactly the

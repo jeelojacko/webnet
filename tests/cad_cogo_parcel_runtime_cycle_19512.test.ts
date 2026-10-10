@@ -92,6 +92,10 @@ const P = (name: string): string => `src/engine/cad/${name}`;
 const BASELINE_NODE_COUNT = 481;
 const BASELINE_EDGE_COUNT = 2393;
 
+// STRUCT-241.1 measured delta (type-only leaves, no VALUE/MIXED change).
+const STRUCT_2411_ADDED_NODES = 2;
+const STRUCT_2411_ADDED_EDGES = 4;
+
 /** Every baseline edge incident to one of the 5 parcel modules (41 edges). */
 const BASELINE_PARCEL_EDGES: readonly BaselineEdge[] = [
   [P('cadCogoParcelDiagnostics.ts'), P('cadCogoParcelGeometry.ts'), 'mixed'],
@@ -434,10 +438,14 @@ describe('STRUCT-195.12 parcel graph guard', () => {
   it('adds exactly two nodes (topology + primitives modules) and seven edges overall', () => {
     const graph = currentGraph();
     // STRUCT-195.14 adds exactly one node (cadGeometryPrimitives.ts) with a
-    // net-zero total edge delta; 195.13 was already net-zero. The frozen
-    // 41-edge parcel slice and its allowlists above are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7);
+    // net-zero total edge delta; 195.13 was already net-zero. STRUCT-241.1
+    // adds exactly two type-only leaf nodes
+    // (cadTransactionsLayerCommandTypes.ts +
+    // cadTransactionsSurveyCommandTypes.ts) with four type edges, all
+    // outside the parcel slice. The frozen 41-edge parcel slice and its
+    // allowlists above are untouched.
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES);
     expect(graph.nodes).toContain(abs(TOPOLOGY));
   });
 });
