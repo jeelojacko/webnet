@@ -21,7 +21,10 @@
  *     scripts/cadTypeImportGraph.mjs: exactly one REMOVED value edge
  *     cadParcelArcGeometry->cadCogoMath and one ADDED
  *     cadParcelArcGeometry->cadCogoSummaries, VALUE nontrivial SCCs
- *     2/12 -> 1/7, the 5 arc/polyline modules singletons, TYPE 0. The
+ *     2/12 -> 1/7, the 5 arc/polyline modules singletons, TYPE 0. (A later
+ *     STRUCT-195.14 downstream roll-forward dissolved the remaining geometry
+ *     septet too: current graph is VALUE 0/0. The 195.13 repoint proved below
+ *     is byte-identical; only the global SCC tally moved 1/7 -> 0/0.) The
  *     negative control rebuilds the graph with the import reverted in
  *     memory and recreates the exact historical 5-node SCC;
  *  5. fixed hand-checked numeric oracles for the arc/polyline/intersection
@@ -87,17 +90,6 @@ const HISTORICAL_ARC_SCC = [
   PARCEL_ARC,
   'src/engine/cad/cadPolylineCourses.ts',
   'src/engine/cad/cadPolylineGeometry.ts',
-] as const;
-
-/** The surviving 7-node cadGeometry VALUE SCC (untouched by this refactor). */
-const CAD_GEOMETRY_SCC = [
-  'src/engine/cad/cadGeometry.ts',
-  'src/engine/cad/cadGeometryArcBuilders.ts',
-  'src/engine/cad/cadGeometryArcPrimitives.ts',
-  'src/engine/cad/cadGeometryCurveCore.ts',
-  'src/engine/cad/cadGeometryCurveIntersections.ts',
-  'src/engine/cad/cadGeometryCurves.ts',
-  'src/engine/cad/cadGeometryTangentCurve.ts',
 ] as const;
 
 const EXPECTED_SUMMARIES_RUNTIME_EXPORTS = [
@@ -301,21 +293,31 @@ const multisetDelta = (
 describe('STRUCT-195.13 cogo/arc graph guard', () => {
   // First cold graph build parses the whole CAD + Field-to-Finish scope; warm
   // BOTH the current and reverted graphs here so only this case pays the cost.
-  it('breaks the arc SCC to VALUE 1/7 (baseline 2/12), TYPE 0', () => {
+  it('breaks the arc SCC to VALUE 0/0 (195.14 downstream; this-refactor baseline 2/12), TYPE 0', () => {
     const graph = currentGraph();
     const baseline = revertedGraph();
 
+    // STRUCT-195.14 downstream roll-forward: the primitive-core split
+    // dissolved the geometry septet that survived this refactor, so the
+    // current graph is VALUE 0 SCC / 0 nodes. The 195.13 repoint below is
+    // byte-identical; only this global tally moved 1/7 -> 0/0.
     const valueCycles = findCycles(graph.nodes, graph.value);
-    expect(valueCycles.cyclic.length, 'current VALUE SCC count').toBe(1);
-    expect(valueCycles.cyclicNodes.size, 'current VALUE cyclic nodes').toBe(7);
-    expect(valueCycles.largest).toEqual([...CAD_GEOMETRY_SCC.map(abs)].sort());
+    expect(valueCycles.cyclic.length, 'current VALUE SCC count').toBe(0);
+    expect(valueCycles.cyclicNodes.size, 'current VALUE cyclic nodes').toBe(0);
+    expect(tarjanSCC(graph.nodes, graph.value).filter((c) => c.length > 1)).toEqual([]);
     const typeCycles = findCycles(graph.nodes, graph.type);
     expect(typeCycles.cyclic.length, 'TYPE SCC count').toBe(0);
     expect(typeCycles.cyclicNodes.size, 'TYPE cyclic nodes').toBe(0);
 
+    // Reverted baseline: only the parcel-arc specifier is restored in
+    // memory, so the 195.14 geometry split stays in BOTH graphs — the revert
+    // recreates just the historical 5-node arc SCC (1 SCC / 5 nodes), not
+    // the pre-195.14 2/12 shape. The full 7-node geometry restoration is
+    // proved in tests/cad_geometry_primitives_runtime_cycle_19514.test.ts.
     const baselineValue = findCycles(baseline.nodes, baseline.value);
-    expect(baselineValue.cyclic.length, 'baseline VALUE SCC count').toBe(2);
-    expect(baselineValue.cyclicNodes.size, 'baseline VALUE cyclic nodes').toBe(12);
+    expect(baselineValue.cyclic.length, 'baseline VALUE SCC count').toBe(1);
+    expect(baselineValue.cyclicNodes.size, 'baseline VALUE cyclic nodes').toBe(5);
+    expect(baselineValue.largest).toEqual([...HISTORICAL_ARC_SCC.map(abs)].sort());
     expect(findCycles(baseline.nodes, baseline.type).cyclic.length, 'baseline TYPE SCC').toBe(0);
   }, 30_000);
 
@@ -350,9 +352,10 @@ describe('STRUCT-195.13 cogo/arc graph guard', () => {
   it('negative control: reverting the import recreates the exact 5-node SCC', () => {
     const baseline = revertedGraph();
     const valueCycles = findCycles(baseline.nodes, baseline.value);
-    // Fails the post-refactor 1/7 assertion by construction.
-    expect(valueCycles.cyclic.length).not.toBe(1);
-    expect(valueCycles.cyclicNodes.size).not.toBe(7);
+    // Fails the post-refactor 0/0 assertion by construction: the revert
+    // restores the 5-node arc SCC on top of the still-split geometry core.
+    expect(valueCycles.cyclic.length).not.toBe(0);
+    expect(valueCycles.cyclicNodes.size).not.toBe(0);
     const five = valueCycles.cyclic.find((component) => component.length === 5);
     expect(five, 'historical 5-node arc SCC missing').toBeDefined();
     expect(five).toEqual([...HISTORICAL_ARC_SCC.map(abs)].sort());

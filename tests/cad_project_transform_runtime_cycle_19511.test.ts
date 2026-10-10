@@ -143,6 +143,48 @@ const ARC_19513_REMOVED = [`value|${ARC_GEOMETRY}|${ARC_COGO_MATH}`].sort();
 /** Independently verified STRUCT-195.13 addition allowlist (1 edge). */
 const ARC_19513_ADDED = [`value|${ARC_GEOMETRY}|${ARC_COGO_SUMMARIES}`].sort();
 
+// STRUCT-195.14 cumulative scope: the final geometry cycle break (new
+// dependency-light src/engine/cad/cadGeometryPrimitives.ts owning the 5
+// interfaces + 15 primitive runtime functions verbatim; cadGeometry.ts
+// thinned to a 3-line public facade; the five arc/curve implementation
+// leaves repoint their './cadGeometry' specifiers to
+// './cadGeometryPrimitives' with bodies byte-identical; the unused TYPE
+// facade->cadTypes edge (CadArcEntity) drops). Exactly 6 edges removed and
+// 6 added, every one incident to the 8 geometry modules below. This is an
+// INDEPENDENT authorization (proved in
+// tests/cad_geometry_primitives_runtime_cycle_19514.test.ts) so the
+// geometry change cannot hide behind the trio, parcel, or arc change sets.
+const GEO_FACADE = 'src/engine/cad/cadGeometry.ts';
+const GEO_PRIMITIVES = 'src/engine/cad/cadGeometryPrimitives.ts';
+const GEO_LEAVES = [
+  'src/engine/cad/cadGeometryArcBuilders.ts',
+  'src/engine/cad/cadGeometryArcPrimitives.ts',
+  'src/engine/cad/cadGeometryCurveCore.ts',
+  'src/engine/cad/cadGeometryCurveIntersections.ts',
+  'src/engine/cad/cadGeometryTangentCurve.ts',
+];
+const GEO_19514_SOURCES = new Set([GEO_FACADE, ...GEO_LEAVES]);
+// Scoped to the authorized relocation pairs only: an edge incident to the
+// facade path is NOT automatically geometry-authorized (the 195.11 trio
+// moved value|projectTransform|cadGeometry -> value|core|cadGeometry, and
+// 195.12 repointed parcel linework edges touching cadGeometry.ts — both
+// stay in their own remainders).
+const geoTouches = (key: string): boolean => {
+  if (key === `type|${GEO_FACADE}|src/engine/cad/cadTypes.ts`) return true;
+  const [, from, to] = key.split('|');
+  return GEO_19514_SOURCES.has(from!) && (to === GEO_FACADE || to === GEO_PRIMITIVES);
+};
+/** Independently verified STRUCT-195.14 removal allowlist (6 edges, all kinds). */
+const GEO_19514_REMOVED = [
+  ...GEO_LEAVES.map((leaf) => `mixed|${leaf}|${GEO_FACADE}`),
+  `type|${GEO_FACADE}|src/engine/cad/cadTypes.ts`,
+].sort();
+/** Independently verified STRUCT-195.14 addition allowlist (6 edges, all kinds). */
+const GEO_19514_ADDED = [
+  ...GEO_LEAVES.map((leaf) => `mixed|${leaf}|${GEO_PRIMITIVES}`),
+  `value|${GEO_FACADE}|${GEO_PRIMITIVES}`,
+].sort();
+
 /** 12 kernel dependency modules whose imports moved facade → core. */
 const KERNEL_DEPS = [
   'cadAdjustmentDependency',
@@ -398,13 +440,13 @@ describe('STRUCT-195.11 no project-transform SCC in VALUE or TYPE graphs', () =>
     expect(offenders, `project-transform TYPE SCC still present: ${offenders.flat().map(rel).join(', ')}`).toEqual([]);
   });
 
-  it('reports the expected SCC shape: VALUE 1 SCC / 7 nodes, TYPE 0 (195.12 parcel quad + 195.13 cogo-arc quintet dissolved)', () => {
+  it('reports the expected SCC shape: VALUE 0 SCC / 0 nodes, TYPE 0 (parcel quad + cogo-arc quintet + geometry septet all dissolved)', () => {
     const graph = currentGraph();
     const valueCycles = findCycles(graph.nodes, graph.value);
     const typeCycles = findCycles(graph.nodes, graph.type);
-    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(1);
-    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(7);
-    expect(valueCycles.largest.length, 'largest VALUE SCC').toBe(7);
+    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(0);
+    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(0);
+    expect(valueCycles.largest.length, 'largest VALUE SCC').toBe(0);
     expect(typeCycles.cyclic.length, 'TYPE SCC count').toBe(0);
     expect(typeCycles.cyclicNodes.size, 'TYPE cyclic nodes').toBe(0);
   });
@@ -498,15 +540,15 @@ describe('STRUCT-195.11 module boundary (static parse)', () => {
 // ===========================================================================
 // 5. Graph delta allowlist vs frozen fixture.
 // ===========================================================================
-describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 parcel and STRUCT-195.13 arc-cogo deltas)', () => {
-  it('touches only the relocated trio or the authorized 195.12/195.13 sets on every removed/added VALUE edge', () => {
+describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 parcel, STRUCT-195.13 arc-cogo, and STRUCT-195.14 geometry deltas)', () => {
+  it('touches only the relocated trio or the authorized 195.12/195.13/195.14 sets on every removed/added VALUE edge', () => {
     const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
     const movedValue = [...removed, ...added].filter(isValueEdgeKey);
     expect(movedValue.length).toBeGreaterThan(0);
     for (const key of movedValue) {
       const [, from, to] = key.split('|');
       const trio = RELOCATED_TRIO.has(from!) || RELOCATED_TRIO.has(to!);
-      expect(trio || parcelTouches(key) || arcTouches(key), `${key} escapes the trio, parcel, and arc authorizations`).toBe(true);
+      expect(trio || parcelTouches(key) || arcTouches(key) || geoTouches(key), `${key} escapes the trio, parcel, arc, and geometry authorizations`).toBe(true);
     }
   });
 
@@ -522,9 +564,15 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     expect(added.filter(arcTouches).sort()).toEqual(ARC_19513_ADDED);
   });
 
-  it('removes exactly the facade kernel imports and the request->facade edge (non-parcel, non-arc remainder)', () => {
+  it('carries exactly the authorized STRUCT-195.14 geometry delta (all kinds)', () => {
+    const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
+    expect(removed.filter(geoTouches).sort()).toEqual(GEO_19514_REMOVED);
+    expect(added.filter(geoTouches).sort()).toEqual(GEO_19514_ADDED);
+  });
+
+  it('removes exactly the facade kernel imports and the request->facade edge (non-parcel, non-arc, non-geometry remainder)', () => {
     const removedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).removed
-      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key)).sort();
+      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key) && !geoTouches(key)).sort();
     const expected = [
       ...KERNEL_DEPS.map((name) => `value|${FACADE}|${depPath(name)}`),
       `mixed|${FACADE}|${depPath('cadTransform2D')}`,
@@ -533,9 +581,9 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     expect(removedValue).toEqual(expected);
   });
 
-  it('adds exactly the core kernel imports, facade->core, and request->core edges (non-parcel, non-arc remainder)', () => {
+  it('adds exactly the core kernel imports, facade->core, and request->core edges (non-parcel, non-arc, non-geometry remainder)', () => {
     const addedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).added
-      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key)).sort();
+      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key) && !geoTouches(key)).sort();
     const expected = [
       `value|${FACADE}|${KERNEL}`,
       ...KERNEL_DEPS.map((name) => `value|${KERNEL}|${depPath(name)}`),
@@ -557,16 +605,18 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     }
   });
 
-  it('adds exactly two nodes and eight edges cumulatively (195.13 is net-zero) and forms no new/expanded VALUE SCC', () => {
+  it('adds exactly three nodes and eight edges cumulatively (195.13 and 195.14 are total-net-zero) and forms no new/expanded VALUE SCC', () => {
     const graph = currentGraph();
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3);
     expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8);
-    // STRUCT-195.13 is a net-zero value-edge repoint, so the cumulative node
-    // and edge counts are unchanged from the 195.12 measurement; only the SCC
-    // shape moves 2/12 -> 1/7.
+    // STRUCT-195.13 is a net-zero value-edge repoint and STRUCT-195.14 is a
+    // net-zero total-edge relocation (-6/+6), so the cumulative edge count
+    // is unchanged from the 195.12 measurement; nodes gain exactly the
+    // 195.14 primitives module. The SCC shape moves 1/7 -> 0/0 as the last
+    // geometry cycle dissolves.
     const valueCycles = findCycles(graph.nodes, graph.value);
-    expect(valueCycles.cyclic.length).toBe(1);
-    expect(valueCycles.cyclicNodes.size).toBe(7);
+    expect(valueCycles.cyclic.length).toBe(0);
+    expect(valueCycles.cyclicNodes.size).toBe(0);
   });
 });
 

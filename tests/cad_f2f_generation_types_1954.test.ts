@@ -307,10 +307,18 @@ describe('STRUCT-195.4 F2F type-edge severance (AST graph)', () => {
   // nodes. Node/edge/pair totals are unchanged (482/2400/1584/1566); the
   // independent 195.13 authorization and exact removed+added edge are proved
   // in tests/cad_project_transform_runtime_cycle_19511.test.ts.
-  it('adds no runtime value cycle (1 SCC / 7 nodes after 195.13 dissolved the cogo-arc quintet)', () => {
+  //
+  // STRUCT-195.14 roll-forward (FOURTH authorized runtime value-graph
+  // change): the primitive-core split (new cadGeometryPrimitives.ts; facade
+  // thinned; five leaves repointed) dissolves the last 7-node geometry VALUE
+  // SCC — the cumulative VALUE graph is now 0 SCC / 0 nodes (TYPE stays 0).
+  // Nodes 482->483, total edges unchanged (2400), value|mixed 1584->1585,
+  // pairs 1566->1567; the 195.14 authorization and exact 6+6 edge allowlist
+  // are proved in tests/cad_geometry_primitives_runtime_cycle_19514.test.ts.
+  it('adds no runtime value cycle (0 SCC / 0 nodes after 195.14 dissolved the geometry septet)', () => {
     const cycles = findCycles(graph.nodes, graph.value);
-    expect(cycles.cyclic).toHaveLength(1);
-    expect(cycles.cyclicNodes.size).toBe(7);
+    expect(cycles.cyclic).toHaveLength(0);
+    expect(cycles.cyclicNodes.size).toBe(0);
   });
 });
 

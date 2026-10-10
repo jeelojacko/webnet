@@ -5,7 +5,7 @@ import {
   cadNormalizeAngleDeg,
   type CadArcDefinition,
   type CadWorldPoint,
-} from './cadGeometry';
+} from './cadGeometryPrimitives';
 import { cadArcEndPoint, cadArcEndTangentAzimuthDeg } from './cadGeometryArcPrimitives';
 import {
   cadBuildArcFromCenterSweep,

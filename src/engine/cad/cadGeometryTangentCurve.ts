@@ -2,7 +2,7 @@ import {
   cadAngleDegFromCenter,
   type CadArcDefinition,
   type CadWorldPoint,
-} from './cadGeometry';
+} from './cadGeometryPrimitives';
 import {
   cadBuildArcFromCenterSweep,
   cadCounterClockwiseDeltaDeg,
