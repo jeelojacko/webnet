@@ -14,7 +14,7 @@
  */
 import type { CadGradingResult } from './grading/gradingTypes';
 import type { ExportWarning } from './exportResult';
-import type { ExportItem } from './cadExportScene';
+import type { ExportItem } from './cadExportItemTypes';
 
 /** Minimum definition identity an exporter needs (structural). */
 export interface GradingExportIdentity {

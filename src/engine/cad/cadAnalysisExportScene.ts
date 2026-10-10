@@ -23,7 +23,7 @@
  */
 import type { CadAnalysisBand, CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus } from './cadAnalysisTypes';
 import type { ExportWarning } from './exportResult';
-import type { ExportItem } from './cadExportScene';
+import type { ExportItem } from './cadExportItemTypes';
 
 export const ANALYSIS_SHEET_DISPOSITION = 'FULL' as const;
 export const ANALYSIS_DXF_FILL_DISPOSITION = 'APPROXIMATED_WITH_WARNING' as const;
