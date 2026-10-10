@@ -76,6 +76,9 @@ const HUB = path.join(CAD_DIR, 'cadTypes.ts');
 const FOUNDATION_LEAF = path.join(CAD_DIR, 'cadEntityFoundationTypes.ts');
 const SURVEY_LEAF = path.join(CAD_DIR, 'cadSurveyPresentationTypes.ts');
 const PRIMITIVE_LEAF = path.join(CAD_DIR, 'cadCorePrimitiveTypes.ts');
+// STRUCT-241.4 roll-forward: the primitive/geometry entity leaf whose four
+// scoped TYPE edges join the allowlist below.
+const PRIMITIVE_GEOMETRY_LEAF = path.join(CAD_DIR, 'cadPrimitiveGeometryEntityTypes.ts');
 
 const FOUNDATION_8 = [
   'CadEntityAppearance',
@@ -406,8 +409,11 @@ describe('STRUCT-241.3 hub facade re-exports', () => {
     expect(typeImports).toContain('./cadSurveyPresentationTypes');
   });
 
-  it('shrinks the hub to the measured line count (1923 -> 1780 lines)', () => {
-    expect(fs.readFileSync(HUB, 'utf8').split('\n').length).toBe(1781);
+  it('shrinks the hub to the measured line count (1923 -> 1780 lines; 241.4 -> 1694 lines)', () => {
+    // STRUCT-241.4 roll-forward: extracting the 8 primitive/geometry entity
+    // contracts drops the hub from 1781 split-lines to 1695 split-lines
+    // (1694 wc lines + trailing newline).
+    expect(fs.readFileSync(HUB, 'utf8').split('\n').length).toBe(1695);
   });
 });
 
@@ -507,7 +513,11 @@ describe('STRUCT-241.3 unaffected hub signatures', () => {
   it('keeps the entity union, project, surface, and runtime surface surface', () => {
     const hubSource = fs.readFileSync(HUB, 'utf8');
     for (const name of [
-      'export interface CadLineEntity extends CadBaseEntity',
+      // STRUCT-241.4 roll-forward: CadLineEntity now lives in
+      // cadPrimitiveGeometryEntityTypes.ts; the hub carries it via the
+      // grouped `import type` + `export type` re-export, not a local
+      // declaration (pinned by tests/cad_primitive_geometry_entity_type_leaf_2414.test.ts).
+      "} from './cadPrimitiveGeometryEntityTypes';",
       'export type CadEntity =',
       'export interface CadProject {',
       'export interface CadSurface',
@@ -588,9 +598,11 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
     // Post-241.2 baseline 486 / 2406; two leaves add +2 nodes / +6 type edges
     // (hub import-type + hub export-type per leaf, plus one leaf-to-core edge
-    // per leaf; each statement is one graph edge).
-    expect(graph.nodes.length).toBe(488);
-    expect(graph.edges.length).toBe(2412);
+    // per leaf; each statement is one graph edge). STRUCT-241.4 adds +1 node
+    // / +4 type edges (hub import-type + hub export-type + two owner-leaf
+    // edges from the new primitive/geometry leaf).
+    expect(graph.nodes.length).toBe(489);
+    expect(graph.edges.length).toBe(2416);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -598,10 +610,11 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     });
   }, 30_000);
 
-  it('adds exactly the six allow-listed TYPE edges incident to the new leaves', () => {
+  it('adds exactly the ten allow-listed TYPE edges incident to the leaves (6 + 4 for 241.4)', () => {
     const graph = cadF2fGraph();
     const foundation = path.resolve(FOUNDATION_LEAF);
     const survey = path.resolve(SURVEY_LEAF);
+    const primitiveGeometry = path.resolve(PRIMITIVE_GEOMETRY_LEAF);
     expect(graph.edges.filter((edge) => edge.from === foundation)).toEqual([
       { from: foundation, to: path.resolve(PRIMITIVE_LEAF), specifier: './cadCorePrimitiveTypes', kind: 'type' },
     ]);
@@ -611,8 +624,28 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     // One `import type` edge plus one `export type ... from` edge per leaf.
     const hubToFoundation = { from: path.resolve(HUB), to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
     const hubToSurvey = { from: path.resolve(HUB), to: survey, specifier: './cadSurveyPresentationTypes', kind: 'type' };
-    expect(graph.edges.filter((edge) => edge.to === foundation)).toEqual([hubToFoundation, hubToFoundation]);
+    // STRUCT-241.4 roll-forward: the new primitive/geometry leaf imports its
+    // foundation dependency, so the hub->foundation pair gains one sibling.
+    const primitiveGeometryToFoundation = { from: primitiveGeometry, to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
+    expect(graph.edges.filter((edge) => edge.to === foundation)).toEqual([
+      primitiveGeometryToFoundation,
+      hubToFoundation,
+      hubToFoundation,
+    ]);
     expect(graph.edges.filter((edge) => edge.to === survey)).toEqual([hubToSurvey, hubToSurvey]);
+    // STRUCT-241.4 roll-forward: the four new TYPE edges are the two
+    // hub<->leaf statements plus the two owner-leaf imports (foundation +
+    // display; the `../../types` station-id edge sits outside CAD+F2F).
+    const hubToPrimitiveGeometry = { from: path.resolve(HUB), to: primitiveGeometry, specifier: './cadPrimitiveGeometryEntityTypes', kind: 'type' };
+    expect(graph.edges.filter((edge) => edge.from === primitiveGeometry)).toEqual([
+      { from: primitiveGeometry, to: path.resolve(path.join(CAD_DIR, 'cadDisplayTypes.ts')), specifier: './cadDisplayTypes', kind: 'type' },
+      primitiveGeometryToFoundation,
+    ]);
+    expect(graph.edges.filter((edge) => edge.to === primitiveGeometry)).toEqual([
+      hubToPrimitiveGeometry,
+      hubToPrimitiveGeometry,
+    ]);
+    expect(graph.nodes.filter((node) => node === primitiveGeometry)).toHaveLength(1);
     expect(graph.nodes.filter((node) => node === foundation || node === survey)).toHaveLength(2);
     expect(graph.edges.filter(
       (edge) => (edge.from === foundation || edge.to === foundation || edge.from === survey || edge.to === survey)
@@ -648,8 +681,10 @@ describe('STRUCT-241.3 full-src graph pins', () => {
     expect(typeCycles.cyclic.length).toBe(7);
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // Post-241.2 baseline 1658 / 7516; type-only extraction adds +2 nodes / +6 edges.
-    expect(graph.nodes.length).toBe(1660);
-    expect(graph.edges.length).toBe(7522);
+    // STRUCT-241.4 adds +1 node / +5 edges (hub import + hub export +
+    // foundation + display + src/types; documented roll-forward).
+    expect(graph.nodes.length).toBe(1661);
+    expect(graph.edges.length).toBe(7527);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
