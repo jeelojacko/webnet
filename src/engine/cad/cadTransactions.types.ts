@@ -29,6 +29,13 @@ import type {
 // type-only leaves so the hub stays free of their command-family cycle.
 import type { CadSurfaceCommandPayload } from './cadTransactionsSurfaceCommandTypes';
 import type { CadVolumeCommandPayload } from './cadTransactionsVolumeCommandTypes';
+// STRUCT-195.5: profile and sample-line/section payload slices are type-only
+// leaves; LANDXML_IMPORT stays inline to preserve union order.
+import type { CadProfileCommandPayload } from './cadTransactionsProfileCommandTypes';
+import type {
+  CadSectionCommandPayload,
+  CadSectionViewDeleteCommand,
+} from './cadTransactionsSectionCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -50,10 +57,8 @@ import type {
   CadPolylineSegmentGeometry,
   CadPolylineSegmentWidth,
   CadProject,
-  CadSectionStyle,
   CadStationEquation,
   CadSurfacePurpose,
-  CadProfileStyle,
   CadTextStyleId,
   ImportedTinPayload,
 } from './cadTypes';
@@ -69,30 +74,7 @@ import type {
   ParcelCheckCommand,
   ParcelScheduleCommand,
 } from './cadTransactionsParcelCommandTypes';
-import type { CadProfileStylePatch } from './cadProfileTypes';
-import type {
-  CadSampleLinePatch,
-  CadSectionStylePatch,
-  CadSectionViewPatch,
-} from './cadSectionTypes';
-
-/**
- * Phase 18J display-only view patch. Only presentation fields (scale,
- * datum, grid intervals, style, name) — never profileIds/alignment, so
- * applying it cannot alter any profile extraction revision.
- */
-export interface CadProfileViewUpdatePatch {
-  horizontalScale?: number;
-  verticalExaggeration?: number;
-  datumMode?: 'auto' | 'explicit';
-  datumElevation?: number;
-  datumStep?: number;
-  majorStationInterval?: number;
-  minorStationInterval?: number;
-  elevationGridInterval?: number;
-  styleId?: string | null;
-  name?: string;
-}
+export type { CadProfileViewUpdatePatch } from './cadTransactionsProfileCommandTypes';
 
 export type CadCommandKey =
   | 'SELECT_ALL'
@@ -994,201 +976,8 @@ export type CadCommand =
     }
   | CadSurfaceCommandPayload
   | CadVolumeCommandPayload
-  | {
-      key: 'PROFILE_CREATE';
-      name?: string;
-      /** Accepted for forward compatibility; profiles carry no layer binding (ignored). */
-      layerId?: CadLayerId;
-      styleId?: string;
-      alignmentEntityId: string;
-      surfaceId: string;
-      description?: string;
-    }
-  | {
-      key: 'PROFILE_REBUILD';
-      profileId: string;
-      name?: string;
-      /** Undefined = leave, null = clear, id = set (must exist). */
-      styleId?: string | null;
-      alignmentEntityId?: string;
-      surfaceId?: string;
-      /** Undefined = leave, null = clear, text = set. */
-      description?: string | null;
-    }
-  | {
-      key: 'PROFILE_DELETE';
-      profileId: string;
-    }
-  | {
-      key: 'PROFILE_VIEW_CREATE';
-      name?: string;
-      alignmentEntityId: string;
-      profileIds?: string[];
-      insertionX?: number;
-      insertionY?: number;
-      width?: number;
-      height?: number;
-      horizontalScale?: number;
-      verticalExaggeration?: number;
-      datumElevation?: number;
-      datumMode?: 'auto' | 'explicit';
-      datumStep?: number;
-      majorStationInterval?: number;
-      minorStationInterval?: number;
-      elevationGridInterval?: number;
-      styleId?: string;
-    }
-  | {
-      key: 'PROFILE_VIEW_UPDATE';
-      viewId: string;
-      patch: CadProfileViewUpdatePatch;
-    }
-  | {
-      key: 'PROFILE_VIEW_DELETE';
-      viewId: string;
-    }
-  | {
-      key: 'PROFILE_STYLE_CREATE';
-      style: CadProfileStyle;
-    }
-  | {
-      key: 'PROFILE_STYLE_DUPLICATE';
-      styleId: string;
-      newId: string;
-      name: string;
-    }
-  | {
-      key: 'PROFILE_STYLE_RENAME';
-      styleId: string;
-      name: string;
-    }
-  | {
-      key: 'PROFILE_STYLE_UPDATE';
-      styleId: string;
-      patch: CadProfileStylePatch;
-    }
-  | {
-      key: 'PROFILE_STYLE_DELETE';
-      styleId: string;
-      /** Required when profiles or views reference the style; refs rewire to it. */
-      replacementId?: string;
-    }
-  | {
-      key: 'SAMPLE_GROUP_CREATE';
-      name?: string;
-      alignmentEntityId: string;
-      layerId?: CadLayerId;
-    }
-  | {
-      key: 'SAMPLE_GROUP_RENAME';
-      groupId: string;
-      name: string;
-    }
-  | {
-      key: 'SAMPLE_GROUP_DELETE';
-      groupId: string;
-    }
-  | {
-      key: 'SAMPLE_LINE_ADD';
-      groupId: string;
-      /** Raw chainage; ignored when stationText is supplied. */
-      rawStation?: number;
-      /** Display station text (`1+234.500`) parsed then mapped to raw. */
-      stationText?: string;
-      leftWidth: number;
-      rightWidth: number;
-      skewDeg?: number;
-      manualName?: string;
-    }
-  | {
-      key: 'SAMPLE_LINE_ADD_INTERVAL';
-      groupId: string;
-      rawStart: number;
-      rawEnd: number;
-      interval: number;
-      leftWidth: number;
-      rightWidth: number;
-      skewDeg?: number;
-    }
-  | {
-      key: 'SAMPLE_LINE_UPDATE';
-      groupId: string;
-      lineId: string;
-      patch: CadSampleLinePatch;
-    }
-  | {
-      key: 'SAMPLE_LINE_DELETE';
-      groupId: string;
-      lineId: string;
-    }
-  | {
-      key: 'SECTION_SOURCE_ADD';
-      groupId: string;
-      surfaceId: string;
-      sectionStyleId?: string;
-    }
-  | {
-      key: 'SECTION_SOURCE_REMOVE';
-      groupId: string;
-      surfaceId: string;
-    }
-  | {
-      key: 'SECTION_SOURCE_SET_STYLE';
-      groupId: string;
-      surfaceId: string;
-      /** Undefined is rejected; null clears. */
-      sectionStyleId: string | null;
-    }
-  | {
-      key: 'SECTION_AREA_COMPARISON';
-      groupId: string;
-      /** Both present = set pair; otherwise clear. */
-      baseSurfaceId?: string;
-      comparisonSurfaceId?: string;
-    }
-  | {
-      key: 'SECTION_STYLE_CREATE';
-      style: CadSectionStyle;
-    }
-  | {
-      key: 'SECTION_STYLE_RENAME';
-      styleId: string;
-      name: string;
-    }
-  | {
-      key: 'SECTION_STYLE_UPDATE';
-      styleId: string;
-      patch: CadSectionStylePatch;
-    }
-  | {
-      key: 'SECTION_STYLE_DELETE';
-      styleId: string;
-      /** Required when groups or views reference the style; refs rewire to it. */
-      replacementId?: string;
-    }
-  | {
-      key: 'SECTION_VIEW_CREATE';
-      sampleLineGroupId: string;
-      sampleLineId: string;
-      name?: string;
-      sourceSurfaceIds?: string[];
-      insertionX?: number;
-      insertionY?: number;
-      horizontalScale?: number;
-      verticalExaggeration?: number;
-      datumMode?: 'auto' | 'explicit';
-      datumElevation?: number;
-      offsetGridInterval?: number;
-      elevationGridInterval?: number;
-      showCutFill?: boolean;
-      styleId?: string;
-      layerId?: CadLayerId;
-    }
-  | {
-      key: 'SECTION_VIEW_UPDATE';
-      viewId: string;
-      patch: CadSectionViewPatch;
-    }
+  | CadProfileCommandPayload
+  | CadSectionCommandPayload
   | {
       key: 'LANDXML_IMPORT';
       fileName: string;
@@ -1209,10 +998,7 @@ export type CadCommand =
       }>;
       surfaces: Array<{ name: string; payload: ImportedTinPayload }>;
     }
-  | {
-      key: 'SECTION_VIEW_DELETE';
-      viewId: string;
-    }
+  | CadSectionViewDeleteCommand
   | {
       key: 'BLOCK_CREATE';
       name: string;
