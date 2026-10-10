@@ -7,7 +7,7 @@ import {
   cadSignedSweepDeg,
   type CadArcDefinition,
   type CadWorldPoint,
-} from './cadGeometry';
+} from './cadGeometryPrimitives';
 import { cadCounterClockwiseDeltaDeg } from './cadGeometryCurveCore';
 
 export const cadArcStartPoint = (

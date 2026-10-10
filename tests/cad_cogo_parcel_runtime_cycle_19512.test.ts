@@ -14,11 +14,11 @@
  *  - graph guard (rebuilt in-process via scripts/cadTypeImportGraph.mjs over
  *    src/engine/cad + src/engine/fieldToFinish): the topology helper is a
  *    non-cyclic singleton in BOTH the VALUE and TYPE graphs, the old 4-node
- *    parcel SCC is gone, and the current graph is VALUE 1 SCC / 7 nodes
- *    (TYPE 0). The sole remaining VALUE SCC is the untouched 7-node geometry
- *    group: the 195.12 parcel quad and the separate 195.13 arc-cogo quintet
- *    are both dissolved. This file's frozen 41-edge parcel slice and its
- *    parcel-local allowlists are unaffected by 195.13.
+ *    parcel SCC is gone, and the current graph is VALUE 0 SCC / 0 nodes
+ *    (TYPE 0). The 195.12 parcel quad, the separate 195.13 arc-cogo quintet,
+ *    and the 195.14 geometry septet are all dissolved. This file's frozen
+ *    41-edge parcel slice and its parcel-local allowlists are unaffected by
+ *    195.13 and 195.14.
  *  - authorized edge-delta allowlist vs the frozen baseline slice in THIS
  *    file: every removed/added edge touches only the 5 parcel modules;
  *  - negative controls (facade still export-stars Diagnostics/SourceDraft, no
@@ -368,7 +368,7 @@ describe('STRUCT-195.12 parcel graph guard', () => {
   // The first graph read parses the entire CAD/Field-to-Finish scope. CI's
   // parallel full-suite load can exceed Vitest's 5s default; do not weaken
   // the SCC assertion just to shrink the timeout.
-  it('reports the expected post-refactor SCC shape (VALUE 1 SCC / 7 nodes, TYPE 0)', () => {
+  it('reports the expected post-refactor SCC shape (VALUE 0 SCC / 0 nodes, TYPE 0)', () => {
     // STRUCT-195.13 downstream roll-forward (2026-10-10): a separate,
     // independently authorized change in cadParcelArcGeometry.ts (repointing
     // buildCadInverseSummary/formatCadBearing from './cadCogoMath' to
@@ -379,11 +379,18 @@ describe('STRUCT-195.12 parcel graph guard', () => {
     // global VALUE SCC tally moves 2 SCC / 12 nodes -> 1 SCC / 7 nodes (the
     // 7-node geometry group); the authorization is proved independently in
     // tests/cad_project_transform_runtime_cycle_19511.test.ts.
+    // STRUCT-195.14 downstream roll-forward: a separate, independently
+    // authorized change (new cadGeometryPrimitives.ts core; facade thinned;
+    // five leaves repointed) dissolved the last 7-node geometry SCC. The
+    // 195.12 parcel work pinned below is still byte-identical; only this
+    // global VALUE SCC tally moves 1 SCC / 7 nodes -> 0 SCC / 0 nodes; the
+    // authorization is proved independently in
+    // tests/cad_geometry_primitives_runtime_cycle_19514.test.ts.
     const graph = currentGraph();
     const valueCycles = findCycles(graph.nodes, graph.value);
     const typeCycles = findCycles(graph.nodes, graph.type);
-    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(1);
-    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(7);
+    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(0);
+    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(0);
     expect(typeCycles.cyclic.length, 'TYPE SCC count').toBe(0);
     expect(typeCycles.cyclicNodes.size, 'TYPE cyclic nodes').toBe(0);
   }, 30_000);
@@ -424,9 +431,12 @@ describe('STRUCT-195.12 parcel graph guard', () => {
     }
   });
 
-  it('adds exactly one node (the topology module) and seven edges overall', () => {
+  it('adds exactly two nodes (topology + primitives modules) and seven edges overall', () => {
     const graph = currentGraph();
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 1);
+    // STRUCT-195.14 adds exactly one node (cadGeometryPrimitives.ts) with a
+    // net-zero total edge delta; 195.13 was already net-zero. The frozen
+    // 41-edge parcel slice and its allowlists above are untouched.
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2);
     expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7);
     expect(graph.nodes).toContain(abs(TOPOLOGY));
   });

@@ -193,11 +193,29 @@ import type {
  * tests/cad_project_transform_runtime_cycle_19511.test.ts. This guard keeps
  * all 195.7 payload/type/purity/singleton assertions intact and only rolls
  * the global golden forward; any further pair/edge/SHA change fails.
+ *
+ * STRUCT-195.14 roll-forward (FOURTH authorized runtime value-graph change):
+ * the final geometry cycle break (new dependency-light
+ * src/engine/cad/cadGeometryPrimitives.ts owning the 5 interfaces + 15
+ * primitive runtime functions verbatim; cadGeometry.ts thinned to a 3-line
+ * public facade; the five arc/curve implementation leaves repoint their
+ * './cadGeometry' specifiers to './cadGeometryPrimitives' with bodies
+ * byte-identical) removes 6 edges and adds 6: five MIXED leaf->facade edges
+ * become leaf->primitives, the unused TYPE facade->cadTypes edge
+ * (CadArcEntity) drops, and one VALUE facade->primitives export-star edge
+ * appears — nodes 482->483, total edges unchanged (2400), value|mixed
+ * 1584->1585, unique pairs 1566->1567, SHA 76838237…->0bc9bae1…. The 195.13
+ * golden (1566/1584/76838237…) survives in git history at c7987ebc and the
+ * complete removal/addition allowlist is proved in
+ * tests/cad_geometry_primitives_runtime_cycle_19514.test.ts (and cumulatively
+ * in tests/cad_project_transform_runtime_cycle_19511.test.ts). This guard
+ * keeps all 195.7 payload/type/purity/singleton assertions intact and only
+ * rolls the global golden forward; any further pair/edge/SHA change fails.
  */
-const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1566;
-const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1584;
+const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1567;
+const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1585;
 const EXPECTED_BASELINE_VALUE_PAIRS_SHA256 =
-  '76838237ec49987ae9c64b11b97a3d72537b2fda2b806b1bcf73a4a22e1300f0';
+  '0bc9bae1f87e81161f250fd5852730e56b9bdd1311b02257cdecf39dd4d2fcb7';
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const abs = (relative: string): string => path.resolve(REPO_ROOT, relative);
 const rel = (absolute: string): string => path.relative(REPO_ROOT, absolute);

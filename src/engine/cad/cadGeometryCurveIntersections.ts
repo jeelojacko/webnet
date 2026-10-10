@@ -4,7 +4,7 @@ import {
   cadPointOnCircle,
   type CadSegmentGeometry,
   type CadWorldPoint,
-} from './cadGeometry';
+} from './cadGeometryPrimitives';
 import { cadIsAngleOnArcSweep } from './cadGeometryCurves';
 
 const dedupeCadPoints = (points: CadWorldPoint[], tolerance = 1e-9): CadWorldPoint[] => {

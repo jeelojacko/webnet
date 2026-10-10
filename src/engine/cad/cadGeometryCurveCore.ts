@@ -5,7 +5,7 @@ import {
   type CadArcDefinition,
   type CadCurveMetrics,
   type CadWorldPoint,
-} from './cadGeometry';
+} from './cadGeometryPrimitives';
 
 export const cadCounterClockwiseDeltaDeg = (
   startAngleDeg: number,
