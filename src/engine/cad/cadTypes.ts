@@ -307,6 +307,51 @@ export type {
   CadSurfaceVertexRef,
 } from './cadSurfaceEditTypes';
 
+// STRUCT-241.9: the six Phase 18I volume contracts and the ten Phase 18J
+// profile plus Phase 18K sample-line/section contracts live in dedicated
+// type-only leaves. They are imported here for local use and re-exported so
+// existing `from './cadTypes'` consumers keep compiling unchanged.
+import type {
+  CadVolumeDisplayRegion,
+  CadVolumeResult,
+  CadVolumeStats,
+  CadVolumeSurface,
+  CadVolumeSurfaceStyle,
+  VolumeSurfaceStatus,
+} from './cadVolumeSurfaceTypes';
+export type {
+  CadVolumeDisplayRegion,
+  CadVolumeResult,
+  CadVolumeStats,
+  CadVolumeSurface,
+  CadVolumeSurfaceStyle,
+  VolumeSurfaceStatus,
+} from './cadVolumeSurfaceTypes';
+import type {
+  CadProfileStyle,
+  CadProfileView,
+  CadSampleLine,
+  CadSampleLineGroup,
+  CadSectionStatus,
+  CadSectionStyle,
+  CadSectionSurfaceSource,
+  CadSectionView,
+  CadSurfaceProfile,
+  SurfaceProfileStatus,
+} from './cadProfileSectionTypes';
+export type {
+  CadProfileStyle,
+  CadProfileView,
+  CadSampleLine,
+  CadSampleLineGroup,
+  CadSectionStatus,
+  CadSectionStyle,
+  CadSectionSurfaceSource,
+  CadSectionView,
+  CadSurfaceProfile,
+  SurfaceProfileStatus,
+} from './cadProfileSectionTypes';
+
 export interface CadSurveyPointEntity extends CadBaseEntity {
   type: 'survey-point';
   stationId: StationId;
@@ -811,238 +856,3 @@ export interface CadSurfaceStyle {
   contourLabelPrecision?: number;
 }
 
-/**
- * Phase 18I: TIN-to-TIN volume relationship. Holds ONLY the base and
- * comparison surface refs plus display binding; overlap polygons, cut/fill
- * cache, and worker status are always derived and never serialized.
- */
-export interface CadVolumeSurface {
-  id: string;
-  name: string;
-  baseSurfaceId: string;
-  comparisonSurfaceId: string;
-  /** Display/lock layer; absent = ByLayer-default (visible, unlocked). */
-  layerId?: CadLayerId;
-  styleId?: string;
-  description?: string;
-}
-
-/** Phase 18I: volume display styling ONLY (never affects geometry/revision). */
-export interface CadVolumeSurfaceStyle {
-  id: string;
-  name: string;
-  showCut: boolean;
-  showFill: boolean;
-  /** Optional display-only zero-boundary lines (never affects quantities). */
-  showZeroBoundary?: boolean;
-  cutColor: string;
-  fillColor: string;
-  /** Display opacity factor (0 fully transparent .. 1 fully opaque). */
-  opacity: number;
-}
-
-/** Phase 18I: derived volume status (never persisted; never a trusted flag). */
-export type VolumeSurfaceStatus =
-  | 'UNBUILT'
-  | 'CURRENT'
-  | 'NEEDS_RECALC'
-  | 'BUILDING'
-  | 'FAILED'
-  | 'BROKEN_REFERENCE'
-  | 'SOURCE_NOT_CURRENT'
-  | 'NO_OVERLAP';
-
-/** Phase 18I: display-only derived overlap polygon (session-only). */
-export interface CadVolumeDisplayRegion {
-  kind: 'cut' | 'fill';
-  /** Convex polygon ring in world XY (planimetric), deterministic winding. */
-  vertices: Array<{ x: number; y: number }>;
-}
-
-/** Phase 18I: derived quantity/display payload (session-only, NEVER persisted). */
-export interface CadVolumeStats {
-  baseTriangleCount?: number;
-  comparisonTriangleCount?: number;
-  candidatePairCount?: number;
-  overlapPairCount?: number;
-  overlapPolygonCount?: number;
-  cutPolygonCount?: number;
-  fillPolygonCount?: number;
-  computeMs?: number;
-}
-
-export interface CadVolumeResult {
-  baseSurfaceId: string;
-  comparisonSurfaceId: string;
-  /** `vrev1:` revision the result was computed for. */
-  revision: string;
-  overlapArea: number;
-  cutArea: number;
-  fillArea: number;
-  /** Positive magnitudes (m³ or ft³). */
-  cutVolume: number;
-  fillVolume: number;
-  /** fill − cut (signed earthwork). */
-  netVolume: number;
-  averageCutDepth: number;
-  averageFillDepth: number;
-  maxCutDepth: number;
-  maxFillDepth: number;
-  minDelta: number;
-  maxDelta: number;
-  baseArea: number;
-  comparisonArea: number;
-  /** Derived cut/fill polygons; omitted when display was not requested. */
-  displayRegions?: CadVolumeDisplayRegion[];
-  stats: CadVolumeStats;
-}
-
-/**
- * Phase 18J: surface profile definition. Holds ONLY the alignment + surface
- * refs plus display binding; samples, revisions, and statuses are always
- * derived and never serialized.
- */
-export interface CadSurfaceProfile {
-  id: string;
-  name: string;
-  alignmentEntityId: CadEntityId;
-  surfaceId: string;
-  styleId?: string;
-  description?: string;
-}
-
-/** Phase 18J: profile display styling ONLY (never affects geometry/revision). */
-export interface CadProfileStyle {
-  id: string;
-  name: string;
-  color: string;
-  lineweight: number;
-  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
-  opacity: number;
-  showVertices?: boolean;
-}
-
-/**
- * Phase 18J: profile view presentation object (insertion XY, scales, datum,
- * grid intervals) — NOT thousands of CadEntity primitives. Derived display
- * geometry is session-only and never persisted.
- */
-export interface CadProfileView {
-  id: string;
-  name: string;
-  alignmentEntityId: CadEntityId;
-  profileIds: string[];
-  insertionX: number;
-  insertionY: number;
-  width?: number;
-  height?: number;
-  horizontalScale: number;
-  verticalExaggeration: number;
-  datumElevation?: number;
-  datumMode: 'auto' | 'explicit';
-  datumStep?: number;
-  majorStationInterval?: number;
-  minorStationInterval?: number;
-  elevationGridInterval?: number;
-  styleId?: string;
-}
-
-/** Phase 18J: derived profile status (never persisted; never a trusted flag). */
-export type SurfaceProfileStatus =
-  | 'UNBUILT'
-  | 'CURRENT'
-  | 'NEEDS_REBUILD'
-  | 'BUILDING'
-  | 'FAILED'
-  | 'BROKEN_REFERENCE'
-  | 'SOURCE_NOT_CURRENT'
-  | 'NO_OVERLAP';
-
-// ---------------------------------------------------------------------------
-// Phase 18K sample lines / cross sections
-// ---------------------------------------------------------------------------
-
-/** One surface a sample-line group extracts from (+ optional display style). */
-export interface CadSectionSurfaceSource {
-  surfaceId: string;
-  sectionStyleId?: string;
-}
-
-/**
- * Phase 18K: one straight sample line across an alignment. Stored by RAW
- * chainage (geometry truth) plus widths and skew — display station text is
- * presentation only and NEVER the identity. Skew is degrees clockwise from
- * the alignment-perpendicular (0 = square to the alignment).
- */
-export interface CadSampleLine {
-  id: string;
-  /** Operator override; absent = derived station label. */
-  manualName?: string;
-  rawStation: number;
-  leftWidth: number;
-  rightWidth: number;
-  skewDeg: number;
-}
-
-/**
- * Phase 18K: a drawing-owned sample-line group bound to exactly ONE
- * alignment. Holds source surfaces + ordered sample lines only — no TIN
- * data, no extracted sections, no revisions, no statuses.
- */
-export interface CadSampleLineGroup {
-  id: string;
-  name: string;
-  alignmentEntityId: CadEntityId;
-  surfaceSources: CadSectionSurfaceSource[];
-  sampleLines: CadSampleLine[];
-  layerId?: CadLayerId;
-  /** Optional pairwise cut/fill area comparison (base vs comparison surface). */
-  areaComparison?: { baseSurfaceId: string; comparisonSurfaceId: string };
-}
-
-/** Phase 18K: section display styling ONLY (never affects geometry/revision). */
-export interface CadSectionStyle {
-  id: string;
-  name: string;
-  color: string;
-  lineweight: number;
-  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
-  opacity: number;
-  showVertices?: boolean;
-}
-
-/**
- * Phase 18K: section view presentation object (one sample line per view).
- * Unlike CadProfileView this carries an explicit layerId so OFF/FROZEN/LOCK
- * apply per view without a rebuild. Derived display geometry never persists.
- */
-export interface CadSectionView {
-  id: string;
-  name: string;
-  sampleLineGroupId: string;
-  sampleLineId: string;
-  sourceSurfaceIds: string[];
-  insertionX: number;
-  insertionY: number;
-  horizontalScale: number;
-  verticalExaggeration: number;
-  datumMode: 'auto' | 'explicit';
-  datumElevation?: number;
-  offsetGridInterval?: number;
-  elevationGridInterval?: number;
-  showCutFill?: boolean;
-  styleId?: string;
-  layerId?: CadLayerId;
-}
-
-/** Phase 18K: derived section status per sample-line x source (never persisted). */
-export type CadSectionStatus =
-  | 'UNBUILT'
-  | 'CURRENT'
-  | 'NEEDS_REBUILD'
-  | 'BUILDING'
-  | 'FAILED'
-  | 'BROKEN_REFERENCE'
-  | 'SOURCE_NOT_CURRENT'
-  | 'OUT_OF_RANGE'
-  | 'NO_COVERAGE';

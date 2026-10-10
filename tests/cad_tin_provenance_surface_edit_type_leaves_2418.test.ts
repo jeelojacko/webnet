@@ -1000,9 +1000,11 @@ describe('STRUCT-241.8 CAD+F2F graph pins', () => {
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
     // 241.7 baseline 495 / 2440; the type-only import-free 241.8 leaves add
     // +2 nodes and +4 type edges (each leaf: 0 out + hub import + hub
-    // export; no retired hub edge).
-    expect(graph.nodes.length).toBe(497);
-    expect(graph.edges.length).toBe(2444);
+    // export; no retired hub edge). STRUCT-241.9 adds +2 nodes and +6
+    // type edges (per leaf: 1 out-edge to core primitives + hub import +
+    // hub export; no retired hub edge).
+    expect(graph.nodes.length).toBe(499);
+    expect(graph.edges.length).toBe(2450);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1062,9 +1064,10 @@ describe('STRUCT-241.8 full-src graph pins', () => {
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // 241.7 baseline 1667 / 7551; the 241.8 leaves add +2 nodes and +4 type
     // edges (same allowlist as the scoped pin; every 241.8 edge resolves
-    // inside `src`).
-    expect(graph.nodes.length).toBe(1669);
-    expect(graph.edges.length).toBe(7555);
+    // inside `src`). STRUCT-241.9 adds +2 nodes and +6 type edges (same
+    // allowlist as the scoped pin; every 241.9 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1671);
+    expect(graph.edges.length).toBe(7561);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
