@@ -827,8 +827,11 @@ describe('STRUCT-241.5 CAD+F2F graph pins', () => {
     // STRUCT-241.6 adds +2 nodes / +9 type edges (documented roll-forward:
     // linear 3 out + hub import + hub export, parcel 2 out + hub import +
     // hub export, no retired hub edge).
-    expect(graph.nodes.length).toBe(493);
-    expect(graph.edges.length).toBe(2433);
+    // STRUCT-241.7 adds +2 nodes / +7 type edges (documented roll-forward:
+    // layout 1 out + hub import + hub export, grip 2 out + hub import +
+    // hub export, no retired hub edge).
+    expect(graph.nodes.length).toBe(495);
+    expect(graph.edges.length).toBe(2440);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -898,8 +901,10 @@ describe('STRUCT-241.5 full-src graph pins', () => {
     // inside `src`, including the retired hub -> anchor edge).
     // STRUCT-241.6 adds +2 nodes / +9 type edges (same scoped allowlist;
     // every 241.6 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1665);
-    expect(graph.edges.length).toBe(7544);
+    // STRUCT-241.7 adds +2 nodes / +7 type edges (same scoped allowlist;
+    // every 241.7 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1667);
+    expect(graph.edges.length).toBe(7551);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
