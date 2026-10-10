@@ -293,10 +293,24 @@ describe('STRUCT-195.4 F2F type-edge severance (AST graph)', () => {
   // is proved in tests/cad_project_transform_runtime_cycle_19511.test.ts and
   // the 195.12 authorized delta in
   // tests/cad_cogo_parcel_runtime_cycle_19512.test.ts.
-  it('adds no runtime value cycle (2 SCCs / 12 nodes after 195.12 dissolved the parcel-diagnostics quad)', () => {
+  //
+  // STRUCT-195.13 roll-forward (2026-10-10, THIRD authorized runtime
+  // value-graph change): cadParcelArcGeometry.ts repoints
+  // { buildCadInverseSummary, formatCadBearing } from './cadCogoMath' to
+  // './cadCogoSummaries', removing exactly one VALUE edge
+  // (src/engine/cad/cadParcelArcGeometry.ts -> src/engine/cad/cadCogoMath.ts)
+  // and adding exactly one (src/engine/cad/cadParcelArcGeometry.ts ->
+  // src/engine/cad/cadCogoSummaries.ts). That dissolves the 5-node cogo-arc
+  // VALUE SCC (cadCogoEntityIntersections, cadCogoMath, cadParcelArcGeometry,
+  // cadPolylineCourses, cadPolylineGeometry now all singletons), leaving only
+  // the 7-node geometry group: the cumulative VALUE graph is now 1 SCC / 7
+  // nodes. Node/edge/pair totals are unchanged (482/2400/1584/1566); the
+  // independent 195.13 authorization and exact removed+added edge are proved
+  // in tests/cad_project_transform_runtime_cycle_19511.test.ts.
+  it('adds no runtime value cycle (1 SCC / 7 nodes after 195.13 dissolved the cogo-arc quintet)', () => {
     const cycles = findCycles(graph.nodes, graph.value);
-    expect(cycles.cyclic).toHaveLength(2);
-    expect(cycles.cyclicNodes.size).toBe(12);
+    expect(cycles.cyclic).toHaveLength(1);
+    expect(cycles.cyclicNodes.size).toBe(7);
   });
 });
 

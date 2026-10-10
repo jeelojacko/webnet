@@ -21,7 +21,7 @@ import {
   cadIntersectArcArc,
   cadIntersectSegmentArc,
 } from './cadGeometryCurveIntersections';
-import { buildCadInverseSummary, formatCadBearing } from './cadCogoMath';
+import { buildCadInverseSummary, formatCadBearing } from './cadCogoSummaries';
 import type { CadParcelCourseGeometry } from './cadTypes';
 
 export interface CadParcelArcMetrics {

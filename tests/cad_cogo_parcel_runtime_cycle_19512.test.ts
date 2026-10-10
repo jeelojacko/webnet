@@ -14,8 +14,11 @@
  *  - graph guard (rebuilt in-process via scripts/cadTypeImportGraph.mjs over
  *    src/engine/cad + src/engine/fieldToFinish): the topology helper is a
  *    non-cyclic singleton in BOTH the VALUE and TYPE graphs, the old 4-node
- *    parcel SCC is gone, and the current graph is VALUE 2 SCC / 12 nodes,
- *    TYPE 0;
+ *    parcel SCC is gone, and the current graph is VALUE 1 SCC / 7 nodes
+ *    (TYPE 0). The sole remaining VALUE SCC is the untouched 7-node geometry
+ *    group: the 195.12 parcel quad and the separate 195.13 arc-cogo quintet
+ *    are both dissolved. This file's frozen 41-edge parcel slice and its
+ *    parcel-local allowlists are unaffected by 195.13.
  *  - authorized edge-delta allowlist vs the frozen baseline slice in THIS
  *    file: every removed/added edge touches only the 5 parcel modules;
  *  - negative controls (facade still export-stars Diagnostics/SourceDraft, no
@@ -365,12 +368,22 @@ describe('STRUCT-195.12 parcel graph guard', () => {
   // The first graph read parses the entire CAD/Field-to-Finish scope. CI's
   // parallel full-suite load can exceed Vitest's 5s default; do not weaken
   // the SCC assertion just to shrink the timeout.
-  it('reports the expected post-refactor SCC shape (VALUE 2 SCC / 12 nodes, TYPE 0)', () => {
+  it('reports the expected post-refactor SCC shape (VALUE 1 SCC / 7 nodes, TYPE 0)', () => {
+    // STRUCT-195.13 downstream roll-forward (2026-10-10): a separate,
+    // independently authorized change in cadParcelArcGeometry.ts (repointing
+    // buildCadInverseSummary/formatCadBearing from './cadCogoMath' to
+    // './cadCogoSummaries', exactly one VALUE edge removed + one added)
+    // dissolved the 5-node cogo-arc SCC. The 195.12 parcel work pinned below
+    // is byte-identical: the frozen 41-edge parcel slice, the topology
+    // singleton, and the parcel-local allowlists are untouched. Only this
+    // global VALUE SCC tally moves 2 SCC / 12 nodes -> 1 SCC / 7 nodes (the
+    // 7-node geometry group); the authorization is proved independently in
+    // tests/cad_project_transform_runtime_cycle_19511.test.ts.
     const graph = currentGraph();
     const valueCycles = findCycles(graph.nodes, graph.value);
     const typeCycles = findCycles(graph.nodes, graph.type);
-    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(2);
-    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(12);
+    expect(valueCycles.cyclic.length, 'VALUE SCC count').toBe(1);
+    expect(valueCycles.cyclicNodes.size, 'VALUE cyclic nodes').toBe(7);
     expect(typeCycles.cyclic.length, 'TYPE SCC count').toBe(0);
     expect(typeCycles.cyclicNodes.size, 'TYPE cyclic nodes').toBe(0);
   }, 30_000);
