@@ -122,6 +122,9 @@ const CAD_DIR = path.join(REPO_ROOT, 'src', 'engine', 'cad');
 const HUB = path.join(CAD_DIR, 'cadTypes.ts');
 const PROV_LEAF = path.join(CAD_DIR, 'cadTinProvenanceTypes.ts');
 const EDIT_LEAF = path.join(CAD_DIR, 'cadSurfaceEditTypes.ts');
+// STRUCT-241.10 roll-forward: the surface-definition leaf imports both
+// low-level leaves above (no hub back-edge, no cycle).
+const DEF_LEAF_24110 = path.join(CAD_DIR, 'cadSurfaceDefinitionTypes.ts');
 
 /** The eleven provenance contracts, in original source order. */
 const MOVED_PROVENANCE = [
@@ -599,6 +602,7 @@ const EDIT_JSDOC_MARKERS = [
 
 const PROV_SPECIFIER = './cadTinProvenanceTypes';
 const EDIT_SPECIFIER = './cadSurfaceEditTypes';
+const DEF_SPECIFIER_24110 = './cadSurfaceDefinitionTypes';
 
 const hubSource = (): string => fs.readFileSync(HUB, 'utf8');
 const provSource = (): string => fs.readFileSync(PROV_LEAF, 'utf8');
@@ -752,11 +756,17 @@ describe('STRUCT-241.8 hub facade re-exports', () => {
   });
 
   it('keeps CadSurfaceDefinition with its edit-stack and imported-TIN fields', () => {
+    // STRUCT-241.10 roll-forward: the definition now lives in
+    // cadSurfaceDefinitionTypes.ts; the hub keeps only the grouped
+    // `import type` + `export type` facade so legacy paths compile.
     const hub = hubSource();
-    expect(hub).toContain('export interface CadSurfaceDefinition {');
-    expect(hub).toContain('edits?: CadSurfaceEdit[];');
-    expect(hub).toContain('importedTin?: ImportedTinPayload;');
-    expect(hub).toContain("sourceKind?: 'native' | 'imported-tin' | 'explicit-tin';");
+    expect(hub).toContain(`} from '${DEF_SPECIFIER_24110}';`);
+    expect(hub).not.toContain('export interface CadSurfaceDefinition {');
+    const def = fs.readFileSync(DEF_LEAF_24110, 'utf8');
+    expect(def).toContain('export interface CadSurfaceDefinition {');
+    expect(def).toContain('edits?: CadSurfaceEdit[];');
+    expect(def).toContain('importedTin?: ImportedTinPayload;');
+    expect(def).toContain("sourceKind?: 'native' | 'imported-tin' | 'explicit-tin';");
   });
 
   it('keeps all 5 runtime surface value exports in the hub', () => {
@@ -772,7 +782,10 @@ describe('STRUCT-241.8 hub facade re-exports', () => {
     }
   });
 
-  it('keeps unrelated surface/point-source contracts in the hub', () => {
+  it('keeps no original surface/point-source declarations in the hub (moved by STRUCT-241.10)', () => {
+    // STRUCT-241.10 roll-forward: the surface source/definition and status
+    // contracts now live in cadSurfaceDefinitionTypes /
+    // cadSurfaceModelStyleTypes; the hub keeps only the facades.
     const hub = hubSource();
     for (const decl of [
       'export type CadSurfacePointSource',
@@ -781,8 +794,9 @@ describe('STRUCT-241.8 hub facade re-exports', () => {
       'export interface CadSurfaceBuildOptions',
       'export type CadSurfaceStatus',
     ]) {
-      expect(hub).toContain(decl);
+      expect(hub).not.toContain(decl);
     }
+    expect(hub).toContain(`} from '${DEF_SPECIFIER_24110}';`);
   });
 });
 
@@ -1002,9 +1016,12 @@ describe('STRUCT-241.8 CAD+F2F graph pins', () => {
     // +2 nodes and +4 type edges (each leaf: 0 out + hub import + hub
     // export; no retired hub edge). STRUCT-241.9 adds +2 nodes and +6
     // type edges (per leaf: 1 out-edge to core primitives + hub import +
+    // hub export; no retired hub edge). STRUCT-241.10 adds +2 nodes and
+    // +9 type edges (definition leaf: 3 out-edges + hub import + hub
+    // export; model leaf: one-way B->A + core out-edge + hub import +
     // hub export; no retired hub edge).
-    expect(graph.nodes.length).toBe(499);
-    expect(graph.edges.length).toBe(2450);
+    expect(graph.nodes.length).toBe(501);
+    expect(graph.edges.length).toBe(2459);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1016,9 +1033,14 @@ describe('STRUCT-241.8 CAD+F2F graph pins', () => {
     const graph = cadF2fGraph();
     const leaf = path.resolve(PROV_LEAF);
     expect(graph.edges.filter((edge) => edge.from === leaf)).toEqual([]);
-    // One `import type` edge plus one `export type ... from` edge.
+    // One `import type` edge plus one `export type ... from` edge, plus the
+    // STRUCT-241.10 definition-leaf out-edge (graph from-path order).
     const hubToLeaf = { from: path.resolve(HUB), to: leaf, specifier: PROV_SPECIFIER, kind: 'type' };
-    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([hubToLeaf, hubToLeaf]);
+    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([
+      { from: path.resolve(DEF_LEAF_24110), to: leaf, specifier: PROV_SPECIFIER, kind: 'type' },
+      hubToLeaf,
+      hubToLeaf,
+    ]);
     expect(graph.nodes.filter((node) => node === leaf)).toHaveLength(1);
     expect(graph.edges.filter(
       (edge) => (edge.from === leaf || edge.to === leaf) && edge.kind !== 'type',
@@ -1029,9 +1051,14 @@ describe('STRUCT-241.8 CAD+F2F graph pins', () => {
     const graph = cadF2fGraph();
     const leaf = path.resolve(EDIT_LEAF);
     expect(graph.edges.filter((edge) => edge.from === leaf)).toEqual([]);
-    // One `import type` edge plus one `export type ... from` edge.
+    // One `import type` edge plus one `export type ... from` edge, plus the
+    // STRUCT-241.10 definition-leaf out-edge (graph from-path order).
     const hubToLeaf = { from: path.resolve(HUB), to: leaf, specifier: EDIT_SPECIFIER, kind: 'type' };
-    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([hubToLeaf, hubToLeaf]);
+    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([
+      { from: path.resolve(DEF_LEAF_24110), to: leaf, specifier: EDIT_SPECIFIER, kind: 'type' },
+      hubToLeaf,
+      hubToLeaf,
+    ]);
     expect(graph.nodes.filter((node) => node === leaf)).toHaveLength(1);
     expect(graph.edges.filter(
       (edge) => (edge.from === leaf || edge.to === leaf) && edge.kind !== 'type',
@@ -1066,8 +1093,10 @@ describe('STRUCT-241.8 full-src graph pins', () => {
     // edges (same allowlist as the scoped pin; every 241.8 edge resolves
     // inside `src`). STRUCT-241.9 adds +2 nodes and +6 type edges (same
     // allowlist as the scoped pin; every 241.9 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1671);
-    expect(graph.edges.length).toBe(7561);
+    // STRUCT-241.10 adds +2 nodes and +9 type edges (same allowlist as the
+    // scoped pin; every 241.10 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1673);
+    expect(graph.edges.length).toBe(7570);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

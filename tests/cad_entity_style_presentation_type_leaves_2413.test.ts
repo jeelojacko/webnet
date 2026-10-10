@@ -409,7 +409,7 @@ describe('STRUCT-241.3 hub facade re-exports', () => {
     expect(typeImports).toContain('./cadSurveyPresentationTypes');
   });
 
-  it('shrinks the hub to the measured line count (1923 -> 1780 lines; 241.4 -> 1694 lines; 241.5 -> 1549 lines; 241.6 -> 1440 lines; 241.7 -> 1340 lines; 241.8 -> 1048 lines; 241.9 -> 858 lines)', () => {
+  it('shrinks the hub to the measured line count (1923 -> 1780 lines; 241.4 -> 1694 lines; 241.5 -> 1549 lines; 241.6 -> 1440 lines; 241.7 -> 1340 lines; 241.8 -> 1048 lines; 241.9 -> 858 lines; 241.10 -> 756 lines)', () => {
     // STRUCT-241.4 roll-forward: extracting the 8 primitive/geometry entity
     // contracts drops the hub from 1781 split-lines to 1695 split-lines
     // (1694 wc lines + trailing newline). STRUCT-241.5 roll-forward:
@@ -427,8 +427,11 @@ describe('STRUCT-241.3 hub facade re-exports', () => {
     // STRUCT-241.9 roll-forward: extracting the 6 volume + 10
     // profile/section contracts (plus the new grouped hub import/export
     // blocks) drops the hub to 859 split-lines (858 wc lines + trailing
-    // newline).
-    expect(fs.readFileSync(HUB, 'utf8').split('\n').length).toBe(859);
+    // newline). STRUCT-241.10 roll-forward: extracting the 6
+    // surface-definition + 5 surface-model/style contracts (plus the new
+    // grouped hub import/export blocks) drops the hub to 757 split-lines
+    // (756 wc lines + trailing newline).
+    expect(fs.readFileSync(HUB, 'utf8').split('\n').length).toBe(757);
   });
 });
 
@@ -535,7 +538,11 @@ describe('STRUCT-241.3 unaffected hub signatures', () => {
       "} from './cadPrimitiveGeometryEntityTypes';",
       'export type CadEntity =',
       'export interface CadProject {',
-      'export interface CadSurface',
+      // STRUCT-241.10 roll-forward: CadSurface now lives in
+      // cadSurfaceModelStyleTypes.ts; the hub carries it via the grouped
+      // `import type` + `export type` re-export, not a local declaration
+      // (pinned by tests/cad_surface_definition_model_style_type_leaves_24110.test.ts).
+      "} from './cadSurfaceModelStyleTypes';",
       'export const surfacePointGroupIds',
       'export const isExplicitTopologyDefinition',
       'export const isExplicitSurfaceDefinition = isExplicitTopologyDefinition;',
@@ -625,8 +632,8 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     // STRUCT-241.7 adds +2 nodes / +7 type edges (documented roll-forward:
     // layout 1 out + hub import + hub export, grip 2 out + hub import +
     // hub export, no retired hub edge).
-    expect(graph.nodes.length).toBe(499);
-    expect(graph.edges.length).toBe(2450);
+    expect(graph.nodes.length).toBe(501);
+    expect(graph.edges.length).toBe(2459);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -725,8 +732,8 @@ describe('STRUCT-241.3 full-src graph pins', () => {
     // STRUCT-241.5 adds +2 nodes / +8 edges (documented roll-forward).
     // STRUCT-241.6 adds +2 nodes / +9 edges (documented roll-forward).
     // STRUCT-241.7 adds +2 nodes / +7 edges (documented roll-forward).
-    expect(graph.nodes.length).toBe(1671);
-    expect(graph.edges.length).toBe(7561);
+    expect(graph.nodes.length).toBe(1673);
+    expect(graph.edges.length).toBe(7570);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
