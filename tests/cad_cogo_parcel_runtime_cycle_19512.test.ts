@@ -109,6 +109,13 @@ const STRUCT_2413_ADDED_EDGES = 6;
 // owner-leaf edges; no VALUE/MIXED change; outside the parcel slice).
 const STRUCT_2414_ADDED_NODES = 1;
 const STRUCT_2414_ADDED_EDGES = 4;
+// STRUCT-241.5 measured delta (two cadTypes type-only leaves: annotation +
+// survey-table; eight scoped type edges: annotation 3 out + hub import-type
+// + hub export-type, survey 2 out + hub import-type + hub export-type, minus
+// the retired hub -> anchor import-type edge; no VALUE/MIXED change;
+// outside the parcel slice).
+const STRUCT_2415_ADDED_NODES = 2;
+const STRUCT_2415_ADDED_EDGES = 8;
 
 /** Every baseline edge incident to one of the 5 parcel modules (41 edges). */
 const BASELINE_PARCEL_EDGES: readonly BaselineEdge[] = [
@@ -459,10 +466,11 @@ describe('STRUCT-195.12 parcel graph guard', () => {
     // outside the parcel slice. STRUCT-241.2 adds one block type-only leaf
     // with two type edges, also outside the parcel slice. STRUCT-241.4 adds
     // one primitive/geometry type-only leaf with four type edges, also
-    // outside the parcel slice. The frozen 41-edge
+    // outside the parcel slice. STRUCT-241.5 adds two type-only leaves with
+    // eight type edges, also outside the parcel slice. The frozen 41-edge
     // parcel slice and its allowlists above are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES);
     expect(graph.nodes).toContain(abs(TOPOLOGY));
   });
 });

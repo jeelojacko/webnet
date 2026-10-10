@@ -95,6 +95,12 @@ const STRUCT_2413_ADDED_EDGES = 6;
 // owner-leaf edges; no VALUE/MIXED change).
 const STRUCT_2414_ADDED_NODES = 1;
 const STRUCT_2414_ADDED_EDGES = 4;
+// STRUCT-241.5 measured delta (two cadTypes type-only leaves: annotation +
+// survey-table; eight scoped type edges: annotation 3 out + hub import-type
+// + hub export-type, survey 2 out + hub import-type + hub export-type, minus
+// the retired hub -> anchor import-type edge; no VALUE/MIXED change).
+const STRUCT_2415_ADDED_NODES = 2;
+const STRUCT_2415_ADDED_EDGES = 8;
 
 // STRUCT-195.12 cumulative scope: the parcel-diagnostics cycle break adds one
 // node (cadCogoParcelLineworkTopology) and repoints value edges among the 5
@@ -631,10 +637,11 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     // outside the transform slice; STRUCT-241.2 adds one block type-only
     // leaf with two type edges, also outside the slice; STRUCT-241.4 adds
     // one primitive/geometry type-only leaf with four type edges, also
-    // outside the slice; VALUE SCC
+    // outside the slice; STRUCT-241.5 adds two type-only leaves with eight
+    // type edges, also outside the slice; VALUE SCC
     // expectations below are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES);
     // STRUCT-195.13 is a net-zero value-edge repoint and STRUCT-195.14 is a
     // net-zero total-edge relocation (-6/+6), so the cumulative edge count
     // is unchanged from the 195.12 measurement; nodes gain exactly the

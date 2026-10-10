@@ -1,4 +1,3 @@
-import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchorTypes';
 import type { CadAnnotationSettings } from './annotation/cadAnnotationSettings';
 import type { CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus } from './cadAnalysisTypes';
 // Phase 18U: re-export the analysis tables so project-level consumers can
@@ -38,7 +37,6 @@ import type {
   CadPointSymbolId,
   CadPointSymbolShape,
   CadStyleId,
-  CadTextStyleId,
 } from './cadCorePrimitiveTypes';
 export type {
   CadBounds,
@@ -123,6 +121,57 @@ export type {
   CadPolylineSegmentGeometry,
   CadPolylineSegmentWidth,
 } from './cadPrimitiveGeometryEntityTypes';
+
+// STRUCT-241.5: the twelve Phase 18O professional annotation entity/style
+// contracts and the seven Phase 19A survey-table contracts live in dedicated
+// type-only leaves. They are imported here for local use and re-exported so
+// existing `from './cadTypes'` consumers keep compiling unchanged.
+import type {
+  CadBearingDistanceLabelEntity,
+  CadBearingLabelStyle,
+  CadCurveLabelEntity,
+  CadCurveLabelField,
+  CadCurveLabelStyle,
+  CadDimensionEntity,
+  CadDimensionKind,
+  CadDimensionStyle,
+  CadLeaderEntity,
+  CadLeaderStyle,
+  CadMTextAttachment,
+  CadMTextEntity,
+} from './cadAnnotationEntityStyleTypes';
+export type {
+  CadBearingDistanceLabelEntity,
+  CadBearingLabelStyle,
+  CadCurveLabelEntity,
+  CadCurveLabelField,
+  CadCurveLabelStyle,
+  CadDimensionEntity,
+  CadDimensionKind,
+  CadDimensionStyle,
+  CadLeaderEntity,
+  CadLeaderStyle,
+  CadMTextAttachment,
+  CadMTextEntity,
+} from './cadAnnotationEntityStyleTypes';
+import type {
+  CadSurveyTableColumnOverride,
+  CadSurveyTableEntity,
+  CadSurveyTableKind,
+  CadSurveyTableRow,
+  CadSurveyTableRowSource,
+  CadSurveyTableStyle,
+  CadSurveyTableTagSettings,
+} from './cadSurveyTableEntityTypes';
+export type {
+  CadSurveyTableColumnOverride,
+  CadSurveyTableEntity,
+  CadSurveyTableKind,
+  CadSurveyTableRow,
+  CadSurveyTableRowSource,
+  CadSurveyTableStyle,
+  CadSurveyTableTagSettings,
+} from './cadSurveyTableEntityTypes';
 
 export interface CadSurveyPointEntity extends CadBaseEntity {
   type: 'survey-point';
@@ -355,200 +404,6 @@ export interface CadBlockReferenceEntity extends CadBaseEntity {
 }
 
 export type CadBlockChildType = CadBlockChild['type'];
-
-// ---------------------------------------------------------------------------
-// Phase 18O professional annotation entities + style tables (all additive)
-// ---------------------------------------------------------------------------
-
-/** 9-point mtext attachment. */
-export type CadMTextAttachment =
-  | 'top-left' | 'top-center' | 'top-right'
-  | 'middle-left' | 'middle-center' | 'middle-right'
-  | 'bottom-left' | 'bottom-center' | 'bottom-right';
-
-export interface CadMTextEntity extends CadBaseEntity {
-  type: 'mtext';
-  x: number;
-  y: number;
-  text: string;
-  textStyleId: CadTextStyleId;
-  rotationDeg: number;
-  attachment: CadMTextAttachment;
-}
-
-export interface CadLeaderEntity extends CadBaseEntity {
-  type: 'leader';
-  arrowAnchor: CadAnnotationAnchor;
-  vertices: { x: number; y: number }[];
-  text: string;
-  leaderStyleId: string;
-  textStyleId?: CadTextStyleId;
-  textAttachment?: CadMTextAttachment;
-}
-
-export type CadDimensionKind = 'linear' | 'aligned' | 'angular' | 'radius' | 'diameter';
-
-export interface CadDimensionEntity extends CadBaseEntity {
-  type: 'dimension';
-  dimensionKind: CadDimensionKind;
-  anchors: CadAnnotationAnchor[];
-  /** Definition-point pair for linear/aligned (anchor pair). */
-  defPoint1?: CadAnnotationAnchor;
-  defPoint2?: CadAnnotationAnchor;
-  orientation?: 'horizontal' | 'vertical' | 'aligned';
-  dimLinePoint: { x: number; y: number };
-  textPoint?: { x: number; y: number };
-  dimensionStyleId: string;
-  textOverride?: string;
-}
-
-export interface CadBearingDistanceLabelEntity extends CadBaseEntity {
-  type: 'bearing-label';
-  sourceEntityId: CadEntityId;
-  labelStyleId: string;
-  offset: { x: number; y: number };
-  side?: 'left' | 'right' | 'auto';
-  manualTextOverride?: string;
-}
-
-export interface CadCurveLabelEntity extends CadBaseEntity {
-  type: 'curve-label';
-  sourceEntityId: CadEntityId;
-  labelStyleId: string;
-  offset: { x: number; y: number };
-  manualTextOverride?: string;
-}
-
-export interface CadDimensionStyle {
-  id: string;
-  name: string;
-  textStyleId: CadTextStyleId;
-  arrowBlockDefinitionId: string;
-  arrowSize: number;
-  arrowSizeMode?: 'model' | 'paper';
-  textGap: number;
-  extensionOffset: number;
-  extensionOvershoot: number;
-  decimalPrecision: number;
-  prefix?: string;
-  suffix?: string;
-}
-
-export interface CadLeaderStyle {
-  id: string;
-  name: string;
-  textStyleId: CadTextStyleId;
-  arrowBlockDefinitionId: string;
-  arrowSize: number;
-  arrowSizeMode?: 'model' | 'paper';
-  landingLength: number;
-  textGap: number;
-}
-
-export interface CadBearingLabelStyle {
-  id: string;
-  name: string;
-  textStyleId: CadTextStyleId;
-  content: 'bearing' | 'distance' | 'bearing-distance' | 'distance-bearing';
-  separator: 'newline' | 'space' | 'slash';
-  offset: { x: number; y: number };
-  decimalPrecision: number;
-}
-
-export type CadCurveLabelField = 'radius' | 'delta' | 'length' | 'chord';
-
-export interface CadCurveLabelStyle {
-  id: string;
-  name: string;
-  textStyleId: CadTextStyleId;
-  fields: CadCurveLabelField[];
-  offset: { x: number; y: number };
-  decimalPrecision: number;
-}
-
-/**
- * Phase 19A survey table (drawing annotation table). Rows are SOURCE
- * REFERENCES resolved at read time (never baked geometry/text); the entity
- * is placement + style + row list only.
- */
-export type CadSurveyTableKind = 'line' | 'curve' | 'parcel-course' | 'parcel-summary' | 'point';
-
-export type CadSurveyTableRowSource =
-  | { kind: 'line'; entityId: CadEntityId }
-  | { kind: 'arc'; entityId: CadEntityId }
-  | { kind: 'parcel-course'; parcelId: CadEntityId; courseId: string }
-  | { kind: 'parcel'; parcelId: CadEntityId }
-  | { kind: 'survey-point'; entityId: CadEntityId };
-
-export interface CadSurveyTableRow {
-  /** Stable row identity (reorder/remove/custom-code target). */
-  id: string;
-  source: CadSurveyTableRowSource;
-  customCode?: string;
-  /** Explicit tag offset override (WINS over the entity tagSettings). */
-  tagOffset?: { dx: number; dy: number };
-  showTag?: boolean;
-}
-
-export interface CadSurveyTableTagSettings {
-  showTags?: boolean;
-  /** Extra prefix prepended to every tag string (e.g. `T-`). */
-  tagPrefix?: string;
-  /** Text style for tag labels; absent = table text style. */
-  tagTextStyleId?: CadTextStyleId;
-  /** Default tag offset (drawing units) relative to the derived anchor. */
-  tagOffset?: { dx: number; dy: number };
-}
-
-/** Per-column display override: visibility toggle + heading text. */
-export interface CadSurveyTableColumnOverride {
-  key: string;
-  visible?: boolean;
-  heading?: string;
-}
-
-export interface CadSurveyTableEntity extends CadBaseEntity {
-  type: 'survey-table';
-  tableKind: CadSurveyTableKind;
-  /** Insertion point (world/drawing units). */
-  x: number;
-  y: number;
-  rotationDeg: number;
-  tableStyleId: string;
-  rows: CadSurveyTableRow[];
-  title?: string;
-  /** Code prefix (e.g. `L`); absent/empty = per-kind default (L/C/P). */
-  prefix?: string;
-  /** First code number; absent = 1. */
-  startNumber?: number;
-  showHeader?: boolean;
-  showTitle?: boolean;
-  tagSettings?: CadSurveyTableTagSettings;
-  /** Per-column visibility/heading overrides (registry order preserved). */
-  columnOverrides?: CadSurveyTableColumnOverride[];
-}
-
-/**
- * Phase 19A survey table display style. Paper/model modes mirror the text
- * height mode convention; every field is display-only (no geometry).
- */
-export interface CadSurveyTableStyle {
-  id: string;
-  name: string;
-  textStyleId: CadTextStyleId;
-  headerTextStyleId?: CadTextStyleId;
-  rowHeight: number;
-  rowHeightMode: 'model' | 'paper';
-  cellPadding: number;
-  cellPaddingMode: 'model' | 'paper';
-  borderWidth: number;
-  showOuterBorder: boolean;
-  showInnerGrid: boolean;
-  headerAlignment: 'left' | 'center' | 'right';
-  bodyAlignment: 'left' | 'center' | 'right';
-  titleGap: number;
-  description?: string;
-}
 
 export type CadEntity =
   | CadSurveyTableEntity
