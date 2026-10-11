@@ -65,7 +65,8 @@
 ## Review
 
 - Independent read-only reviewer on exact integrated final diff (incl.
-  negative controls): PENDING — must APPROVE before handoff.
+  negative controls): APPROVE (no findings) on exact head 536320ec; PR #256
+  OPEN UNMERGED (Refs #241 ONLY).
 - Stash preservation: 14/14, order intact; worktree contains only the
   241.13 scope (hub + 2 leaves + 1 new + 15 rolled-forward tests + 2
   evidence docs).
