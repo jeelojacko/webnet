@@ -344,6 +344,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   // 6 + 9, no widening).
   const alignment = leafMemberDescriptors(AL_LEAF, 'alignment', AL_ALIAS);
   const parcelConstruction = leafMemberDescriptors(PC_LEAF, 'parcel', PC_ALIAS);
+  // STRUCT-241.14 roll-forward: expand the primitive-draw (13) +
+  // basic-curve (6) aliases per-member (all single-keyed, no widening).
+  const primitive = leafMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsPrimitiveDrawCommandTypes.ts'), 'primitive', 'CadPrimitiveDrawCommandPayload');
+  const basiccurve = leafMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'), 'basiccurve', 'CadBasicCurveCommandPayload');
   const alias = findAlias(hub, 'hub', 'CadCommand');
   const members: string[] = [];
   const visit = (node: ts.TypeNode): void => {
@@ -364,6 +370,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (name === 'CadDesignSurfaceCommandPayload') members.push(...designsurface);
       else if (name === AL_ALIAS) members.push(...alignment);
       else if (name === PC_ALIAS) members.push(...parcelConstruction);
+      else if (name === 'CadPrimitiveDrawCommandPayload') members.push(...primitive);
+      else if (name === 'CadBasicCurveCommandPayload') members.push(...basiccurve);
       else members.push(name);
       return;
     }
@@ -951,26 +959,34 @@ describe('STRUCT-241.13 baseline shapes: Extract<CadCommand> vs leaf vs Base*', 
 });
 
 describe('STRUCT-241.13 hub union splice order and member counts', () => {
-  it('measures 89 top-level members and documents the 102 -> 89 extraction', () => {
+  it('measures 72 top-level members and documents the 89 -> 72 extraction', () => {
     const counts = hubTopLevelCounts();
-    expect(counts).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 });
-    // Re-inlining the two leaves restores the 241.12 shape 102 = 51 + 6 + 9
-    // bodies + 29 old refs + 2 alias references... precisely:
-    // 102 = 89 + 6 + 9 - 2.
+    expect(counts).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 });
+    // Re-inlining the two 241.13 leaves restores 85 = 72 + 6 + 9 - 2;
+    // re-inlining the two 241.14 leaves on top restores the 241.12 shape
+    // 102 = 85 + 13 + 6 - 2.
     expect(leafMemberDescriptors(AL_LEAF, 'alignment', AL_ALIAS).length).toBe(6);
     expect(leafMemberDescriptors(PC_LEAF, 'parcel', PC_ALIAS).length).toBe(9);
-    expect(counts.total + 6 + 9 - 2).toBe(102);
+    expect(counts.total + 6 + 9 - 2).toBe(85);
+    expect(leafMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsPrimitiveDrawCommandTypes.ts'), 'primitive', 'CadPrimitiveDrawCommandPayload').length).toBe(13);
+    expect(leafMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'), 'basiccurve', 'CadBasicCurveCommandPayload').length).toBe(6);
+    expect(counts.total + 6 + 9 + 13 + 6 - 4).toBe(102);
   });
 
   it('splices both groups with neighbor sentinels in the original position', () => {
     const seq = hubMemberSequence();
-    const tangent = seq.findIndex((m) => m.kind === 'inline' && m.label === 'TANGENT_CURVE');
-    expect(seq[tangent]).toEqual({ kind: 'inline', label: 'TANGENT_CURVE' });
-    // Alignment group sits immediately after TANGENT_CURVE; parcel group
-    // immediately after alignment; LINETABLE intersection immediately after.
-    expect(seq[tangent + 1]).toEqual({ kind: 'ref', label: AL_ALIAS });
-    expect(seq[tangent + 2]).toEqual({ kind: 'ref', label: PC_ALIAS });
-    expect(seq[tangent + 3]).toEqual({ kind: 'intersection', label: 'LINETABLE' });
+    // STRUCT-241.14 roll-forward: TANGENT_CURVE now arrives via the
+    // basic-curve alias, so the run anchors on that alias reference.
+    const basiccurve = seq.findIndex((m) => m.kind === 'ref' && m.label === 'CadBasicCurveCommandPayload');
+    expect(seq[basiccurve]).toEqual({ kind: 'ref', label: 'CadBasicCurveCommandPayload' });
+    // Alignment group sits immediately after the basic-curve group; parcel
+    // group immediately after alignment; LINETABLE intersection immediately
+    // after.
+    expect(seq[basiccurve + 1]).toEqual({ kind: 'ref', label: AL_ALIAS });
+    expect(seq[basiccurve + 2]).toEqual({ kind: 'ref', label: PC_ALIAS });
+    expect(seq[basiccurve + 3]).toEqual({ kind: 'intersection', label: 'LINETABLE' });
   });
 
   it('keeps the six table intersections, seven parcel-management refs, and styles in order', () => {
@@ -1009,7 +1025,7 @@ describe('STRUCT-241.13 hub union splice order and member counts', () => {
 
   it('leaves no inline alignment/parcel-construction key behind in the hub union', () => {
     const inlineSets = hubInlineKeySets();
-    expect(inlineSets.length).toBe(51);
+    expect(inlineSets.length).toBe(32);
     const moved: Set<string> = new Set([...EXPECTED_MOVED_LITERALS]);
     for (const set of inlineSets) {
       for (const key of set) {
@@ -1195,11 +1211,11 @@ describe('STRUCT-241.13 CAD+F2F graph pins', () => {
     const typeCycles = findCycles(graph.nodes, graph.type);
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
-    // Post-241.12 baseline 505 / 2470; the two type-only leaves add +2 nodes
-    // and +5 type edges (2 hub imports + 1 alignment out-edge + 2 parcel
-    // out-edges; no retired module edge).
-    expect(graph.nodes.length).toBe(507);
-    expect(graph.edges.length).toBe(2475);
+    // Post-241.13 baseline 507 / 2475; the two type-only leaves add +2 nodes
+    // and +3 type edges (2 hub imports + 2 primitive-draw out-edges + 0
+    // basic-curve out-edges - 1 retired hub tangent-solver edge).
+    expect(graph.nodes.length).toBe(509);
+    expect(graph.edges.length).toBe(2478);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1279,10 +1295,10 @@ describe('STRUCT-241.13 full-src graph pins', () => {
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
     expect(typeCycles.cyclic.length).toBe(7);
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
-    // Post-241.12 baseline 1677 / 7581; the two leaves add the same +2 / +5
-    // (every 241.13 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1679);
-    expect(graph.edges.length).toBe(7586);
+    // Post-241.13 baseline 1679 / 7586; the two leaves add the same +2 / +3
+    // (every 241.14 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1681);
+    expect(graph.edges.length).toBe(7589);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
@@ -1495,7 +1511,7 @@ describe('STRUCT-241.13 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });
@@ -1507,7 +1523,7 @@ describe('STRUCT-241.13 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });
@@ -1520,8 +1536,8 @@ describe('STRUCT-241.13 negative controls (in-memory mutations only)', () => {
       .replace('__SWAP_AL__\n', `  | ${PC_ALIAS}\n`);
     expect(mutated).not.toBe(source);
     const seq = hubMemberSequence(parseText('mutated-hub.ts', mutated));
-    const tangent = seq.findIndex((m) => m.kind === 'inline' && m.label === 'TANGENT_CURVE');
-    expect(() => expect(seq[tangent + 1]).toEqual({ kind: 'ref', label: AL_ALIAS })).toThrow();
+    const basiccurve = seq.findIndex((m) => m.kind === 'ref' && m.label === 'CadBasicCurveCommandPayload');
+    expect(() => expect(seq[basiccurve + 1]).toEqual({ kind: 'ref', label: AL_ALIAS })).toThrow();
   });
 
   it('fails the ordering guard when parcel variants reorder', () => {

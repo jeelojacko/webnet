@@ -348,6 +348,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
     abs('src/engine/cad/cadTransactionsAlignmentCommandTypes.ts'), 'alignment', 'CadAlignmentCommandPayload');
   const parcelConstruction = leafMemberDescriptors(
     abs('src/engine/cad/cadTransactionsParcelConstructionCommandTypes.ts'), 'parcel', 'CadParcelConstructionCommandPayload');
+  // STRUCT-241.14 roll-forward: expand the primitive-draw (13) + basic-
+  // curve (6) aliases per-member (all single-keyed, no widening).
+  const primitive = leafMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsPrimitiveDrawCommandTypes.ts'), 'primitive', 'CadPrimitiveDrawCommandPayload');
+  const basiccurve = leafMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'), 'basiccurve', 'CadBasicCurveCommandPayload');
   const alias = findAlias(hub, 'hub', 'CadCommand');
   const members: string[] = [];
   const visit = (node: ts.TypeNode): void => {
@@ -368,6 +374,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (name === DS_ALIAS) members.push(...designsurface);
       else if (name === 'CadAlignmentCommandPayload') members.push(...alignment);
       else if (name === 'CadParcelConstructionCommandPayload') members.push(...parcelConstruction);
+      else if (name === 'CadPrimitiveDrawCommandPayload') members.push(...primitive);
+      else if (name === 'CadBasicCurveCommandPayload') members.push(...basiccurve);
       else members.push(name);
       return;
     }
@@ -1043,20 +1051,26 @@ describe('STRUCT-241.12 baseline shapes: Extract<CadCommand> vs leaf vs Base*', 
 });
 
 describe('STRUCT-241.12 hub union splice order and member counts', () => {
-  it('measures 89 top-level members and documents the 102 -> 89 extraction', () => {
+  it('measures 72 top-level members and documents the 89 -> 72 extraction', () => {
     const counts = hubTopLevelCounts();
-    expect(counts).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 });
-    // Re-inlining the two 241.12 leaves restores the 241.11 shape 103 =
-    // 89 + 11 + 5 bodies - 2 alias references; re-inlining the 241.13
-    // leaves on top restores the 241.12 shape 116 = 103 + 6 + 9 - 2.
+    expect(counts).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 });
+    // Re-inlining the two 241.12 leaves restores 86 = 72 + 11 + 5 bodies -
+    // 2 alias references; re-inlining the 241.13 leaves on top restores 99 =
+    // 86 + 6 + 9 - 2; re-inlining the 241.14 leaves on top restores the
+    // 241.12 shape 116 = 99 + 13 + 6 - 2.
     expect(leafMemberDescriptors(FL_LEAF, 'featureline', FL_ALIAS).length).toBe(11);
     expect(leafMemberDescriptors(DS_LEAF, 'designsurface', DS_ALIAS).length).toBe(5);
-    expect(counts.total + 11 + 5 - 2).toBe(103);
+    expect(counts.total + 11 + 5 - 2).toBe(86);
     expect(leafMemberDescriptors(
       abs('src/engine/cad/cadTransactionsAlignmentCommandTypes.ts'), 'alignment', 'CadAlignmentCommandPayload').length).toBe(6);
     expect(leafMemberDescriptors(
       abs('src/engine/cad/cadTransactionsParcelConstructionCommandTypes.ts'), 'parcel', 'CadParcelConstructionCommandPayload').length).toBe(9);
-    expect(counts.total + 11 + 5 + 6 + 9 - 4).toBe(116);
+    expect(counts.total + 11 + 5 + 6 + 9 - 4).toBe(99);
+    expect(leafMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsPrimitiveDrawCommandTypes.ts'), 'primitive', 'CadPrimitiveDrawCommandPayload').length).toBe(13);
+    expect(leafMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'), 'basiccurve', 'CadBasicCurveCommandPayload').length).toBe(6);
+    expect(counts.total + 11 + 5 + 6 + 9 + 13 + 6 - 6).toBe(116);
   });
 
   it('splices both groups with neighbor sentinels in the original position', () => {
@@ -1113,7 +1127,7 @@ describe('STRUCT-241.12 hub union splice order and member counts', () => {
 
   it('leaves no inline feature-line/design-surface key behind in the hub union', () => {
     const inlineSets = hubInlineKeySets();
-    expect(inlineSets.length).toBe(51);
+    expect(inlineSets.length).toBe(32);
     const moved: Set<string> = new Set([...EXPECTED_MOVED_LITERALS]);
     for (const set of inlineSets) {
       for (const key of set) {
@@ -1332,8 +1346,11 @@ describe('STRUCT-241.12 CAD+F2F graph pins', () => {
     // cadFeatureLineCreate + gradingGroupTypes). STRUCT-241.13 roll-forward:
     // +2 / +5 (alignment leaf: 1 out-edge + hub import; parcel leaf:
     // 2 out-edges + hub import; no retired module edge).
-    expect(graph.nodes.length).toBe(507);
-    expect(graph.edges.length).toBe(2475);
+    // STRUCT-241.14 roll-forward: +2 / +3 (primitive-draw leaf: 2
+    // out-edges + hub import; basic-curve leaf: 0 out-edges + hub import;
+    // 1 retired hub tangent-solver edge).
+    expect(graph.nodes.length).toBe(509);
+    expect(graph.edges.length).toBe(2478);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1416,9 +1433,10 @@ describe('STRUCT-241.12 full-src graph pins', () => {
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // Post-241.11 baseline 1675 / 7576; the two leaves add the same +2 / +5
     // (every 241.12 edge resolves inside `src`). STRUCT-241.13 roll-forward:
-    // +2 / +5 (every 241.13 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1679);
-    expect(graph.edges.length).toBe(7586);
+    // +2 / +5 (every 241.13 edge resolves inside `src`). STRUCT-241.14
+    // roll-forward: +2 / +3 (every 241.14 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1681);
+    expect(graph.edges.length).toBe(7589);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
@@ -1624,7 +1642,7 @@ describe('STRUCT-241.12 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });
