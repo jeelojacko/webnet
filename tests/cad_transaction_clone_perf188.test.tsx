@@ -14,9 +14,11 @@
  *    `cadProject` yet still need that normalization on publish.
  *  - The `useSurveyCadWorkspace` wrapper's reference-based no-op guard is
  *    retained: selection-only and rejected-command updates publish nothing.
- *    A genuine commit still publishes through the wrapper *and* the
- *    persistence normalization sync, so real commit/undo/redo clone twice
- *    (same as before #262); only the no-op paths drop to zero.
+ *    PERF-188.2 adds a per-workspace provenance certificate: the wrapper's
+ *    ownership-boundary clone is recorded (identity only) and the persistence
+ *    sync skips its second normalization clone when it certifies the current
+ *    document. Real commit/undo/redo therefore clone once, not twice; every
+ *    no-op path still drops to zero.
  *
  * This suite drives the REAL hooks through a `react-dom/client` probe (the
  * established workspace harness) with a module-level `vi.mock` that actually
@@ -527,7 +529,7 @@ describe('PERF-188 clone budget', () => {
     expect(clones().project).toBe(1);
   });
 
-  it('(b) a successful commit clones twice (wrapper publish + persistence normalization)', async () => {
+  it('(b) a successful commit clones once (wrapper publish; certified sync skips)', async () => {
     const project = buildProjectWithEntities(5);
     const harness = await createControlledHarness(buildDrawing(project));
     const layerId = project.layers[0]!.id;
@@ -537,18 +539,17 @@ describe('PERF-188 clone budget', () => {
       expect(renameLayer(harness.api(), layerId, 'renamed-once')).toBe(true);
     });
 
-    // Same as before #262: the wrapper publishes the committed project, then
-    // the persistence sync clones once more to normalize/compare (and
-    // discards the equal result). The reference-based no-op guard only
-    // removes the wrapper clone when nothing changed.
+    // PERF-188.2: the wrapper publishes the committed project and records the
+    // provenance certificate; the persistence sync recognizes the published
+    // document as its own normalized output and skips the redundant clone.
     const counts = clones();
-    expect(counts.drawing).toBe(2);
-    expect(counts.project).toBe(2);
+    expect(counts.drawing).toBe(1);
+    expect(counts.project).toBe(1);
     expect(harness.api().historyDepth).toBe(1);
     expect(harness.drawing().project.layers[0]!.name).toBe('renamed-once');
   });
 
-  it('(c) undo clones twice and restores the pre-commit project deeply', async () => {
+  it('(c) undo clones once and restores the pre-commit project deeply', async () => {
     const project = buildProjectWithEntities(5);
     const harness = await createControlledHarness(buildDrawing(project));
     const layerId = project.layers[0]!.id;
@@ -561,14 +562,14 @@ describe('PERF-188 clone budget', () => {
       harness.api().undo();
     });
 
-    expect(clones().drawing).toBe(2);
+    expect(clones().drawing).toBe(1);
     expect(harness.api().historyDepth).toBe(0);
     expect(harness.api().canRedo).toBe(true);
     expect(deepValue(harness.api().cadProject)).toEqual(deepValue(project));
     expect(deepValue(harness.drawing().project)).toEqual(deepValue(project));
   });
 
-  it('(d) redo clones twice and restores the committed project deeply', async () => {
+  it('(d) redo clones once and restores the committed project deeply', async () => {
     const project = buildProjectWithEntities(5);
     const harness = await createControlledHarness(buildDrawing(project));
     const layerId = project.layers[0]!.id;
@@ -585,7 +586,7 @@ describe('PERF-188 clone budget', () => {
       harness.api().redo();
     });
 
-    expect(clones().drawing).toBe(2);
+    expect(clones().drawing).toBe(1);
     expect(harness.api().historyDepth).toBe(1);
     expect(deepValue(harness.api().cadProject)).toEqual(committed);
     expect(deepValue(harness.drawing().project)).toEqual(committed);
@@ -622,7 +623,7 @@ describe('PERF-188 clone budget', () => {
     await act(async () => {
       expect(renameLayer(harness.api(), project.layers[0]!.id, 'renamed-live')).toBe(true);
     });
-    expect(clones().drawing).toBe(2);
+    expect(clones().drawing).toBe(1);
     expect(harness.api().selectedEntityIds).toEqual([secondEntity!.id]);
     expect(firstEntity).toBe(project.entities[0]);
   });
@@ -759,13 +760,12 @@ describe('PERF-188 clone budget', () => {
       harness.api().runLandXmlImport(payload.preview, payload.fileName, payload.commitSelection);
     });
 
-    // The imported-TIN definition normalizes its key order on clone, so the
-    // persistence sync clones once more (and discards the equal result):
-    // wrapper clone + normalization sync = 2, the pre-#262 baseline. Undo
-    // returns to the canonical blank project and likewise pays the sync;
-    // redo re-imports and pays it again.
+    // The imported-TIN definition normalizes its key order on the wrapper
+    // clone, which is certified, so the persistence sync skips: 1 clone. Undo
+    // returns to the canonical blank project and likewise pays only the wrapper
+    // clone; redo re-imports and pays it once.
     const afterCommit = clones();
-    expect(afterCommit.drawing).toBe(2);
+    expect(afterCommit.drawing).toBe(1);
     expect(harness.api().historyDepth).toBe(1);
     expect(harness.api().canUndo).toBe(true);
     expect(harness.api().cadProject.entities).toHaveLength(6);
@@ -775,7 +775,7 @@ describe('PERF-188 clone budget', () => {
     await act(async () => {
       harness.api().undo();
     });
-    expect(clones().drawing).toBe(2);
+    expect(clones().drawing).toBe(1);
     expect(harness.api().historyDepth).toBe(0);
     expect(harness.api().canRedo).toBe(true);
     expect(harness.api().cadProject.entities).toHaveLength(0);
@@ -784,7 +784,7 @@ describe('PERF-188 clone budget', () => {
     await act(async () => {
       harness.api().redo();
     });
-    expect(clones().drawing).toBe(2);
+    expect(clones().drawing).toBe(1);
     expect(harness.api().historyDepth).toBe(1);
     expect(harness.api().cadProject.entities).toHaveLength(6);
   });
@@ -964,7 +964,7 @@ describe('PERF-188 negative controls', () => {
     await act(async () => {
       renameLayer(harness.api(), project.layers[0]!.id, 'budget-liveness');
     });
-    expect(clones().drawing).toBe(2);
+    expect(clones().drawing).toBe(1);
     expect(() => expect(clones().drawing).toBe(0)).toThrow();
   });
 });
@@ -1051,9 +1051,9 @@ describe('PERF-188 clone/time sample (logged)', () => {
           `noOpClones=${noOpClones} noOpMs=${noOpElapsed.toFixed(2)}`,
       );
 
-      expect(commitClones).toBe(2 * sample.iterations);
-      expect(undoClones).toBe(2 * sample.iterations);
-      expect(redoClones).toBe(2 * sample.iterations);
+      expect(commitClones).toBe(1 * sample.iterations);
+      expect(undoClones).toBe(1 * sample.iterations);
+      expect(redoClones).toBe(1 * sample.iterations);
       expect(noOpClones).toBe(0);
     }
   });
