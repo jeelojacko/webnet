@@ -159,6 +159,13 @@ const STRUCT_24110_ADDED_EDGES = 9;
 // barrel + analysis maps/legends/types modules; no VALUE/MIXED change).
 const STRUCT_24111_ADDED_NODES = 2;
 const STRUCT_24111_ADDED_EDGES = 6;
+// STRUCT-241.12 measured delta (two cadTransactions type-only leaves:
+// feature-line + design-surface command payloads; five scoped type edges:
+// feature-line leaf 2 out-edges + hub import-type, design-surface leaf
+// 3 out-edges + hub import-type, minus 2 retired hub edges to
+// cadFeatureLineCreate + gradingGroupTypes; no VALUE/MIXED change).
+const STRUCT_24112_ADDED_NODES = 2;
+const STRUCT_24112_ADDED_EDGES = 5;
 
 /** Every baseline edge incident to one of the 5 parcel modules (41 edges). */
 const BASELINE_PARCEL_EDGES: readonly BaselineEdge[] = [
@@ -515,8 +522,8 @@ describe('STRUCT-195.12 parcel graph guard', () => {
     // STRUCT-241.7 adds two type-only leaves with seven type edges, also
     // outside the parcel slice. The frozen 41-edge
     // parcel slice and its allowlists above are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES);
     expect(graph.nodes).toContain(abs(TOPOLOGY));
   });
 });

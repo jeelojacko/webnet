@@ -10,8 +10,6 @@ import type {
   CadSurveyTableStyleCommandPayload,
 } from './cadSurveyTables';
 
-import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
-import type { CadGradingGroupResult } from './grading/gradingGroupTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
 import type {
@@ -52,6 +50,10 @@ import type {
 // type-only leaves; the hub splices both unions in the original position.
 import type { CadAnnotationCommandPayload } from './cadTransactionsAnnotationCommandTypes';
 import type { CadAnalysisCommandPayload } from './cadTransactionsAnalysisCommandTypes';
+// STRUCT-241.12: feature-line (11) + design-surface (5) command payload slices are
+// type-only leaves; the hub splices both unions in the original position.
+import type { CadFeatureLineCommandPayload } from './cadTransactionsFeatureLineCommandTypes';
+import type { CadDesignSurfaceCommandPayload } from './cadTransactionsDesignSurfaceCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -72,7 +74,6 @@ import type {
   CadPolylineSegmentWidth,
   CadProject,
   CadStationEquation,
-  CadSurfacePurpose,
   ImportedTinPayload,
 } from './cadTypes';
 import type {
@@ -811,134 +812,12 @@ export type CadCommand =
   | CadBlockDefinitionCommandPayload
   | CadAnnotationCommandPayload
   | CadAnalysisCommandPayload
-  // Phase 20A — 3D feature lines (create + edit + report).
-  | {
-      key: 'FEATURELINE' | 'FEATURELINECREATE';
-      sourceEntityIds: CadEntityId[];
-      sourceKind: 'survey-points' | 'chain';
-      elevation: FeatureLineElevationMethod;
-      name?: string;
-      description?: string;
-      closed?: boolean;
-    }
-  | {
-      key: 'FEATURELINEELEV' | 'FLSETZ';
-      entityId: CadEntityId;
-      z: number;
-      vertexIds?: string[];
-    }
-  | {
-      key: 'FLRAISELOWER';
-      entityId: CadEntityId;
-      deltaZ: number;
-      vertexIds?: string[];
-    }
-  | {
-      key: 'FLGRADE';
-      entityId: CadEntityId;
-      startVertexId?: string;
-      endVertexId?: string;
-      startStation?: number;
-      endStation?: number;
-      gradePercent: number;
-      mode?: 'set-end-only' | 'grade-all-intermediates';
-    }
-  | {
-      key: 'FLINTERPOLATE';
-      entityId: CadEntityId;
-      startVertexId?: string;
-      endVertexId?: string;
-      startStation?: number;
-      endStation?: number;
-    }
-  | {
-      key: 'FLSURFACEELEV';
-      entityId: CadEntityId;
-      surfaceId: string;
-    }
-  | {
-      key: 'FLREVERSE';
-      entityId: CadEntityId;
-    }
-  | {
-      key: 'FLINQUIRY';
-      entityId: CadEntityId;
-      startStation?: number;
-      endStation?: number;
-    }
-  | {
-      key: 'FLINSERTVERTEX';
-      entityId: CadEntityId;
-      courseIndex: number;
-      station: number;
-    }
-  | {
-      key: 'FLDELETEVERTEX';
-      entityId: CadEntityId;
-      vertexIndex: number;
-    }
-  | {
-      key: 'SURFACE_ADD_FEATURE_LINE_BREAKLINE';
-      surfaceId: string;
-      entityId: CadEntityId;
-      name?: string;
-    }
+  | CadFeatureLineCommandPayload
   // Phase 20B — grade-to-surface definitions (results/meshes never in history).
   | CadGradingCommandPayload
   // Phase 20C — grading groups (single side only; definitions + snapshots).
   | CadGradingGroupCommandPayload
-  // Phase 20D Wave-1A — design surface workflow (engine only).
-  | {
-      key: 'SURFPURPOSE';
-      surfaceId: string;
-      /** Explicit role; null/undefined clears back to legacy neutral. */
-      purpose?: CadSurfacePurpose | null;
-    }
-  | {
-      key: 'DESIGNSURFACE';
-      sourceSurfaceId: string;
-      name: string;
-      /** Current source revision; a stale value rejects the copy. */
-      expectedRevision: string;
-      /** Session-owned CURRENT assertion (see SURFBAKE). */
-      sessionCurrent?: boolean;
-      layerId?: CadLayerId;
-      /** Undefined = keep the source style; null = clear. */
-      styleId?: string | null;
-    }
-  | {
-      key: 'DESIGNAPPLY';
-      /** Design target (keeps id/name/layer/style/purpose; never existing-ground). */
-      targetSurfaceId: string;
-      /** Current target revision; a stale value rejects the apply. */
-      targetExpectedRevision: string;
-      /** Patch source (contributes topology only; byte-identical). */
-      patchSurfaceId: string;
-      /** Current patch revision; a stale value rejects the apply. */
-      patchExpectedRevision: string;
-      /** Session-owned CURRENT assertion (see SURFBAKE). */
-      sessionCurrent?: boolean;
-    }
-  | {
-      key: 'DESIGNVOLUME';
-      baseSurfaceId: string;
-      comparisonSurfaceId: string;
-      name?: string;
-      layerId?: CadLayerId;
-      styleId?: string;
-    }
-  | {
-      key: 'DESIGNPATCH';
-      groupId: string;
-      /** Cached CURRENT result snapshot (never recomputed here). */
-      result: CadGradingGroupResult;
-      expectedRevision: string;
-      sessionCurrent?: boolean;
-      name?: string;
-      layerId?: CadLayerId;
-      /** Undefined = keep the group style; null = clear. */
-      styleId?: string | null;
-    }
+  | CadDesignSurfaceCommandPayload
   // Phase C3 — polyline vertex topology (count-changing, one undo entry).
   | {
       key: 'POLYLINE_INSERT_VERTEX';

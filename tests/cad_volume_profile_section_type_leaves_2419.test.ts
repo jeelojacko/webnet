@@ -946,8 +946,8 @@ describe('STRUCT-241.9 CAD+F2F graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (annotation leaf
     // 4 out-edges + hub import; analysis leaf 4 out-edges + hub import;
     // 4 retired hub edges to the anchor barrel + analysis modules).
-    expect(graph.nodes.length).toBe(503);
-    expect(graph.edges.length).toBe(2465);
+    expect(graph.nodes.length).toBe(505);
+    expect(graph.edges.length).toBe(2470);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1019,8 +1019,8 @@ describe('STRUCT-241.9 full-src graph pins', () => {
     // inside `src`).
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1675);
-    expect(graph.edges.length).toBe(7576);
+    expect(graph.nodes.length).toBe(1677);
+    expect(graph.edges.length).toBe(7581);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
