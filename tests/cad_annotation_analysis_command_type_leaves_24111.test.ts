@@ -23,10 +23,13 @@
  * four REATTACH slots, and the Phase 18U section comment); per-key
  * `Extract<CadCommand>` equivalence in both directions; optionality
  * precision; the byte-identical `CadCommandKey` (248 literals / 241 unique /
- * 7 legacy duplicate BLOCK keys kept); both splice sentinels + 133->116
- * top-level + 168 flattened; public transaction types; type-only emit pins;
- * CAD+F2F and full-`src` graph pins with an explicit +2 node / +6 type-edge
- * allowlist (+10 new type edges, -4 retired hub edges); in-memory negative
+ * 7 legacy duplicate BLOCK keys kept); both splice sentinels + 102 top-level
+ * (241.11: 133->116; 241.12 roll-forward: 116->102) + 168 flattened; public
+ * transaction types; type-only emit pins;
+ * CAD+F2F and full-`src` graph pins with an explicit +2 node / +5 type-edge
+ * roll-forward allowlist (241.11: +2/+6 with +10 new type edges and -4
+ * retired hub edges; 241.12: +2/+5 with +7 new type edges and -2 retired hub
+ * edges); in-memory negative
  * controls; and annotation/analysis regression neighbours by import
  * existence only.
  *
@@ -132,6 +135,34 @@ const unionKeysInOrderFromSource = (
 
 const unionKeysInOrder = (file: string, label: string, aliasName: string): string[] =>
   unionKeysInOrderFromSource(parse(file), label, aliasName);
+
+/**
+ * STRUCT-241.12 roll-forward: one descriptor per object member of the alias
+ * union, in declaration order. Multi-literal keys keep their normalized
+ * union text as a single descriptor, so expanding the feature-line leaf
+ * (11 members incl. 2 double-key objects) + design-surface leaf (5) keeps
+ * the exact 168 effective members without widening/splitting semantics.
+ */
+const unionMemberDescriptorsFromSource = (
+  source: ts.SourceFile,
+  label: string,
+  aliasName: string,
+): string[] => {
+  const alias = findAlias(source, label, aliasName);
+  if (!ts.isUnionTypeNode(alias.type)) throw new Error(`${label}: ${aliasName} is not a union`);
+  const out: string[] = [];
+  for (const member of alias.type.types) {
+    const flat = unwrap(member);
+    if (!ts.isTypeLiteralNode(flat)) throw new Error(`${label}: ${aliasName} has a non-literal member`);
+    const keyType = keyPropOf(flat)?.type;
+    if (!keyType) throw new Error(`${label}: ${aliasName} member without a key`);
+    out.push(ts.isLiteralTypeNode(keyType) && ts.isStringLiteral(keyType.literal) ? keyType.literal.text : norm(keyType.getText()));
+  }
+  return out;
+};
+
+const unionMemberDescriptors = (file: string, label: string, aliasName: string): string[] =>
+  unionMemberDescriptorsFromSource(parse(file), label, aliasName);
 
 interface VariantShape {
   key: string;
@@ -285,6 +316,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   const hub = source ?? parse(HUB);
   const annotation = unionKeysInOrder(ANN_LEAF, 'annotation', ANN_ALIAS);
   const analysis = unionKeysInOrder(ANL_LEAF, 'analysis', ANL_ALIAS);
+  // STRUCT-241.12 roll-forward: expand the feature-line (11 members, both
+  // double-key objects kept whole) + design-surface (5) leaves.
+  const featureline = unionMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsFeatureLineCommandTypes.ts'), 'featureline', 'CadFeatureLineCommandPayload');
+  const designsurface = unionMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsDesignSurfaceCommandTypes.ts'), 'designsurface', 'CadDesignSurfaceCommandPayload');
   const blockPrelude = unionKeysInOrder(
     abs('src/engine/cad/cadTransactionsBlockCommandTypes.ts'), 'block', 'CadBlockPreludeCommandPayload');
   const blockDefinition = unionKeysInOrder(
@@ -305,6 +342,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       const name = flat.typeName.text;
       if (name === ANN_ALIAS) members.push(...annotation);
       else if (name === ANL_ALIAS) members.push(...analysis);
+      else if (name === 'CadFeatureLineCommandPayload') members.push(...featureline);
+      else if (name === 'CadDesignSurfaceCommandPayload') members.push(...designsurface);
       else if (name === 'CadBlockPreludeCommandPayload') members.push(...blockPrelude);
       else if (name === 'CadBlockDefinitionCommandPayload') members.push(...blockDefinition);
       else if (name === 'CadLayerCommandPayload') members.push(...layer);
@@ -800,14 +839,22 @@ describe('STRUCT-241.11 baseline shapes: Extract<CadCommand> vs leaf vs Base*', 
 });
 
 describe('STRUCT-241.11 hub union splice order and member counts', () => {
-  it('measures 116 top-level members and documents the 133 -> 116 extraction', () => {
+  it('measures 102 top-level members and documents the 116 -> 102 extraction', () => {
     const counts = hubTopLevelCounts();
-    expect(counts).toEqual({ total: 116, inline: 82, refs: 27, intersections: 7 });
-    // Re-inlining the two leaves restores the pre-refactor 133 = 82 + 34 + 7
-    // top-level nodes (19 inline bodies replaced by 2 alias references).
+    // STRUCT-241.12 roll-forward: 16 feature-line + design-surface inline
+    // members replaced by 2 alias references (66 inline, 29 refs, 7 intersections).
+    expect(counts).toEqual({ total: 102, inline: 66, refs: 29, intersections: 7 });
+    // Re-inlining the annotation + analysis leaves restores the 241.11 shape
+    // 119 = 102 + 19 bodies - 2 alias references ...
     expect(unionKeysInOrder(ANN_LEAF, 'annotation', ANN_ALIAS).length).toBe(11);
     expect(unionKeysInOrder(ANL_LEAF, 'analysis', ANL_ALIAS).length).toBe(8);
-    expect(counts.total + 11 + 8 - 2).toBe(133);
+    expect(counts.total + 11 + 8 - 2).toBe(119);
+    // ... and re-inlining the 241.12 leaves on top restores the pre-241.11 133.
+    expect(unionMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsFeatureLineCommandTypes.ts'), 'featureline', 'CadFeatureLineCommandPayload').length).toBe(11);
+    expect(unionMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsDesignSurfaceCommandTypes.ts'), 'designsurface', 'CadDesignSurfaceCommandPayload').length).toBe(5);
+    expect(counts.total + 11 + 8 + 11 + 5 - 4).toBe(133);
   });
 
   it('splices both groups with neighbor sentinels in the original position', () => {
@@ -816,8 +863,10 @@ describe('STRUCT-241.11 hub union splice order and member counts', () => {
     expect(seq[definition]).toEqual({ kind: 'ref', label: 'CadBlockDefinitionCommandPayload' });
     expect(seq[definition + 1]).toEqual({ kind: 'ref', label: ANN_ALIAS });
     expect(seq[definition + 2]).toEqual({ kind: 'ref', label: ANL_ALIAS });
-    const next = seq[definition + 3];
-    expect(next?.kind).toBe('inline');
+    // STRUCT-241.12 roll-forward: the feature-line group now splices here,
+    // still contiguous, ahead of the Phase 20B grading group.
+    expect(seq[definition + 3]).toEqual({ kind: 'ref', label: 'CadFeatureLineCommandPayload' });
+    expect(seq[definition + 4]).toEqual({ kind: 'ref', label: 'CadGradingCommandPayload' });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -834,7 +883,9 @@ describe('STRUCT-241.11 hub union splice order and member counts', () => {
 
   it('leaves no inline annotation/analysis block key behind in the hub union', () => {
     const inlineSets = hubInlineKeySets();
-    expect(inlineSets.length).toBe(82);
+    // STRUCT-241.12 roll-forward: 82 -> 66 inline (16 feature-line +
+    // design-surface members moved to leaves).
+    expect(inlineSets.length).toBe(66);
     const moved: Set<string> = new Set([...EXPECTED_ANNOTATION_KEYS, ...EXPECTED_ANALYSIS_KEYS]);
     for (const set of inlineSets) {
       for (const key of set) {
@@ -964,8 +1015,10 @@ describe('STRUCT-241.11 annotation/analysis regression neighbours covered by imp
 // sorted-unique `<relPosix(from)>\n<relPosix(to)>`; sha256(JSON.stringify).
 // The 241.11 extraction is type-only: +2 nodes / +6 type edges (+10 new type
 // edges — 2 hub imports + 8 leaf out-edges — minus 4 retired hub edges to the
-// anchor barrel and the three analysis source modules). Both historical
-// value/mixed digests stay identical.
+// anchor barrel and the three analysis source modules). STRUCT-241.12
+// roll-forward: +2 nodes / +5 type edges (+7 new type edges — 2 hub imports +
+// 5 leaf out-edges — minus 2 retired hub edges to cadFeatureLineCreate +
+// gradingGroupTypes). Both historical value/mixed digests stay identical.
 // ---------------------------------------------------------------------------
 
 const pairDigest = (graph: ReturnType<typeof buildGraphs>): { valueEdges: number; uniqPairs: number; sha: string } => {
@@ -998,12 +1051,14 @@ describe('STRUCT-241.11 CAD+F2F graph pins', () => {
     const typeCycles = findCycles(graph.nodes, graph.type);
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
-    // Pre-241.11 baseline 501 / 2459; the two type-only leaves add +2 nodes
-    // and +6 type edges (annotation leaf: 4 out-edges + hub import;
-    // analysis leaf: 4 out-edges + hub import; 4 retired hub edges to the
-    // anchor barrel + analysis maps/legends/types modules).
-    expect(graph.nodes.length).toBe(503);
-    expect(graph.edges.length).toBe(2465);
+    // Pre-241.11 baseline 501 / 2459; the 241.11 leaves add +2 / +6
+    // (annotation leaf: 4 out-edges + hub import; analysis leaf: 4 out-edges
+    // + hub import; 4 retired hub edges to the anchor barrel +
+    // analysis maps/legends/types modules). STRUCT-241.12 roll-forward:
+    // +2 / +5 (feature-line leaf: 2 out-edges + hub import; design-surface
+    // leaf: 3 out-edges + hub import; 2 retired hub edges).
+    expect(graph.nodes.length).toBe(505);
+    expect(graph.edges.length).toBe(2470);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1087,10 +1142,10 @@ describe('STRUCT-241.11 full-src graph pins', () => {
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
     expect(typeCycles.cyclic.length).toBe(7);
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
-    // Pre-241.11 baseline 1673 / 7570; the two leaves add the same +2 / +6
-    // (every 241.11 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1675);
-    expect(graph.edges.length).toBe(7576);
+    // Pre-241.11 baseline 1673 / 7570; the 241.11 leaves add +2 / +6 and the
+    // 241.12 leaves add +2 / +5 (every 241.11/241.12 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1677);
+    expect(graph.edges.length).toBe(7581);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
@@ -1247,7 +1302,7 @@ describe('STRUCT-241.11 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 116, inline: 82, refs: 27, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 102, inline: 66, refs: 29, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });

@@ -848,8 +848,8 @@ describe('STRUCT-241.10 CAD+F2F graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (annotation leaf
     // 4 out-edges + hub import; analysis leaf 4 out-edges + hub import;
     // 4 retired hub edges to the anchor barrel + analysis modules).
-    expect(graph.nodes.length).toBe(503);
-    expect(graph.edges.length).toBe(2465);
+    expect(graph.nodes.length).toBe(505);
+    expect(graph.edges.length).toBe(2470);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -893,7 +893,15 @@ describe('STRUCT-241.10 CAD+F2F graph pins', () => {
     ]);
     // One `import type` edge plus one `export type ... from` edge.
     const hubToLeaf = { from: path.resolve(HUB), to: leaf, specifier: MODEL_SPECIFIER, kind: 'type' };
-    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([hubToLeaf, hubToLeaf]);
+    // STRUCT-241.12 roll-forward: the design-surface command leaf adds one
+    // type-only edge for `CadSurfacePurpose` (first in from-path order).
+    const designSurfaceToLeaf = {
+      from: path.resolve(path.join(CAD_DIR, 'cadTransactionsDesignSurfaceCommandTypes.ts')),
+      to: leaf,
+      specifier: MODEL_SPECIFIER,
+      kind: 'type',
+    };
+    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([designSurfaceToLeaf, hubToLeaf, hubToLeaf]);
     expect(graph.nodes.filter((node) => node === leaf)).toHaveLength(1);
     expect(graph.edges.filter(
       (edge) => (edge.from === leaf || edge.to === leaf) && edge.kind !== 'type',
@@ -934,8 +942,8 @@ describe('STRUCT-241.10 full-src graph pins', () => {
     // resolves inside `src`).
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1675);
-    expect(graph.edges.length).toBe(7576);
+    expect(graph.nodes.length).toBe(1677);
+    expect(graph.edges.length).toBe(7581);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

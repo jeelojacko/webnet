@@ -87,6 +87,8 @@ const BLOCK_LEAF = path.join(CAD_DIR, 'cadTransactionsBlockCommandTypes.ts');
 // expanded by the flattened view so the 168 effective members stay pinned.
 const ANN_LEAF = path.join(CAD_DIR, 'cadTransactionsAnnotationCommandTypes.ts');
 const ANL_LEAF = path.join(CAD_DIR, 'cadTransactionsAnalysisCommandTypes.ts');
+const FL_LEAF = path.join(CAD_DIR, 'cadTransactionsFeatureLineCommandTypes.ts');
+const DS_LEAF = path.join(CAD_DIR, 'cadTransactionsDesignSurfaceCommandTypes.ts');
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 
 const LAYER_ALIAS = 'CadLayerCommandPayload';
@@ -148,6 +150,32 @@ const unionKeysInOrderFromSource = (
 
 const unionKeysInOrder = (file: string, label: string, aliasName: string): string[] =>
   unionKeysInOrderFromSource(parse(file), label, aliasName);
+
+/**
+ * STRUCT-241.12 roll-forward: one descriptor per object member of the alias
+ * union, in declaration order. Multi-literal keys keep their normalized
+ * union text as a single descriptor, so expanding the feature-line leaf
+ * (11 members incl. 2 double-key objects) + design-surface leaf (5) keeps
+ * the exact 168 effective members without widening/splitting semantics.
+ */
+const unionMemberDescriptors = (file: string, label: string, aliasName: string): string[] => {
+  const source = parse(file);
+  const alias = findAlias(source, label, aliasName);
+  if (!ts.isUnionTypeNode(alias.type)) throw new Error(`${label}: ${aliasName} is not a union`);
+  const out: string[] = [];
+  for (const member of alias.type.types) {
+    const flat = unwrap(member);
+    if (!ts.isTypeLiteralNode(flat)) throw new Error(`${label}: ${aliasName} has a non-literal member`);
+    const keyProp = flat.members.find(
+      (m): m is ts.PropertySignature =>
+        ts.isPropertySignature(m) && m.name.getText() === 'key',
+    );
+    const keyType = keyProp?.type;
+    if (!keyType) throw new Error(`${label}: ${aliasName} member without a key`);
+    out.push(ts.isLiteralTypeNode(keyType) && ts.isStringLiteral(keyType.literal) ? keyType.literal.text : norm(keyType.getText()));
+  }
+  return out;
+};
 
 /** Collapse all whitespace so formatting drift cannot mask (or fake) type drift. */
 const norm = (text: string): string => text.replace(/\s+/g, '');
@@ -282,6 +310,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   // STRUCT-241.11: expand the annotation (11) + analysis (8) leaves.
   const annotationKeys = unionKeysInOrder(ANN_LEAF, 'annotation leaf', ANN_ALIAS);
   const analysisKeys = unionKeysInOrder(ANL_LEAF, 'analysis leaf', ANL_ALIAS);
+  // STRUCT-241.12 roll-forward: expand the feature-line (11 members, both
+  // double-key objects kept whole) + design-surface (5) leaves.
+  const featurelineKeys = unionMemberDescriptors(
+    FL_LEAF, 'featureline leaf', 'CadFeatureLineCommandPayload');
+  const designsurfaceKeys = unionMemberDescriptors(
+    DS_LEAF, 'designsurface leaf', 'CadDesignSurfaceCommandPayload');
   const keyDescriptor = (member: ts.TypeLiteralNode): string | null => {
     const keyProp = member.members.find(
       (m): m is ts.PropertySignature =>
@@ -306,6 +340,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (flat.typeName.text === BLOCK_DEF_ALIAS) members.push(...blockDefKeys);
       else if (flat.typeName.text === ANN_ALIAS) members.push(...annotationKeys);
       else if (flat.typeName.text === ANL_ALIAS) members.push(...analysisKeys);
+      else if (flat.typeName.text === 'CadFeatureLineCommandPayload') members.push(...featurelineKeys);
+      else if (flat.typeName.text === 'CadDesignSurfaceCommandPayload') members.push(...designsurfaceKeys);
       else members.push(flat.typeName.text);
       return;
     }
@@ -1361,7 +1397,10 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.11 roll-forward: 133 -> 116 top-level (82 inline, 27 refs,
     // 7 intersections); flattened effective members stay 168 via the
     // annotation + analysis leaves.
-    expect(hubTopLevelCounts()).toEqual({ total: 116, inline: 82, refs: 27, intersections: 7 });
+    // STRUCT-241.12 roll-forward: 116 -> 102 top-level (66 inline, 29 refs,
+    // 7 intersections); flattened effective members stay 168 via the
+    // feature-line + design-surface leaves.
+    expect(hubTopLevelCounts()).toEqual({ total: 102, inline: 66, refs: 29, intersections: 7 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1396,7 +1435,9 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.2 roll-forward: 110 -> 101 inline (9 block members moved to leaves).
     // STRUCT-241.11 roll-forward: 101 -> 82 inline (19 annotation +
     // analysis members moved to leaves).
-    expect(inlineSets.length).toBe(82);
+    // STRUCT-241.12 roll-forward: 82 -> 66 inline (16 feature-line +
+    // design-surface members moved to leaves).
+    expect(inlineSets.length).toBe(66);
     for (const set of inlineSets) {
       for (const key of set) {
         expect(key.startsWith('LAYER_'), `inline ${key} still in hub`).toBe(false);

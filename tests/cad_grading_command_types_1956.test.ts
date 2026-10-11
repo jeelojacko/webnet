@@ -954,15 +954,16 @@ describe('STRUCT-195.6 independent baseline pins: grading-group payloads', () =>
 describe('STRUCT-195.6 hub union splice order', () => {
   it('splices grading -> grading-group between breakline and purpose with no gaps', () => {
     const members = hubMemberOrder();
-    const breaklineAt = members.indexOf('SURFACE_ADD_FEATURE_LINE_BREAKLINE');
-    expect(breaklineAt, 'SURFACE_ADD_FEATURE_LINE_BREAKLINE').toBeGreaterThanOrEqual(0);
-    expect(members.slice(breaklineAt - 1, breaklineAt + 5)).toEqual([
-      'FLDELETEVERTEX',
-      'SURFACE_ADD_FEATURE_LINE_BREAKLINE',
+    // STRUCT-241.12 roll-forward: the feature-line (11) + design-surface (5)
+    // bodies moved into alias leaves, so the contiguity pin now runs at ref
+    // granularity (member order itself is unchanged).
+    const featurelineAt = members.indexOf('CadFeatureLineCommandPayload');
+    expect(featurelineAt, 'CadFeatureLineCommandPayload').toBeGreaterThanOrEqual(0);
+    expect(members.slice(featurelineAt, featurelineAt + 4)).toEqual([
+      'CadFeatureLineCommandPayload',
       'CadGradingCommandPayload',
       'CadGradingGroupCommandPayload',
-      'SURFPURPOSE',
-      'DESIGNSURFACE',
+      'CadDesignSurfaceCommandPayload',
     ]);
   });
 
