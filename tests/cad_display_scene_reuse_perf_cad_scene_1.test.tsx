@@ -1499,6 +1499,100 @@ describe('PERF-CAD-SCENE.1 guard unit contract', () => {
     ).toBe(false);
   });
 
+  it('fails closed when BOTH sides carry the same unknown provenance field', () => {
+    const project = lineProject(2);
+    const contourCache = { cache: 'contour' };
+    const tinCache = { cache: 'tin' };
+    const volumeCache = { cache: 'volume' };
+    // The unknown key is present on BOTH the cached entry and the candidate, so
+    // the old equal-key-set check alone accepted it while comparing only the
+    // pinned fields; the per-slot allowlist must reject it either way.
+    const contourEntry = entryFor(project, {
+      surfaceContourInputs: {
+        version: 7,
+        contourCache,
+        getContours: () => null,
+        extraProvenance: { cache: 'previous' },
+      },
+      surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+    });
+    // Same unknown key on both sides with DIFFERENT values.
+    expect(
+      canReuseCadDisplaySceneBase(contourEntry, project, {
+        ...inputs,
+        surfaceContourInputs: {
+          version: 7,
+          contourCache,
+          getContours: () => null,
+          extraProvenance: { cache: 'next' },
+        },
+        surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+      }),
+    ).toBe(false);
+    // Same unknown key on both sides with an EQUAL (same-reference) value is
+    // still unproven provenance — unknown means fail closed, not value-diff.
+    const extraProvenance = { cache: 'same' };
+    const equalEntry = entryFor(project, {
+      surfaceContourInputs: {
+        version: 7,
+        contourCache,
+        getContours: () => null,
+        extraProvenance,
+      },
+      surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+    });
+    expect(
+      canReuseCadDisplaySceneBase(equalEntry, project, {
+        ...inputs,
+        surfaceContourInputs: {
+          version: 7,
+          contourCache,
+          getContours: () => null,
+          extraProvenance,
+        },
+        surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+      }),
+    ).toBe(false);
+    // The volume slot fails closed the same way.
+    const volumeEntry = entryFor(project, {
+      surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+      surfaceVolumeInputs: {
+        version: 2,
+        tinCache,
+        volumeCache,
+        extraProvenance: { cache: 'previous' },
+      },
+    });
+    expect(
+      canReuseCadDisplaySceneBase(volumeEntry, project, {
+        ...inputs,
+        surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+        surfaceVolumeInputs: {
+          version: 2,
+          tinCache,
+          volumeCache,
+          extraProvenance: { cache: 'next' },
+        },
+      }),
+    ).toBe(false);
+    // Existing known-field behavior is unchanged: the same shapes without the
+    // unknown key still reuse across a fresh getter closure.
+    expect(
+      canReuseCadDisplaySceneBase(
+        entryFor(project, {
+          surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+          surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+        }),
+        project,
+        {
+          ...inputs,
+          surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+          surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+        },
+      ),
+    ).toBe(true);
+  });
+
   it('falsifiability: a loosened guard that ignores entities would pass an entity edit', () => {
     const project = lineProject(4);
     const moved = replaceCadProjectEntities(

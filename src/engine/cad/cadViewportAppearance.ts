@@ -292,6 +292,33 @@ const sameKeys = (first: object, second: object): boolean => {
 };
 
 /**
+ * Known own-keys per session-input slot. A key outside its slot's allowlist is
+ * unproven provenance and fails closed until explicitly gated here — even when
+ * the same unknown key is present on BOTH inputs with identical values, since
+ * matching keys alone cannot prove the getter ignores it.
+ *
+ * `getContours`/`buildingVolumeIds`/`sessionDiagnostics` are carried by the
+ * production inputs but never read by the display-scene getters; they are
+ * allowlisted so a new (potentially read) field is the only thing that trips.
+ */
+const CONTOUR_INPUT_KNOWN_KEYS: ReadonlySet<string> = new Set([
+  'version',
+  'contourCache',
+  'getContours',
+]);
+const VOLUME_INPUT_KNOWN_KEYS: ReadonlySet<string> = new Set([
+  'version',
+  'tinCache',
+  'volumeCache',
+  'buildingVolumeIds',
+  'sessionDiagnostics',
+]);
+
+/** True only when every own key of `value` is in the slot's allowlist. */
+const hasOnlyKnownKeys = (value: object, knownKeys: ReadonlySet<string>): boolean =>
+  ownKeys(value).every((key) => knownKeys.has(key));
+
+/**
  * The contour scene input is rebuilt by the shell whenever `cadProject`
  * changes, so its object identity churns on a layer-only edit even though its
  * content does not; the volume input is reference-stable unless its
@@ -307,10 +334,11 @@ const sameKeys = (first: object, second: object): boolean => {
  *    across a layer rename and every volume mutation bumps `version`.
  *
  * `version` alone is NOT sufficient (a cache can be swapped without a bump);
- * each slot is therefore pinned by presence + version + cache identity. The
- * own-key set must also match, so a newly added input field fails closed
- * until it is explicitly gated. A presence change (`undefined` <-> object)
- * changes the scene shape and always forces a rebuild.
+ * each slot is therefore pinned by presence + version + cache identity. Each
+ * own-key set must also be a subset of the slot's known-key allowlist, so a
+ * newly added input field fails closed — even when present on both sides with
+ * equal values — until it is explicitly gated. A presence change
+ * (`undefined` <-> object) changes the scene shape and always forces a rebuild.
  *
  * INVARIANT (guarded by tests): the contour/volume getters must never read
  * layer NAMES. `layersDifferOnlyByName` already requires every non-layer
@@ -322,6 +350,8 @@ const sameContourInputs = (previous: unknown, next: unknown): boolean => {
   if (previous == null || next == null) return false;
   if (typeof previous !== 'object' || typeof next !== 'object') return false;
   if (!sameKeys(previous, next)) return false;
+  if (!hasOnlyKnownKeys(previous, CONTOUR_INPUT_KNOWN_KEYS)) return false;
+  if (!hasOnlyKnownKeys(next, CONTOUR_INPUT_KNOWN_KEYS)) return false;
   const previousInput = previous as ContourSessionInput;
   const nextInput = next as ContourSessionInput;
   return (
@@ -335,6 +365,8 @@ const sameVolumeInputs = (previous: unknown, next: unknown): boolean => {
   if (previous == null || next == null) return false;
   if (typeof previous !== 'object' || typeof next !== 'object') return false;
   if (!sameKeys(previous, next)) return false;
+  if (!hasOnlyKnownKeys(previous, VOLUME_INPUT_KNOWN_KEYS)) return false;
+  if (!hasOnlyKnownKeys(next, VOLUME_INPUT_KNOWN_KEYS)) return false;
   const previousInput = previous as VolumeSessionInput;
   const nextInput = next as VolumeSessionInput;
   return (
