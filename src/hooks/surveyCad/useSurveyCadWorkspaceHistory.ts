@@ -55,13 +55,20 @@ export const useSurveyCadWorkspaceHistory = (
   // equal, so no update loop is possible.
   // PERF-187: the previous double `buildStableCadProjectSignature` call paid
   // two complete canonical traversals + allocations + JSON.stringify per
-  // effect run. `areCadProjectsCanonicallyEqual` preserves the exact same
+  // effect run. `areCadProjectsCanonicallyEqual` keeps the same
   // key-order-insensitive equivalence (clone-normalized TIN surfaces stay
-  // equal; genuine external edits still adopt) with a same-reference fast
-  // path plus, per distinct-reference comparison, one cheap domain walk per
-  // side and one allocation-light early-exit comparison walk with zero
-  // serialization, falling back to the original canonical serializer on
-  // exotic values rather than risking undo loss.
+  // equal; genuine external edits still adopt) via a same-reference fast path;
+  // for distinct references it first runs two native `JSON.stringify` calls and
+  // returns `true` when they match. When the raw strings differ, a stringify
+  // throws, or a raw result is `undefined`, it falls back to the original
+  // double `buildStableCadProjectSignature` serializer. Non-inert inputs
+  // whose raw strings differ, or whose serialization throws (proxies,
+  // cycles), route through the canonical oracle; a raw-equal `Array`
+  // subclass returns `true` as a documented safe-direction exclusion (K1),
+  // and stateful accessors are documented exclusions in `cadProjectState`
+  // (multi-pass reads can advance getter state, so the inert-data parity
+  // guarantee does not extend to them). On real project data — always
+  // inert plain JSON — undo is never lost.
   useEffect(() => {
     if (resetKeyRef.current !== resetKey) return;
     if (history.present.project === baseProject) return;

@@ -5,15 +5,23 @@
  * Regression + perf contract for `areCadProjectsCanonicallyEqual` and its use
  * in `useSurveyCadWorkspaceHistory`:
  *
- * - The external-adopt effect must keep the EXACT key-order-insensitive
- *   equivalence of `buildStableCadProjectSignature` (Phase 18M: the drawing
+ * - The external-adopt effect must keep the key-order-insensitive
+ *   equivalence of `buildStableCadProjectSignature` on INERT plain-JSON
+ *   project data (Phase 18M: the drawing
  *   sync clones the project, normalizing imported-TIN key order, and must not
- *   wipe the just-committed undo transaction).
+ *   wipe the just-committed undo transaction). Intentional documented
+ *   divergences on production-impossible inputs: K1 (species array),
+ *   L1 (stateful accessor), G2 (same-ref cyclic).
  * - The effect must stop paying two full canonical traversals + JSON
  *   serialization per run. The comparator has a same-reference fast path and,
- *   per distinct-reference comparison, one cheap domain walk per side plus one
- *   allocation-light comparison walk with zero serialization; only exotic,
- *   non-plain-JSON values fall back to the original canonical serializer.
+ *   for distinct references, a plain raw-JSON pair.
+ *   Plain order-preserved clones take that branch with exactly TWO stringify
+ *   calls (first args = the original refs). Reordered or genuinely different
+ *   INERT values fall back to the canonical serializer oracle (two raw +
+ *   two canonical calls); same-ref is zero. Exotic inputs are budgeted by
+ *   shape: raw-equal exotics (K1 species) cost the raw pair; throwing or
+ *   aborted serializations cost the raw attempt (possibly partial) plus the
+ *   oracle pair; K1/L1/G2 document the intentional divergences.
  *
  * The module is mocked so `buildStableCadProjectSignature` is counted while
  * still delegating to the real implementation. `areCadProjectsCanonicallyEqual`
@@ -21,11 +29,12 @@
  *
  * That export spy only observes the DIRECT export binding. The helper's
  * INTERNAL fallback calls `buildStableCadProjectSignature` through the
- * module-local binding (cadProjectState.ts:582/586), which `vi.mock` cannot
- * replace, so `signatureCalls() === 0` alone never proves the helper skipped
- * serialization. Helper-internal serialization is measured with the global
- * `JSON.stringify` spy (`measureStringifyCalls` below), which the fallback
- * does route through. Zero-serialization claims use that spy;
+ * module-local binding, which `vi.mock` cannot replace, so
+ * `signatureCalls() === 0` alone never proves the helper skipped the oracle.
+ * Both the plain raw pair and the fallback route through the global
+ * `JSON.stringify`, so the spy below (`measureStringifyCalls`) is the real
+ * branch discriminator; it also captures each call's first argument so a test
+ * can prove the raw branch passed the ORIGINAL refs with no canonical rebuild.
  * `signatureCalls()` is reserved for direct/hook call-budget checks.
  */
 import { readFileSync } from 'node:fs';
@@ -98,21 +107,34 @@ const resetSignatureCalls = (): void => {
 };
 
 /**
- * Observe the helper's INTERNAL serializer fallback.
+ * Observe the helper's `JSON.stringify` traffic by branch.
  *
  * `areCadProjectsCanonicallyEqual` reaches `buildStableCadProjectSignature`
- * through the MODULE-LOCAL binding (cadProjectState.ts:582/586), which the
- * `vi.mock` above cannot replace, so `signatureCalls()` can NEVER see that
- * fallback. The fallback does route through the global `JSON.stringify`,
- * however, so this spy is the only way to observe it. Keep the window tight:
- * exactly one synchronous helper call, no React rendering. Clear immediately
- * before the call, read immediately after, restore in `finally`.
+ * through the MODULE-LOCAL binding, which the `vi.mock` above cannot replace,
+ * so `signatureCalls()` can NEVER see the oracle fallback. Both the plain raw
+ * pair and the fallback go through the global `JSON.stringify`, so this spy
+ * counts the raw branch (exactly 2 calls whose first args are the ORIGINAL
+ * inputs) versus the fallback (exactly 4: the completed raw pair plus the two
+ * canonical oracle calls). `firstArgs`
+ * captures each call's first argument, so raw-branch tests prove no canonical
+ * rebuild happened. Keep the window tight: exactly one synchronous helper
+ * call, no React rendering. Clear immediately before the call, read
+ * immediately after, restore in `finally`.
  */
-function measureStringifyCalls<T>(run: () => T): { result: T; calls: number } {
+function measureStringifyCalls<T>(run: () => T): {
+  result: T;
+  calls: number;
+  firstArgs: unknown[];
+} {
   const spy = vi.spyOn(JSON, 'stringify');
   spy.mockClear();
   try {
-    return { result: run(), calls: spy.mock.calls.length };
+    const result = run();
+    return {
+      result,
+      calls: spy.mock.calls.length,
+      firstArgs: spy.mock.calls.map((call) => call[0]),
+    };
   } finally {
     spy.mockRestore();
   }
@@ -809,10 +831,10 @@ describe('PERF-187 oracle parity (helper vs both buildStable outputs)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Shared-reference parity (PERF-187 P1 correction): object identity must NOT
-// shortcut `canonicalValuesEqual`; only primitives/null may. A shared nested
-// reference must traverse structurally so cycles hit the ancestor-stack
-// fallback and the original serializer preserves throw-parity.
+// Shared-reference parity: a shared nested REFERENCE must not let the raw fast
+// path claim equality for a cyclic graph. The raw stringify throws on a
+// cycle, so the helper routes to the canonical oracle and preserves its
+// throw-parity; only an identical TOP-LEVEL reference returns `true` directly.
 // ---------------------------------------------------------------------------
 
 describe('PERF-187 shared-reference parity (narrowed identity shortcut)', () => {
@@ -844,18 +866,20 @@ describe('PERF-187 shared-reference parity (narrowed identity shortcut)', () => 
     expect(() => realStable(project)).toThrow();
   });
 
-  it('G3: distinct projects sharing a NON-cyclic nested reference are equal with 0 serialization', () => {
+  it('G3: distinct projects sharing a NON-cyclic plain reference take the raw path', () => {
     const shared = { p: 1, q: { r: 'x' } };
     const first = { nested: shared } as unknown as CadProject;
     const second = { nested: shared } as unknown as CadProject;
 
-    // Structural traversal of the shared reference succeeds without ever
-    // touching the serializer. The export spy cannot observe the helper's
-    // module-local fallback, so prove zero-serialization with the global
-    // JSON.stringify spy instead.
+    // Plain data, so the raw pair runs and its strings match. The export
+    // spy cannot observe the module-local fallback; prove the raw branch with
+    // the global JSON.stringify spy: exactly two calls whose first args are the
+    // ORIGINAL input refs (a canonical rebuild would pass fresh objects).
     const measured = measureStringifyCalls(() => areCadProjectsCanonicallyEqual(first, second));
     expect(measured.result).toBe(true);
-    expect(measured.calls).toBe(0);
+    expect(measured.calls).toBe(2);
+    expect(measured.firstArgs[0]).toBe(first);
+    expect(measured.firstArgs[1]).toBe(second);
     expect(realStable(first)).toBe(realStable(second));
   });
 });
@@ -865,7 +889,7 @@ describe('PERF-187 shared-reference parity (narrowed identity shortcut)', () => 
 // ---------------------------------------------------------------------------
 
 describe('PERF-187 sampled comparison cost (counts, not time gates)', () => {
-  it('never serializes on equal clones while the oracle pays two stable signatures', () => {
+  it('uses exactly two raw stringify calls on equal order-preserved clones', () => {
     const samples = [
       { label: '1k', entityCount: 1_000, iterations: 5 },
       { label: '10k', entityCount: 10_000, iterations: 3 },
@@ -882,11 +906,14 @@ describe('PERF-187 sampled comparison cost (counts, not time gates)', () => {
         const clone = cloneCadProject(base);
         resetSignatureCalls();
         // Tight synchronous window: exactly the helper call. `cloneCadProject`
-        // above stays OUTSIDE it (it is not the measured path). The helper's
-        // plain-JSON fast path must not touch the serializer; the global
-        // JSON.stringify spy proves that where the export spy cannot.
+        // above stays OUTSIDE it (it is not the measured path). The
+        // order-preserved raw branch must issue exactly two stringify calls
+        // with the ORIGINAL refs; the global spy proves both.
         const measured = measureStringifyCalls(() => areCadProjectsCanonicallyEqual(base, clone));
         equalChecks.push(measured.result);
+        expect(measured.calls).toBe(2);
+        expect(measured.firstArgs[0]).toBe(base);
+        expect(measured.firstArgs[1]).toBe(clone);
         newStringifyCalls += measured.calls;
         newStableCalls += signatureCalls();
       }
@@ -912,7 +939,7 @@ describe('PERF-187 sampled comparison cost (counts, not time gates)', () => {
       expect(equalChecks).toHaveLength(sample.iterations);
       expect(equalChecks.every((value) => value === true)).toBe(true);
       expect(newStableCalls).toBe(0);
-      expect(newStringifyCalls).toBe(0);
+      expect(newStringifyCalls).toBe(sample.iterations * 2);
       expect(oldStableCalls).toBe(sample.iterations * 2);
       expect(oldBytes).toBeGreaterThan(0);
 
@@ -928,13 +955,67 @@ describe('PERF-187 sampled comparison cost (counts, not time gates)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// PERF-187 P1 correction round 2: traversal-order-independent exotic parity.
+// PERF-187 P1 redesign: branch-discriminating raw-path battery.
 //
-// Phase 1 must establish the plain-JSON domain for BOTH distinct references
-// BEFORE Phase 2 may report any structural mismatch. Otherwise an early plain
-// difference would mask an exotic value later in the document and return
-// `false` where the stable-signature oracle (which walks the whole document)
-// throws.
+// The raw branch issues exactly TWO `JSON.stringify` calls whose first args are
+// the ORIGINAL refs (no canonical rebuild — the airtight observable). The
+// fallback issues FOUR (the completed raw pair plus the two canonical oracle
+// calls).
+// ---------------------------------------------------------------------------
+
+describe('PERF-187 raw-path branch battery', () => {
+  it('R1: an order-preserved 1k-entity clone takes the raw branch', () => {
+    const base = buildSyntheticProject(1_000);
+    const clone = cloneCadProject(base);
+    expect(clone).not.toBe(base);
+
+    const measured = measureStringifyCalls(() => areCadProjectsCanonicallyEqual(base, clone));
+    expect(measured.result).toBe(true);
+    expect(measured.calls).toBe(2);
+    expect(measured.firstArgs[0]).toBe(base);
+    expect(measured.firstArgs[1]).toBe(clone);
+    expect(realStable(base)).toBe(realStable(clone));
+  });
+
+  it('R2: a toJSON-constant pair with equal raw output stays on the raw branch and agrees', () => {
+    const first = { a: { toJSON: () => 1, value: 5 } } as unknown as CadProject;
+    const second = { a: { toJSON: () => 1, value: 6 } } as unknown as CadProject;
+    // Raw output is equal (both toJSON constants serialize identically), which
+    // is exactly the identity-sensitive family the raw contract accepts.
+    expect(JSON.stringify(first)).toBe(JSON.stringify(second));
+
+    const measured = measureStringifyCalls(() => areCadProjectsCanonicallyEqual(first, second));
+    expect(measured.result).toBe(true);
+    expect(measured.calls).toBe(2);
+    expect(measured.firstArgs[0]).toBe(first);
+    expect(measured.firstArgs[1]).toBe(second);
+    expect(realStable(first)).toBe(realStable(second));
+  });
+
+  it('R3: a key-reordered clone takes the fallback branch (4 calls) yet returns true', () => {
+    const first = {
+      kind: 'tin',
+      importedTin: { vertices: [1], faces: [2], provenance: { a: 1, b: 2 } },
+    } as unknown as CadProject;
+    const second = {
+      importedTin: { provenance: { b: 2, a: 1 }, faces: [2], vertices: [1] },
+      kind: 'tin',
+    } as unknown as CadProject;
+    expect(JSON.stringify(first)).not.toBe(JSON.stringify(second));
+
+    const measured = measureStringifyCalls(() => areCadProjectsCanonicallyEqual(first, second));
+    expect(measured.result).toBe(true);
+    expect(measured.calls).toBe(4);
+    expect(realStable(first)).toBe(realStable(second));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PERF-187 correction round 2 (raw-path abort): exotic parity must not
+// depend on where a plain difference appears. The raw pair aborts for the WHOLE
+// side on the first cycle/bigint/toJSON throw, so an early plain difference can
+// never mask a later exotic: the helper routes to the canonical oracle and
+// preserves its throw behavior.
 // ---------------------------------------------------------------------------
 
 describe('PERF-187 correction round 2 (domain pre-scan ordering)', () => {
@@ -953,7 +1034,7 @@ describe('PERF-187 correction round 2 (domain pre-scan ordering)', () => {
   });
 
   it('H2: a null short-circuit must not mask a later bigint (helper AND oracle throw)', () => {
-    // Direct bigint value: the plain-object key scan already detects it.
+    // Direct bigint value: the raw stringify throws on it directly.
     const directFirst = { a: null } as unknown as CadProject;
     const directSecond = { a: BigInt(1) } as unknown as CadProject;
     expect(() => realStable(directFirst)).not.toThrow();
@@ -961,10 +1042,10 @@ describe('PERF-187 correction round 2 (domain pre-scan ordering)', () => {
     expect(oracleOutcome(directFirst, directSecond)).toBe('throw');
     expect(helperOutcome(directFirst, directSecond)).toBe('throw');
 
-    // Bigint hidden behind an array: this is the actual order-dependent shape.
-    // `realStable(directFirst)` serializes fine and `realStable(nestedSecond)`
-    // throws, so the oracle throws; the null-vs-array short-circuit must not
-    // report false before Phase 1 inspects the array element.
+    // Bigint hidden behind an array: `realStable(directFirst)` serializes fine
+    // and `realStable(nestedSecond)` throws, so the oracle throws; the raw pair
+    // must abort into the fallback instead of comparing a raw `null` against a
+    // partially serialized array.
     const nestedFirst = { a: null } as unknown as CadProject;
     const nestedSecond = { a: [BigInt(1)] } as unknown as CadProject;
     expect(() => realStable(nestedFirst)).not.toThrow();
@@ -978,18 +1059,17 @@ describe('PERF-187 correction round 2 (domain pre-scan ordering)', () => {
     const second = { a: 1, b: { toJSON: () => 1, value: 5 } } as unknown as CadProject;
 
     expect(oracleOutcome(first, second)).toBe(false);
-    // Phase 1 detects the nested `toJSON` (exotic) and routes to the serializer
-    // fallback instead of letting Phase 2 exit at `a`. That fallback is
-    // module-local, so the export spy cannot see it; the global JSON.stringify
-    // spy proves the serialization actually ran. This is the spy-sensitivity
-    // control for the perf sample's zero-serialization claim below.
+    // The raw pair differs at `a` before the nested `toJSON` matters, so the
+    // helper falls back to the canonical oracle. That fallback is module-local,
+    // so the export spy cannot see it; the global JSON.stringify spy proves it
+    // ran (4 calls: 2 raw + 2 canonical). This is the spy-sensitivity control
+    // for the perf sample's raw-branch budget above.
     const measured = measureStringifyCalls(() => helperOutcome(first, second));
     expect(measured.result).toBe(false);
-    expect(measured.calls).toBeGreaterThan(0);
+    expect(measured.calls).toBe(4);
 
-    // A throwing `toJSON` is the order-dependent variant that proves Phase 1
-    // ran: the old early exit at `a` returned false, while the oracle (and the
-    // fallback path) throw.
+    // A throwing `toJSON` is the order-dependent variant: the raw pair throws,
+    // so the helper falls back to the oracle, which throws too.
     const throwingFirst = {
       a: 0,
       b: {
@@ -1012,12 +1092,12 @@ describe('PERF-187 correction round 2 (domain pre-scan ordering)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// PERF-187 correction round 3: accessor + array-map domain guards.
+// PERF-187 correction round 3: accessor + array-map guards.
 //
-// The domain scanner must DETECT accessors without invoking them and route to
-// the serializer fallback, and it must reject an `Array` whose virtual `map`
-// was overridden. Each case asserts helper/oracle agreement on a fresh input
-// pair, since a stateful getter advances on every read.
+// Accessors are read through the raw stringify (which invokes a getter exactly
+// like the oracle does), and an `Array` whose virtual `map` was overridden is
+// an `Array` subclass. Each case asserts helper/oracle agreement on a fresh
+// input pair, since a stateful getter advances on every read.
 // ---------------------------------------------------------------------------
 
 interface AccessorReadState {
@@ -1077,8 +1157,8 @@ const mapOverridingArrayProject = (): { first: CadProject; second: CadProject } 
   };
 };
 
-describe('PERF-187 correction round 3 (accessor + array-map guards)', () => {
-  it('J1: object accessor routes to the fallback and agrees with the oracle', () => {
+describe('PERF-187 correction round 3 (accessor + array-map cases)', () => {
+  it('J1: object accessor is read consistently and agrees with the oracle', () => {
     const oracleState: AccessorReadState = { reads: 0 };
     const oraclePair = incrementingGetterProject(oracleState);
     const oracle = oracleOutcome(oraclePair.first, oraclePair.second);
@@ -1089,12 +1169,12 @@ describe('PERF-187 correction round 3 (accessor + array-map guards)', () => {
 
     expect(helper).toBe(oracle);
     // Agreeing without a specific boolean: both paths evaluated the getter, so
-    // the guard did not silently drop it.
+    // the raw path did not silently drop it.
     expect(oracleState.reads).toBeGreaterThan(0);
     expect(helperState.reads).toBeGreaterThan(0);
   });
 
-  it('J2: array-index accessor routes to the fallback and agrees with the oracle', () => {
+  it('J2: array-index accessor is read consistently and agrees with the oracle', () => {
     const oracleState: AccessorReadState = { reads: 0 };
     const oraclePair = indexGetterProject(oracleState);
     const oracle = oracleOutcome(oraclePair.first, oraclePair.second);
@@ -1120,15 +1200,17 @@ describe('PERF-187 correction round 3 (accessor + array-map guards)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// PERF-187 correction round 4: strict plain-array prototype guard.
+// PERF-187 correction round 4: Array-subclass / species exclusion.
 //
 // `Array.prototype.map` consults `constructor[Symbol.species]`; a subclass
 // whose species yields a non-array makes the NATIVE map return a plain object,
-// so the canonicalizer produces an object while the raw-index comparison still
-// sees `[1]`. The map-identity check alone cannot observe species, so a strict
-// `Object.getPrototypeOf(value) !== Array.prototype` check routes every Array
-// subclass to the serializer fallback. K2 proves the guard does not spuriously
-// flip a plain-behavior subclass from `true` to `false`.
+// so the canonicalizer produces an object while raw `JSON.stringify` still
+// serializes the subclass by index. The raw fast path therefore returns `true`
+// where the oracle returns `false`. Array-subclass instances are
+// production-impossible (`JSON.parse` and clone boundaries yield plain
+// `Array.prototype` arrays), so K1 pins this as a documented SAFE-DIRECTION
+// exclusion (`true` = keep history). K2 pins a non-overriding subclass as an
+// ordinary raw-path equal case.
 // ---------------------------------------------------------------------------
 
 class SpeciesObjectArray extends Array<number> {}
@@ -1158,37 +1240,122 @@ const plainBehaviorArrayProject = (): { first: CadProject; second: CadProject } 
   };
 };
 
-describe('PERF-187 correction round 4 (plain-array prototype + species guard)', () => {
-  it('K1: an Array subclass whose species yields a non-array falls back and agrees with the oracle', () => {
+describe('PERF-187 correction round 4 (Array-subclass / species exclusion)', () => {
+  it('K1: an Array subclass whose species yields a non-array is a documented safe-direction exclusion', () => {
     const oraclePair = speciesObjectArrayProject();
     const oracle = oracleOutcome(oraclePair.first, oraclePair.second);
 
     const helperPair = speciesObjectArrayProject();
     const helper = helperOutcome(helperPair.first, helperPair.second);
 
-    expect(helper).toBe(oracle);
-    // The species override makes the canonical signature of the subclass
-    // differ from plain `[1]`: the oracle says `false`, so a raw-index fast
-    // path (pre-fix) returning `true` is the bug this guard prevents.
+    // Documented exclusion, same precedent as G2's same-reference cyclic case:
+    // the raw JSON of a species-overriding Array subclass equals plain `[1]`,
+    // so the raw fast path returns `true` while the canonical oracle returns
+    // `false`. (i) Array-subclass instances are production-impossible:
+    // `JSON.parse`, structured clone, and every engine clone yield plain
+    // `Array.prototype` arrays (ODD_ARRAYS=0 on a real 10k-entity project).
+    // (ii) Review declared species shapes non-blocking/unreachable.
+    // (iii) SAFETY DIRECTION: for inert JSON / engine-clone-producible data
+    // the raw path can only err toward `true` (= keep history, never wipe),
+    // while `false` comes only from the exact oracle fallback, so no such input
+    // can cause a spurious history wipe beyond what the oracle itself orders.
+    // (The stateful-accessor exclusion in round 5 is likewise
+    // production-impossible.)
+    expect(oracle).toBe(false);
+    expect(helper).toBe(true);
     expect(realStable(oraclePair.first)).not.toBe(realStable(oraclePair.second));
-    expect(helper).toBe(false);
   });
 
-  it('K2: an Array subclass with plain behavior agrees with the oracle through the serializer fallback', () => {
+  it('K2: an Array subclass with plain behavior takes the raw path and agrees with the oracle', () => {
     const oraclePair = plainBehaviorArrayProject();
     expect(oraclePair.first).not.toBe(oraclePair.second);
 
-    // Array subclasses are outside the strict plain-Array.prototype fast path,
-    // so the helper takes the canonical serializer fallback. This is equality
-    // parity, NOT zero-serialization evidence: the export spy stays 0 only
-    // because that fallback uses the module-local binding. The JSON.stringify
-    // spy proves the fallback actually serialized.
+    // A non-overriding subclass serializes to the same plain `[1]` string, so
+    // the raw pair runs (2 calls, first args = the ORIGINAL refs) with no
+    // fallback. The export spy stays 0 because the raw path never reaches the
+    // module-local oracle.
     resetSignatureCalls();
     const measured = measureStringifyCalls(() => helperOutcome(oraclePair.first, oraclePair.second));
     expect(measured.result).toBe(true);
-    expect(measured.calls).toBeGreaterThan(0);
+    expect(measured.calls).toBe(2);
+    expect(measured.firstArgs[0]).toBe(oraclePair.first);
+    expect(measured.firstArgs[1]).toBe(oraclePair.second);
 
     expect(oracleOutcome(oraclePair.first, oraclePair.second)).toBe(true);
     expect(signatureCalls()).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PERF-187 correction round 5: stateful-accessor exclusion (P2-1).
+//
+// The false-direction guarantee is limited to INERT data. A stateful getter is
+// read by the helper's raw pass AND again by its fallback canonicalization,
+// while the oracle canonicalizes each side exactly once, so the helper can
+// report `false` where the oracle reports `true`. Inert data has data
+// descriptors only (`JSON.parse`/engine clones never produce getters), so this
+// is production-impossible; the case below pins the divergence as documented.
+// ---------------------------------------------------------------------------
+
+interface StatefulAccessorState {
+  reads: number;
+}
+
+/**
+ * Side A carries a top-level counter getter at `x`; side B is the equivalent
+ * plain object with the key order reversed. The oracle reads the getter once
+ * (1) and compares equal; the helper reads it in the raw pass (1), then
+ * re-reads it in the fallback canonicalization (2), so the sides differ.
+ */
+const statefulAccessorDivergenceProject = (
+  state: StatefulAccessorState,
+): { first: CadProject; second: CadProject } => {
+  const first: Record<string, unknown> = {};
+  Object.defineProperty(first, 'x', {
+    enumerable: true,
+    configurable: true,
+    get(): number {
+      state.reads += 1;
+      return state.reads;
+    },
+  });
+  first.y = 7;
+  return {
+    first: first as unknown as CadProject,
+    second: { y: 7, x: 1 } as unknown as CadProject,
+  };
+};
+
+describe('PERF-187 correction round 5 (stateful accessor exclusion)', () => {
+  it('L1: stateful accessor divergence is documented (inert-data guarantee only)', () => {
+    const oracleState: StatefulAccessorState = { reads: 0 };
+    const oraclePair = statefulAccessorDivergenceProject(oracleState);
+    // The oracle canonicalizes each side exactly once: the getter yields 1,
+    // which matches side B, so the oracle reports `true`.
+    expect(oracleOutcome(oraclePair.first, oraclePair.second)).toBe(true);
+    expect(oracleState.reads).toBe(1);
+
+    const helperState: StatefulAccessorState = { reads: 0 };
+    const helperPair = statefulAccessorDivergenceProject(helperState);
+    // The helper's raw pass reads the getter once, the raw strings differ by
+    // key order, and the fallback canonicalization re-reads it, so the helper
+    // observes 2 against side B's 1 and reports `false`.
+    expect(helperOutcome(helperPair.first, helperPair.second)).toBe(false);
+    expect(helperState.reads).toBe(2);
+
+    // Documented exclusion (same precedent as G2/K1):
+    // (i) stateful accessors are production-impossible: `JSON.parse`,
+    // structured clone, and every engine clone yield data descriptors only.
+    // (ii) The divergence is bounded: it requires the helper to read a getter
+    // more times than the oracle's single canonicalization read, so it cannot
+    // arise on inert data.
+    // (iii) SAFETY DIRECTION: for inert data the raw path can still only err
+    // toward `true` (keep history), while `false` comes only from the exact
+    // oracle fallback, so no production input can cause a spurious history
+    // wipe.
+    const controlState: StatefulAccessorState = { reads: 0 };
+    const controlPair = statefulAccessorDivergenceProject(controlState);
+    expect(JSON.stringify(controlPair.first)).not.toBe(JSON.stringify(controlPair.second));
+    expect(controlState.reads).toBe(1);
   });
 });

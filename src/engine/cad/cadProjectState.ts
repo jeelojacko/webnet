@@ -241,349 +241,87 @@ export const buildStableCadProjectSignature = (project: CadProject): string =>
   JSON.stringify(canonicalizeSignatureValue(project));
 
 /**
- * PERF-187: allocation-light canonical-equality check for history adoption.
+ * PERF-187 P1: raw-JSON fast path for history-adoption canonical equality.
  *
- * The history-adopt effect must preserve the EXACT equivalence of
- * `buildStableCadProjectSignature` equality (key-order-insensitive JSON):
- * the drawing sync clones the project (key order normalizes, e.g.
- * imported-TIN surface definitions), which is not an external update — a
- * plain reference or raw-stringify comparison would wipe the just-committed
- * transaction and disable undo/redo (Phase 18M precedent). The previous
- * implementation paid TWO complete canonical traversals + allocations +
- * JSON.stringify per effect run (including the same-reference mount).
+ * Contract (inert JSON / engine-clone-producible data): identical top-level
+ * references return `true`; every other accepted value returns exactly
+ * `buildStableCadProjectSignature(first) ===
+ * buildStableCadProjectSignature(second)`, and it throws wherever that
+ * canonical oracle throws. The non-inert exclusions documented below are the
+ * only known divergences.
  *
- * Two-phase comparison (PERF-187 P1 correction round 2):
- *   Phase 1 — a cheap full domain walk (`isPlainJsonDomainValue`) on BOTH
- *   distinct references establishes that neither input leaves the plain-JSON
- *   domain BEFORE any mismatch may be reported. This is required for
- *   traversal-order independence: an early structural difference (e.g.
- *   `{a:0,b:cycle}` vs `{a:1,b:cycle}`, or `{a:null}` vs `{a:1n}`) must not
- *   mask an exotic value later in the document, because the stable-signature
- *   oracle walks the whole document and throws on that exotic.
- *   Phase 2 — once both sides are known plain JSON, `canonicalValuesEqual`
- *   compares them with early exit.
- * Every DISTINCT-reference comparison therefore pays one cheap domain walk
- * per side plus one comparison walk. The plain-JSON production path (the
- * only path real project data takes) pays zero canonical-object allocation
- * and zero `JSON.stringify`. This is NOT a sublinear traversal for differing
- * documents: the domain walk always visits the whole tree, and only the
- * Phase 2 comparison exits early.
+ * Why raw equality implies canonical equality (inert data): two distinct
+ * references with identical `JSON.stringify` output denote the same observable
+ * JSON structure, key order included. `canonicalizeSignatureValue` is
+ * deterministic over that structure (arrays map in index order; object keys
+ * are read from `Object.keys` and sorted), so canonicalizing two raw-equal
+ * values yields equal canonical output.
  *
- * Reference semantics (narrowed, PERF-187 P1 correction): inside
- * `canonicalValuesEqual` only NON-OBJECT (primitive/null) identity is
- * short-circuited; shared OBJECT references are compared structurally. This
- * keeps shared cyclic nested references on the ancestor-stack `fallback`
- * path, so the ORIGINAL serializer runs on both sides and exotic
- * throw-parity is preserved. `areCadProjectsCanonicallyEqual` additionally
- * returns `true` immediately for identical top-level references by contract,
- * WITHOUT consulting the serializer: that is the safe hook behavior (an
- * identical reference is never an external update, so no adopt and no undo
- * loss), whereas throwing would crash render. Cyclic graphs are therefore
- * outside this function's domain (no production path can deliver one —
- * every producer is JSON-serializable/deep-cloned, and persistence would
- * throw first). For DISTINCT references the comparator returns exactly
- * signature-equality, with serializer fallback on exotics (`toJSON`,
- * non-plain prototypes, bigint, `__proto__`, and cycles including shared
- * nested references).
+ * SAFETY DIRECTION: for inert JSON / engine-clone-producible data,
+ * false-direction parity is total — the raw fast path can only ever err toward
+ * `true` (identical observable JSON -> keep the current history, never wipe
+ * it), while `false` is produced exclusively by the exact canonical oracle
+ * fallback. The hook adopts only when this returns `false`, so for that data
+ * no input can cause a spurious history wipe beyond what the oracle itself
+ * orders.
  *
- * Fail-closed: anything outside the plain-JSON value domain falls back to
- * the ORIGINAL canonical-serializer comparison rather than risking a wrong
- * adopt/reset and user undo loss.
+ * Documented exclusions (production-impossible inputs):
+ *  - `Array`-subclass family: `JSON.stringify` serializes any `Array.isArray`
+ *    value by index, while the canonicalizer maps through
+ *    `Array.prototype.map`, which honors `Symbol.species` and an overridden
+ *    `map`. The raw pair can therefore return `true` where the oracle returns
+ *    `false` (K1): an intentional SAFE-DIRECTION divergence (`true` = keep
+ *    history), not a faithful route to the oracle. `JSON.parse`, structured
+ *    clone, and every engine clone yield only plain `Array.prototype` arrays
+ *    (verified zero non-plain arrays on a real 10k-entity project), so this
+ *    hole is unreachable.
+ *  - Stateful accessors: the raw pass reads each getter once and, when the raw
+ *    strings differ (e.g. key order), the canonical fallback reads them again,
+ *    so the helper may observe a different value than the oracle, which
+ *    canonicalizes each side exactly once. Example: side A
+ *    `{ x: <counter getter: 1 then 2>, y }` vs side B `{ y, x: 1 }` — the
+ *    oracle reads the getter once and reports `true`, while the helper's raw
+ *    pass consumes read 1 and its fallback re-reads 2, so the helper reports
+ *    `false`. Inert data has data descriptors only (`JSON.parse`/engine clones
+ *    never produce getters), so this is production-impossible; the test file
+ *    pins the divergence as a documented exclusion.
+ *  - An identity-sensitive `toJSON` (reading mutable identity) is likewise a
+ *    documented exclusion, the same accepted family as proxies.
  *
- * Proxies whose traps lie consistently (data descriptors with shifting values,
- * invisible map/species swaps) are indistinguishable from plain data without
- * serializing and are outside this domain; no production path delivers proxies
- * (structured JSON/clone boundaries do not preserve them).
- */
-const isJsonNullSerialized = (value: unknown): boolean =>
-  value === null || (typeof value === 'number' && !Number.isFinite(value));
-
-const isJsonSkippedObjectValue = (value: unknown): boolean =>
-  value === undefined || typeof value === 'function' || typeof value === 'symbol';
-
-const hasJsonToJSON = (value: object): boolean => {
-  try {
-    return typeof (value as { toJSON?: unknown }).toJSON === 'function';
-  } catch {
-    return true;
-  }
-};
-
-type OwnPropertyProbe = 'data' | 'exotic' | 'absent';
-
-/**
- * PERF-187 correction round 3: classify an OWN property WITHOUT invoking it.
- * Accessor descriptors (get/set) and thrown descriptor traps are exotic; a
- * missing descriptor is `absent` (a legitimate array hole, but exotic for
- * object keys drawn from `Object.keys`). Only `data` may be read: a stateful
- * getter read once by the domain scan and again by the comparison would
- * diverge from the serializer, which freezes each value once during
- * canonicalization.
- */
-const probeOwnProperty = (target: object, key: string): OwnPropertyProbe => {
-  let descriptor: PropertyDescriptor | undefined;
-  try {
-    descriptor = Object.getOwnPropertyDescriptor(target, key);
-  } catch {
-    return 'exotic';
-  }
-  if (descriptor === undefined || descriptor === null) return 'absent';
-  if (descriptor.get !== undefined || descriptor.set !== undefined) return 'exotic';
-  return 'data';
-};
-
-/**
- * PERF-187 Phase 1: cheap full walk deciding whether `value` stays inside the
- * plain-JSON domain that `canonicalValuesEqual` can compare structurally.
- * Returns `false` on any exotic the canonical serializer would treat
- * specially (accessor properties, bigint, non-plain prototype, own
- * `__proto__`, function-valued `toJSON`, an overridden `Array.prototype.map`,
- * or a reference cycle).
+ * Cost model (honest): same reference = 0 work. The common order-preserved
+ * clone (the production drawing-sync path) pays two native `JSON.stringify`
+ * calls and skips the canonical traversal entirely: measured ~2-4x faster than
+ * the old two-canonical-tree path on equal objects. A reordered clone or a
+ * genuine change (rare) wastes the raw pair and still runs the full canonical
+ * oracle, ~1.4-2x slower than the old path on that branch. This is NOT a
+ * zero-allocation fast path: it avoids building canonical full deep-copy
+ * objects, but on the common branch the only large allocations are the two raw
+ * JSON strings themselves (the old path allocated two canonical trees, two
+ * strings, and the string compare). Exact measurements live in the PERF-187
+ * evidence docs.
  *
- * `ancestors` is a stack, so a shared (non-cyclic) reference is fine while a
- * cycle is detected as an ancestor repeat. `undefined`/function/symbol
- * values are skipped exactly as JSON does, and a function object is never
- * recursed into (its properties are invisible to JSON).
- */
-const isPlainJsonDomainValue = (value: unknown, ancestors: object[]): boolean => {
-  if (value === null) return true;
-  const type = typeof value;
-  if (
-    type === 'string' ||
-    type === 'boolean' ||
-    type === 'number' ||
-    type === 'undefined' ||
-    type === 'function' ||
-    type === 'symbol'
-  ) {
-    return true;
-  }
-  if (type === 'bigint') return false;
-  const objectValue = value as object;
-  if (Array.isArray(objectValue)) return isPlainJsonArrayDomainValue(objectValue, ancestors);
-  return isPlainJsonObjectDomainValue(objectValue, ancestors);
-};
-
-/**
- * Array half of the domain walk. Arrays are rebuilt through the virtual
- * `value.map`, so an own/inherited `toJSON` (honored because the species
- * result keeps an Array subclass prototype) or an overridden `map` leaves the
- * plain-JSON domain and routes to the serializer fallback. Only plain arrays
- * with `Array.prototype` keep the fast path: an underlying `map` of
- * `Array.prototype.map` plus JSON's index-only array serialization means extra
- * props are ignored identically on both sides.
- */
-const isPlainJsonArrayDomainValue = (array: unknown[], ancestors: object[]): boolean => {
-  if (ancestors.includes(array)) return false;
-  // Strict plain-array prototype check. Any Array subclass (including one
-  // whose `static get [Symbol.species]() { return Object; }` makes the native
-  // `map` return a non-array) leaves the plain-JSON domain; the retained
-  // `map`-identity check below cannot see species, so this single prototype
-  // condition subsumes Symbol.species and every other subclass quirk. Plain
-  // production arrays (JSON.parse/clone output) keep the fast path. A trap
-  // that throws is exotic too.
-  try {
-    if (Object.getPrototypeOf(array) !== Array.prototype) return false;
-  } catch {
-    return false;
-  }
-  // Probe the own `toJSON` slot before reading it so a getter is never
-  // invoked; an inherited `toJSON` is unreachable now that subclasses are
-  // rejected, but the own-slot probe is still required for a plain array.
-  if (probeOwnProperty(array, 'toJSON') === 'exotic') return false;
-  if (hasJsonToJSON(array)) return false;
-  // Retained deliberately: an own `map` data property on a plain-prototype
-  // array would otherwise slip through the prototype check above.
-  try {
-    if (array.map !== Array.prototype.map) return false;
-  } catch {
-    return false;
-  }
-  ancestors.push(array);
-  try {
-    for (let index = 0; index < array.length; index += 1) {
-      const probe = probeOwnProperty(array, String(index));
-      if (probe === 'exotic') return false;
-      if (probe === 'absent') continue; // hole → JSON serializes null, plain
-      const item = index in array ? array[index] : undefined;
-      if (isJsonSkippedObjectValue(item)) continue;
-      if (!isPlainJsonDomainValue(item, ancestors)) return false;
-    }
-    return true;
-  } finally {
-    ancestors.pop();
-  }
-};
-
-/**
- * Plain-object half of the domain walk. Each own enumerable key is probed for
- * an accessor before its value is read, and `toJSON` is checked only after
- * every descriptor is confirmed pure data.
- */
-const isPlainJsonObjectDomainValue = (record: object, ancestors: object[]): boolean => {
-  const proto = Object.getPrototypeOf(record);
-  if (proto !== Object.prototype && proto !== null) return false;
-  const keys = Object.keys(record);
-  if (keys.includes('__proto__')) return false;
-  if (ancestors.includes(record)) return false;
-  ancestors.push(record);
-  try {
-    const values = record as Record<string, unknown>;
-    for (const key of keys) {
-      if (probeOwnProperty(record, key) !== 'data') return false;
-      const item = values[key];
-      if (isJsonSkippedObjectValue(item)) continue;
-      if (!isPlainJsonDomainValue(item, ancestors)) return false;
-    }
-    // Only reaches here once every own enumerable value is a pure data
-    // property, so this cannot invoke a getter-defined `toJSON`.
-    if (probeOwnProperty(record, 'toJSON') === 'exotic') return false;
-    if (hasJsonToJSON(record)) return false;
-    return true;
-  } finally {
-    ancestors.pop();
-  }
-};
-
-type CanonicalEquality = boolean | 'fallback';
-
-const canonicalValuesEqual = (
-  first: unknown,
-  second: unknown,
-  firstAncestors: readonly object[] | object[],
-  secondAncestors: readonly object[] | object[],
-): CanonicalEquality => {
-  // Only primitives/null may short-circuit on identity. Object identity (a
-  // shared nested reference in particular) must fall through to structural
-  // comparison so cycles reach the ancestor-stack `fallback` path and keep
-  // serializer throw-parity.
-  if (first === second && (typeof first !== 'object' || first === null)) return true;
-  const firstNull = isJsonNullSerialized(first);
-  const secondNull = isJsonNullSerialized(second);
-  if (firstNull || secondNull) return firstNull && secondNull;
-  if (typeof first === 'number' || typeof second === 'number') return false;
-  if (typeof first !== 'object' || typeof second !== 'object' || first === null || second === null) {
-    if (typeof first === 'bigint' || typeof second === 'bigint') return 'fallback';
-    return false;
-  }
-  if (hasJsonToJSON(first) || hasJsonToJSON(second)) return 'fallback';
-  const firstIsArray = Array.isArray(first);
-  const secondIsArray = Array.isArray(second);
-  if (firstIsArray || secondIsArray) {
-    if (!firstIsArray || !secondIsArray) return false;
-    if ((firstAncestors as object[]).includes(first) || (secondAncestors as object[]).includes(second)) {
-      return 'fallback';
-    }
-    if (first.length !== second.length) return false;
-    (firstAncestors as object[]).push(first);
-    (secondAncestors as object[]).push(second);
-    try {
-      for (let index = 0; index < first.length; index += 1) {
-        const firstItem = index in first ? first[index] : undefined;
-        const secondItem = index in second ? second[index] : undefined;
-        // JSON.stringify maps undefined/functions/symbols (and holes) to null in arrays.
-        const firstElement = isJsonSkippedObjectValue(firstItem) ? null : firstItem;
-        const secondElement = isJsonSkippedObjectValue(secondItem) ? null : secondItem;
-        if (typeof firstElement === 'bigint' || typeof secondElement === 'bigint') return 'fallback';
-        const nested = canonicalValuesEqual(firstElement, secondElement, firstAncestors, secondAncestors);
-        if (nested !== true) return nested;
-      }
-      return true;
-    } finally {
-      (firstAncestors as object[]).pop();
-      (secondAncestors as object[]).pop();
-    }
-  }
-  const firstProto = Object.getPrototypeOf(first);
-  const secondProto = Object.getPrototypeOf(second);
-  if (
-    (firstProto !== Object.prototype && firstProto !== null) ||
-    (secondProto !== Object.prototype && secondProto !== null)
-  ) {
-    return 'fallback';
-  }
-  if ((firstAncestors as object[]).includes(first) || (secondAncestors as object[]).includes(second)) {
-    return 'fallback';
-  }
-  // JSON.stringify drops undefined/function/symbol-valued keys; the
-  // canonicalizer preserves then drops them identically, so skip here.
-  // `__proto__` is excluded: plain assignment would mutate the prototype
-  // instead of creating an own property, diverging from key comparison.
-  const firstKeys: string[] = [];
-  for (const key of Object.keys(first)) {
-    if (key === '__proto__') return 'fallback';
-    const value = (first as Record<string, unknown>)[key];
-    if (typeof value === 'bigint') return 'fallback';
-    if (!isJsonSkippedObjectValue(value)) firstKeys.push(key);
-  }
-  const secondKeys: string[] = [];
-  for (const key of Object.keys(second)) {
-    if (key === '__proto__') return 'fallback';
-    const value = (second as Record<string, unknown>)[key];
-    if (typeof value === 'bigint') return 'fallback';
-    if (!isJsonSkippedObjectValue(value)) secondKeys.push(key);
-  }
-  firstKeys.sort();
-  secondKeys.sort();
-  if (firstKeys.length !== secondKeys.length) return false;
-  for (let index = 0; index < firstKeys.length; index += 1) {
-    if (firstKeys[index] !== secondKeys[index]) return false;
-  }
-  (firstAncestors as object[]).push(first);
-  (secondAncestors as object[]).push(second);
-  try {
-    for (const key of firstKeys) {
-      const nested = canonicalValuesEqual(
-        (first as Record<string, unknown>)[key],
-        (second as Record<string, unknown>)[key],
-        firstAncestors,
-        secondAncestors,
-      );
-      if (nested !== true) return nested;
-    }
-    return true;
-  } finally {
-    (firstAncestors as object[]).pop();
-    (secondAncestors as object[]).pop();
-  }
-};
-
-/**
- * Canonical project equality for history adoption.
- *
- * Identical references return `true` by contract WITHOUT consulting the
- * serializer (see the module doc above): an identical reference is never an
- * external update, so adopting/resetting would wrongly wipe the
- * just-committed transaction, whereas throwing would crash render. Cyclic
- * graphs are outside this function's domain (no production path can deliver
- * one). For DISTINCT references this returns exactly
- * `buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second)`.
- *
- * Phase 1 (`isPlainJsonDomainValue`) walks BOTH inputs fully with fresh
- * ancestor stacks before Phase 2 may report any mismatch; if either side
- * leaves the plain-JSON domain, both serializations run (first-then-second,
- * matching the oracle's evaluation order and throw parity) for exotics
- * (`toJSON`, non-plain prototypes, bigint, `__proto__`, and cycles including
- * shared nested references). Phase 2 then reuses the early-exit
- * `canonicalValuesEqual` walk; its own exotic fallbacks remain as
- * unreachable defense-in-depth.
- *
- * Proxies whose traps lie consistently (data descriptors with shifting values,
- * invisible map/species swaps) are indistinguishable from plain data without
- * serializing and are outside this domain; no production path delivers proxies
- * (structured JSON/clone boundaries do not preserve them).
+ * Cycles and proxies are outside the raw domain; the raw pair is wrapped in
+ * `try`/`catch` and otherwise routes to the canonical oracle, whose evaluation
+ * order (first, then second) and throw behavior are preserved. The
+ * `Array`-subclass family additionally diverges in the safe direction per the
+ * K1 exclusion above.
  */
 export const areCadProjectsCanonicallyEqual = (first: CadProject, second: CadProject): boolean => {
   if (first === second) return true;
   if (first === null || second === null || typeof first !== 'object' || typeof second !== 'object') {
     return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
   }
-  if (!isPlainJsonDomainValue(first, []) || !isPlainJsonDomainValue(second, [])) {
+  let rawFirst: string | undefined;
+  let rawSecond: string | undefined;
+  try {
+    rawFirst = JSON.stringify(first);
+    rawSecond = JSON.stringify(second);
+  } catch {
     return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
   }
-  const result = canonicalValuesEqual(first, second, [], []);
-  if (result === 'fallback') {
+  if (rawFirst === undefined || rawSecond === undefined) {
     return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
   }
-  return result;
+  if (rawFirst === rawSecond) return true;
+  return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
 };
