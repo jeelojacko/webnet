@@ -543,6 +543,10 @@ describe('STRUCT-241.10 JSDoc parity (comments travel with the declarations)', (
     expect(modelSource()).toContain(marker);
   });
 
+  it('keeps the original Phase 18F section header immediately above the point source', () => {
+    assertPhase18FHeader(defSource());
+  });
+
   it('keeps the point-group legacy precedence note adjacent to the point source', () => {
     const source = defSource();
     const note = source.indexOf('legacy single-source shape, migrated on load');
@@ -568,6 +572,12 @@ describe('STRUCT-241.10 JSDoc parity (comments travel with the declarations)', (
     }
   });
 });
+
+/** Phase 18F section-header assertion shared by the positive pin and the negative control. */
+const PHASE_18F_HEADER = '/** Phase 18F: TIN surface model (engine only; never triangle entities). */\n\nexport type CadSurfacePointSource =';
+const assertPhase18FHeader = (source: string): void => {
+  expect(source).toContain(PHASE_18F_HEADER);
+};
 
 // ---------------------------------------------------------------------------
 // Facade contract: hub re-exports all 11, keeps no originals.
@@ -1042,6 +1052,24 @@ describe('STRUCT-241.10 negative controls (in-memory mutations only)', () => {
     expect(mutated).not.toBe(modelSource());
     expect(() => expect(propsOf(parseText('m.ts', mutated), 'm', 'CadSurfaceStyle'))
       .toEqual(EXPECTED_INTERFACE_PROPS['CadSurfaceStyle'])).toThrow();
+  });
+
+  it('fails the section-header pin when the Phase 18F header is changed', () => {
+    const mutated = defSource().replace(
+      '/** Phase 18F: TIN surface model (engine only; never triangle entities). */',
+      '/** Phase 18F: TIN surface model. */',
+    );
+    expect(mutated).not.toBe(defSource());
+    expect(() => assertPhase18FHeader(mutated)).toThrow();
+  });
+
+  it('fails the section-header pin when the Phase 18F header is deleted', () => {
+    const mutated = defSource().replace(
+      '/** Phase 18F: TIN surface model (engine only; never triangle entities). */\n\n',
+      '',
+    );
+    expect(mutated).not.toBe(defSource());
+    expect(() => assertPhase18FHeader(mutated)).toThrow();
   });
 
   it('fails facade exhaustiveness when ONLY the re-export is removed but the import stays', () => {

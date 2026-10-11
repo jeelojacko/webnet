@@ -57,6 +57,25 @@ URL recorded at handoff (see PR body / final report).
   VALUE SCC 0, TYPE 7/38.
 - Full after: 1673/7570, digest identical, SCCs unchanged.
 
+## Correction (same-phase, controller-found JSDoc parity miss)
+
+Controller's independent GitHub review of PR #252 (exact-head run
+38095955175, 5/5 green) confirmed 11/11 bodies exact but found ONE
+documentary miss: the original hub section header
+`/** Phase 18F: TIN surface model (engine only; never triangle entities). */`
+(+ single blank line) immediately above `CadSurfacePointSource` was
+replaced by the hub facade block and carried into neither leaf.
+Root cause: the frozen worker baseline started at the type declaration
+and the suite's JSDoc marker lists never contained that header string,
+so no pin failed. Corrected on the same branch: header re-inserted
+verbatim above the declaration in `cadSurfaceDefinitionTypes.ts`
+(11/11 JSDoc parity now); suite strengthened to 103 tests with an exact
+adjacency pin (`header + single empty line + export`) plus
+change/delete in-memory negative controls on the SAME assertion.
+Runtime emit unaffected (comments stripped): hub still 680 chars
+sha37445357, both leaves `export {};`. No production, graph, or other
+test changes.
+
 ## Reviewer disposition
 
 Independent read-only reviewer (fresh mission against the integrated
