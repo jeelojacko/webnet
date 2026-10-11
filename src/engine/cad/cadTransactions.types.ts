@@ -1,6 +1,5 @@
 import type { CadSelectionState } from './cadSelectionTypes';
 import type { DraftDocument } from './cadDraftTypes';
-import type { CadTangentSource } from './cadGeometryCircleTangentSolvers';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/fieldToFinishGenerationTypes';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 import type {
@@ -58,6 +57,10 @@ import type { CadDesignSurfaceCommandPayload } from './cadTransactionsDesignSurf
 // type-only leaves; the hub splices both unions in the original position.
 import type { CadAlignmentCommandPayload } from './cadTransactionsAlignmentCommandTypes';
 import type { CadParcelConstructionCommandPayload } from './cadTransactionsParcelConstructionCommandTypes';
+// STRUCT-241.14: primitive-draw (13) + basic-curve (6) command payload slices are
+// type-only leaves; the hub splices both unions in the original position.
+import type { CadPrimitiveDrawCommandPayload } from './cadTransactionsPrimitiveDrawCommandTypes';
+import type { CadBasicCurveCommandPayload } from './cadTransactionsBasicCurveCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -73,8 +76,6 @@ import type {
   CadPointLabelStyleId,
   CadPointStyle,
   CadPointStyleId,
-  CadPolylineSegmentGeometry,
-  CadPolylineSegmentWidth,
   CadProject,
   CadStationEquation,
   ImportedTinPayload,
@@ -362,92 +363,7 @@ export type CadCommand =
   | {
       key: 'ERASE';
     }
-  | {
-      key: 'POINT';
-      x: number;
-      y: number;
-      label?: string;
-    }
-  | {
-      key: 'COGO_POINT';
-      x: number;
-      y: number;
-      label?: string;
-      basisLabel: string;
-      directionLabel: string;
-    }
-  | {
-      key: 'LINE';
-      start: { x: number; y: number; label: string };
-      end: { x: number; y: number; label: string };
-    }
-  | {
-      key: 'LINE_CREATE_BATCH';
-      segments: Array<{
-        start: { x: number; y: number; label: string };
-        end: { x: number; y: number; label: string };
-      }>;
-      /** User-facing creation mode recorded as metadata.createdBy. */
-      createdBy: string;
-    }
-  | {
-      key: 'RECTANGLE';
-      firstCorner: { x: number; y: number; label: string };
-      oppositeCorner: { x: number; y: number; label: string };
-    }
-  | {
-      key: 'POLYGON';
-      center: { x: number; y: number; label: string };
-      through: { x: number; y: number; label: string };
-      sides: number;
-      mode: 'inscribed' | 'circumscribed';
-    }
-  | {
-      key: 'CIRCLE';
-      center: { x: number; y: number; label: string };
-      radius: number;
-    }
-  | {
-      key: 'CIRCLECD';
-      center: { x: number; y: number; label: string };
-      diameter: number;
-    }
-  | {
-      key: 'CIRCLE2P';
-      first: { x: number; y: number; label: string };
-      second: { x: number; y: number; label: string };
-    }
-  | {
-      key: 'CIRCLE3P';
-      first: { x: number; y: number; label: string };
-      second: { x: number; y: number; label: string };
-      third: { x: number; y: number; label: string };
-    }
-  | {
-      key: 'CIRCLETTR';
-      first: CadTangentSource;
-      second: CadTangentSource;
-      radius: number;
-    }
-  | {
-      key: 'CIRCLETTT';
-      first: CadTangentSource;
-      second: CadTangentSource;
-      third: CadTangentSource;
-    }
-  | {
-      key: 'PLINE';
-      vertices: { x: number; y: number; label: string }[];
-      /** Absent/false = open polyline. True = closed ring stored without a
-       *  duplicate closure vertex (the renderer/segment law wraps to first). */
-      closed?: boolean;
-      /** Phase C2 optional per-course bulge metadata; absent = all-line.
-       *  Trailing optional (no version bump). */
-      segmentGeometry?: CadPolylineSegmentGeometry[];
-      /** Phase C2 optional per-course full centred band widths (metres);
-       *  absent = zero-width. Trailing optional (no version bump). */
-      segmentWidths?: CadPolylineSegmentWidth[];
-    }
+  | CadPrimitiveDrawCommandPayload
   | {
       key: 'TRAVERSE';
       vertices: { x: number; y: number; label: string }[];
@@ -476,42 +392,7 @@ export type CadCommand =
       key: 'BATCH_COGO';
       draft: CadBatchCogoDraft;
     }
-  | {
-      key: 'ARC_3PT';
-      start: { x: number; y: number; label: string };
-      through: { x: number; y: number; label: string };
-      end: { x: number; y: number; label: string };
-    }
-  | {
-      key: 'ARC_CREATE';
-      modeLabel: string;
-      definition: {
-        center: { x: number; y: number };
-        radius: number;
-        startAngleDeg: number;
-        endAngleDeg: number;
-      };
-      metadata?: Record<string, unknown>;
-    }
-  | {
-      key: 'BEST_FIT_LINE';
-      samples: { x: number; y: number; label: string; sourceEntityId?: string }[];
-    }
-  | {
-      key: 'BEST_FIT_ARC';
-      samples: { x: number; y: number; label: string; sourceEntityId?: string }[];
-    }
-  | {
-      key: 'BEST_FIT_PARABOLA';
-      samples: { x: number; y: number; label: string; sourceEntityId?: string }[];
-    }
-  | {
-      key: 'TANGENT_CURVE';
-      pi: { x: number; y: number; label: string };
-      backTangentPoint: { x: number; y: number; label: string };
-      aheadTangentPoint: { x: number; y: number; label: string };
-      radius: number;
-    }
+  | CadBasicCurveCommandPayload
   | CadAlignmentCommandPayload
   | CadParcelConstructionCommandPayload
   | ({ key: 'LINETABLE' } & CadSurveyTableCreatePayload)

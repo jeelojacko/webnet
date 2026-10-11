@@ -580,8 +580,11 @@ describe('STRUCT-241.4 CAD+F2F graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (annotation leaf
     // 4 out-edges + hub import; analysis leaf 4 out-edges + hub import;
     // 4 retired hub edges to the anchor barrel + analysis modules).
-    expect(graph.nodes.length).toBe(507);
-    expect(graph.edges.length).toBe(2475);
+    // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (primitive-draw
+    // leaf 2 out-edges + hub import; basic-curve leaf 0 out-edges + hub
+    // import; 1 retired hub tangent-solver edge).
+    expect(graph.nodes.length).toBe(509);
+    expect(graph.edges.length).toBe(2478);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -599,8 +602,17 @@ describe('STRUCT-241.4 CAD+F2F graph pins', () => {
       { from: leaf, to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' },
     ]);
     // One `import type` edge plus one `export type ... from` edge.
+    // STRUCT-241.14 roll-forward: the primitive-draw leaf adds one inbound
+    // `import type { CadPolylineSegmentGeometry, CadPolylineSegmentWidth }`
+    // edge (first in edge order); still type-only, still no value edge.
     const hubToLeaf = { from: path.resolve(HUB), to: leaf, specifier: './cadPrimitiveGeometryEntityTypes', kind: 'type' };
-    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([hubToLeaf, hubToLeaf]);
+    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([
+      {
+        from: path.resolve(path.join(CAD_DIR, 'cadTransactionsPrimitiveDrawCommandTypes.ts')),
+        to: leaf, specifier: './cadPrimitiveGeometryEntityTypes', kind: 'type',
+      },
+      hubToLeaf, hubToLeaf,
+    ]);
     expect(graph.nodes.filter((node) => node === leaf)).toHaveLength(1);
     expect(graph.edges.filter(
       (edge) => (edge.from === leaf || edge.to === leaf) && edge.kind !== 'type',
@@ -639,8 +651,10 @@ describe('STRUCT-241.4 full-src graph pins', () => {
     // hub export, no retired hub edge).
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1679);
-    expect(graph.edges.length).toBe(7586);
+    // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (same allowlist
+    // as the scoped pin; every 241.14 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1681);
+    expect(graph.edges.length).toBe(7589);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

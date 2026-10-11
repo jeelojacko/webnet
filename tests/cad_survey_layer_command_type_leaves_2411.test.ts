@@ -93,6 +93,10 @@ const DS_LEAF = path.join(CAD_DIR, 'cadTransactionsDesignSurfaceCommandTypes.ts'
 // are expanded by the flattened view so the 168 effective members stay pinned.
 const AL_LEAF = path.join(CAD_DIR, 'cadTransactionsAlignmentCommandTypes.ts');
 const PC_LEAF = path.join(CAD_DIR, 'cadTransactionsParcelConstructionCommandTypes.ts');
+// STRUCT-241.14 roll-forward: primitive-draw (13) + basic-curve (6) leaves
+// are expanded by the flattened view so the 168 effective members stay pinned.
+const PR_LEAF = path.join(CAD_DIR, 'cadTransactionsPrimitiveDrawCommandTypes.ts');
+const BC_LEAF = path.join(CAD_DIR, 'cadTransactionsBasicCurveCommandTypes.ts');
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 
 const LAYER_ALIAS = 'CadLayerCommandPayload';
@@ -326,6 +330,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
     AL_LEAF, 'alignment leaf', 'CadAlignmentCommandPayload');
   const parcelConstructionKeys = unionMemberDescriptors(
     PC_LEAF, 'parcel leaf', 'CadParcelConstructionCommandPayload');
+  // STRUCT-241.14 roll-forward: expand the primitive-draw (13) +
+  // basic-curve (6) leaves (all single-keyed, no widening).
+  const primitiveKeys = unionMemberDescriptors(
+    PR_LEAF, 'primitive leaf', 'CadPrimitiveDrawCommandPayload');
+  const basiccurveKeys = unionMemberDescriptors(
+    BC_LEAF, 'basiccurve leaf', 'CadBasicCurveCommandPayload');
   const keyDescriptor = (member: ts.TypeLiteralNode): string | null => {
     const keyProp = member.members.find(
       (m): m is ts.PropertySignature =>
@@ -354,6 +364,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (flat.typeName.text === 'CadDesignSurfaceCommandPayload') members.push(...designsurfaceKeys);
       else if (flat.typeName.text === 'CadAlignmentCommandPayload') members.push(...alignmentKeys);
       else if (flat.typeName.text === 'CadParcelConstructionCommandPayload') members.push(...parcelConstructionKeys);
+      else if (flat.typeName.text === 'CadPrimitiveDrawCommandPayload') members.push(...primitiveKeys);
+      else if (flat.typeName.text === 'CadBasicCurveCommandPayload') members.push(...basiccurveKeys);
       else members.push(flat.typeName.text);
       return;
     }
@@ -1415,7 +1427,10 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.13 roll-forward: 102 -> 89 top-level (51 inline, 31 refs,
     // 7 intersections); flattened effective members stay 168 via the
     // alignment + parcel-construction leaves.
-    expect(hubTopLevelCounts()).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 });
+    // STRUCT-241.14 roll-forward: 89 -> 72 top-level (32 inline, 33 refs,
+    // 7 intersections); flattened effective members stay 168 via the
+    // primitive-draw + basic-curve leaves.
+    expect(hubTopLevelCounts()).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1452,7 +1467,9 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // analysis members moved to leaves).
     // STRUCT-241.13 roll-forward: 66 -> 51 inline (15 alignment +
     // parcel-construction members moved to leaves).
-    expect(inlineSets.length).toBe(51);
+    // STRUCT-241.14 roll-forward: 51 -> 32 inline (19 primitive-draw +
+    // basic-curve members moved to leaves).
+    expect(inlineSets.length).toBe(32);
     for (const set of inlineSets) {
       for (const key of set) {
         expect(key.startsWith('LAYER_'), `inline ${key} still in hub`).toBe(false);

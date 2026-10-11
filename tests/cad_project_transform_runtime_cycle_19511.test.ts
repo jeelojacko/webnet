@@ -152,6 +152,13 @@ const STRUCT_24112_ADDED_EDGES = 5;
 // hub import-type, no retired hub module edge; no VALUE/MIXED change).
 const STRUCT_24113_ADDED_NODES = 2;
 const STRUCT_24113_ADDED_EDGES = 5;
+// STRUCT-241.14 measured delta (two cadTransactions type-only leaves:
+// primitive-draw + basic-curve command payloads; three scoped type edges:
+// primitive-draw leaf 2 out-edges + hub import-type, basic-curve leaf
+// 0 out-edges + hub import-type, minus 1 retired hub tangent-solver edge;
+// no VALUE/MIXED change).
+const STRUCT_24114_ADDED_NODES = 2;
+const STRUCT_24114_ADDED_EDGES = 3;
 
 // STRUCT-195.12 cumulative scope: the parcel-diagnostics cycle break adds one
 // node (cadCogoParcelLineworkTopology) and repoints value edges among the 5
@@ -694,8 +701,8 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     // two type-only leaves with seven type edges, also outside the slice;
     // VALUE SCC
     // expectations below are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES + STRUCT_24113_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES + STRUCT_24113_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES + STRUCT_24113_ADDED_NODES + STRUCT_24114_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES + STRUCT_24113_ADDED_EDGES + STRUCT_24114_ADDED_EDGES);
     // STRUCT-195.13 is a net-zero value-edge repoint and STRUCT-195.14 is a
     // net-zero total-edge relocation (-6/+6), so the cumulative edge count
     // is unchanged from the 195.12 measurement; nodes gain exactly the

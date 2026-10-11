@@ -635,8 +635,9 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (annotation leaf
     // 4 out-edges + hub import; analysis leaf 4 out-edges + hub import;
     // 4 retired hub edges to the anchor barrel + analysis modules).
-    expect(graph.nodes.length).toBe(507);
-    expect(graph.edges.length).toBe(2475);
+    // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (2 hub imports + 2 primitive-draw out-edges + 0 basic-curve out-edges - 1 retired hub tangent-solver edge).
+    expect(graph.nodes.length).toBe(509);
+    expect(graph.edges.length).toBe(2478);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -690,7 +691,14 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
       { from: primitiveGeometry, to: path.resolve(path.join(CAD_DIR, 'cadDisplayTypes.ts')), specifier: './cadDisplayTypes', kind: 'type' },
       primitiveGeometryToFoundation,
     ]);
+    // STRUCT-241.14 roll-forward: the primitive-draw leaf adds one inbound
+    // `import type { CadPolylineSegmentGeometry, CadPolylineSegmentWidth }`
+    // edge (first in edge order); still type-only, still no value edge.
     expect(graph.edges.filter((edge) => edge.to === primitiveGeometry)).toEqual([
+      {
+        from: path.resolve(path.join(CAD_DIR, 'cadTransactionsPrimitiveDrawCommandTypes.ts')),
+        to: primitiveGeometry, specifier: './cadPrimitiveGeometryEntityTypes', kind: 'type',
+      },
       hubToPrimitiveGeometry,
       hubToPrimitiveGeometry,
     ]);
@@ -737,8 +745,9 @@ describe('STRUCT-241.3 full-src graph pins', () => {
     // STRUCT-241.7 adds +2 nodes / +7 edges (documented roll-forward).
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1679);
-    expect(graph.edges.length).toBe(7586);
+    // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (same allowlist as the scoped pin; every 241.14 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1681);
+    expect(graph.edges.length).toBe(7589);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
