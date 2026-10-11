@@ -39,8 +39,11 @@
 | (n) controlled key-reordered imported-TIN mount | 1 publish (normalized) | 0 (raw order leaked) | **1** (normalization publish) |
 
 Net: the retained optimization is the **wrapper reference-based no-op guard**:
-selection-only and rejected-command updates drop from `1` to `0` clones, and
-no-op/idempotent syncs never clone. A genuine order-preserved
+selection-only and rejected-command updates drop from `1` to `0` clones:
+history-updater no-ops never reach the drawing publish. An idempotent
+persistence-effect re-run still pays its single normalization clone
+(row (f) = `1`, discarded when equal) — only history no-ops are zero-clone.
+A genuine order-preserved
 commit/undo/redo still pays the wrapper clone **and** the persistence
 normalization sync (`2`, the pre-#262 baseline), because raw equality cannot
 prove the target is normalization-stable — see `architecture.md` "Precise
