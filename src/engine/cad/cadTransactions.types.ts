@@ -65,6 +65,12 @@ import type { CadBasicCurveCommandPayload } from './cadTransactionsBasicCurveCom
 // type-only leaves; the hub splices both unions in the original position.
 import type { CadPlanarTransformCommandPayload } from './cadTransactionsPlanarTransformCommandTypes';
 import type { CadGeometryEditCommandPayload } from './cadTransactionsGeometryEditCommandTypes';
+// STRUCT-241.16: sheet/viewport (6) + polyline-topology (2) command payload
+// slices are type-only leaves; the hub splices both unions in the original
+// position. The Phase C3 header moves with the polyline leaf; the CAD
+// Curves F1 header stays in the hub.
+import type { CadSheetViewportCommandPayload } from './cadTransactionsSheetViewportCommandTypes';
+import type { CadPolylineTopologyCommandPayload } from './cadTransactionsPolylineTopologyCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -434,40 +440,7 @@ export type CadCommand =
       request: ProjectTransformRequest;
     }
   | CadGeometryEditCommandPayload
-  | {
-      key: 'SHEET_ADD';
-      sheetId: string;
-      sheetName: string;
-    }
-  | {
-      key: 'SHEET_DELETE';
-      sheetId: string;
-    }
-  | {
-      key: 'VIEWPORT_MOVE';
-      sheetId: string;
-      viewportId: string;
-      x: number;
-      y: number;
-    }
-  | {
-      key: 'VIEWPORT_SCALE';
-      sheetId: string;
-      viewportId: string;
-      scaleDenominator: number;
-    }
-  | {
-      key: 'VIEWPORT_ROTATE';
-      sheetId: string;
-      viewportId: string;
-      rotationDeg: number;
-    }
-  | {
-      key: 'TITLE_BLOCK_EDIT';
-      sheetId: string;
-      definitionId: string;
-      values: Record<string, string>;
-    }
+  | CadSheetViewportCommandPayload
   | CadBlockPreludeCommandPayload
   | CadLayerCommandPayload
   | {
@@ -509,19 +482,7 @@ export type CadCommand =
   // Phase 20C — grading groups (single side only; definitions + snapshots).
   | CadGradingGroupCommandPayload
   | CadDesignSurfaceCommandPayload
-  // Phase C3 — polyline vertex topology (count-changing, one undo entry).
-  | {
-      key: 'POLYLINE_INSERT_VERTEX';
-      entityId: CadEntityId;
-      courseIndex: number;
-      x: number;
-      y: number;
-    }
-  | {
-      key: 'POLYLINE_DELETE_VERTEX';
-      entityId: CadEntityId;
-      vertexIndex: number;
-    }
+  | CadPolylineTopologyCommandPayload
   // CAD Curves F1 — six atomic curve commands + atomic subdivision.
   | CadCurveBetweenLinesCommand
   | CadCurveOnLinesCommand

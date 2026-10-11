@@ -1025,8 +1025,9 @@ describe('STRUCT-241.8 CAD+F2F graph pins', () => {
     // 4 retired hub edges to the anchor barrel + analysis modules).
     // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (2 hub imports + 2 primitive-draw out-edges + 0 basic-curve out-edges - 1 retired hub tangent-solver edge).
     // STRUCT-241.15 roll-forward: +2 nodes / +5 type edges (2 hub imports + 3 geometry-edit out-edges + 0 planar out-edges, no retired edge).
-    expect(graph.nodes.length).toBe(511);
-    expect(graph.edges.length).toBe(2483);
+    // STRUCT-241.16 roll-forward: +2 nodes / +3 type edges (2 hub imports + 1 polyline out-edge + 0 sheet out-edges, no retired edge).
+    expect(graph.nodes.length).toBe(513);
+    expect(graph.edges.length).toBe(2486);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1103,8 +1104,9 @@ describe('STRUCT-241.8 full-src graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
     // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (same allowlist as the scoped pin; every 241.14 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1683);
-    expect(graph.edges.length).toBe(7594);
+    // STRUCT-241.16 roll-forward: +2 nodes / +3 type edges (same allowlist as the scoped pin; every 241.16 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1685);
+    expect(graph.edges.length).toBe(7597);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

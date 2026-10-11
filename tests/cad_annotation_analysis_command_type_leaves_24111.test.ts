@@ -341,6 +341,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
     abs('src/engine/cad/cadTransactionsPlanarTransformCommandTypes.ts'), 'planar', 'CadPlanarTransformCommandPayload');
   const geometryedit = unionMemberDescriptors(
     abs('src/engine/cad/cadTransactionsGeometryEditCommandTypes.ts'), 'geometryedit', 'CadGeometryEditCommandPayload');
+  // STRUCT-241.16 roll-forward: expand the sheet/viewport (6) +
+  // polyline-topology (2) leaves (all single-keyed, no widening).
+  const sheetviewport = unionMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsSheetViewportCommandTypes.ts'), 'sheet', 'CadSheetViewportCommandPayload');
+  const polytopology = unionMemberDescriptors(
+    abs('src/engine/cad/cadTransactionsPolylineTopologyCommandTypes.ts'), 'polytopo', 'CadPolylineTopologyCommandPayload');
   const blockPrelude = unionKeysInOrder(
     abs('src/engine/cad/cadTransactionsBlockCommandTypes.ts'), 'block', 'CadBlockPreludeCommandPayload');
   const blockDefinition = unionKeysInOrder(
@@ -369,6 +375,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (name === 'CadBasicCurveCommandPayload') members.push(...basiccurve);
       else if (name === 'CadPlanarTransformCommandPayload') members.push(...planar);
       else if (name === 'CadGeometryEditCommandPayload') members.push(...geometryedit);
+      else if (name === 'CadSheetViewportCommandPayload') members.push(...sheetviewport);
+      else if (name === 'CadPolylineTopologyCommandPayload') members.push(...polytopology);
       else if (name === 'CadBlockPreludeCommandPayload') members.push(...blockPrelude);
       else if (name === 'CadBlockDefinitionCommandPayload') members.push(...blockDefinition);
       else if (name === 'CadLayerCommandPayload') members.push(...layer);
@@ -864,7 +872,7 @@ describe('STRUCT-241.11 baseline shapes: Extract<CadCommand> vs leaf vs Base*', 
 });
 
 describe('STRUCT-241.11 hub union splice order and member counts', () => {
-  it('measures 61 top-level members and documents the 72 -> 61 extraction', () => {
+  it('measures 55 top-level members and documents the 61 -> 55 extraction', () => {
     const counts = hubTopLevelCounts();
     // STRUCT-241.13 roll-forward: 15 alignment + parcel-construction inline
     // members replaced by 2 alias references (51 inline, 31 refs, 7 intersections).
@@ -872,12 +880,14 @@ describe('STRUCT-241.11 hub union splice order and member counts', () => {
     // members replaced by 2 alias references (32 inline, 33 refs, 7 intersections).
     // STRUCT-241.15 roll-forward: 13 planar-transform + geometry-edit inline
     // members replaced by 2 alias references (19 inline, 35 refs, 7 intersections).
-    expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 });
-    // Re-inlining the annotation + analysis + 241.15 leaves restores the 241.13 shape
-    // 89 = 61 + 11 + 8 + 6 + 7 - 4 ...
+    // STRUCT-241.16 roll-forward: 8 sheet/viewport + polyline-topology inline
+    // members replaced by 2 alias references (11 inline, 37 refs, 7 intersections).
+    expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 });
+    // Re-inlining the annotation + analysis + 241.15 + 241.16 leaves restores
+    // the 241.13 shape 89 = 55 + 11 + 8 + 6 + 7 + 6 + 2 - 6 ...
     expect(unionKeysInOrder(ANN_LEAF, 'annotation', ANN_ALIAS).length).toBe(11);
     expect(unionKeysInOrder(ANL_LEAF, 'analysis', ANL_ALIAS).length).toBe(8);
-    expect(counts.total + 11 + 8 + 6 + 7 - 4).toBe(89);
+    expect(counts.total + 11 + 8 + 6 + 7 + 6 + 2 - 6).toBe(89);
     // ... and re-inlining the 241.12 + 241.13 leaves on top restores the pre-241.11 133.
     expect(unionMemberDescriptors(
       abs('src/engine/cad/cadTransactionsFeatureLineCommandTypes.ts'), 'featureline', 'CadFeatureLineCommandPayload').length).toBe(11);
@@ -887,13 +897,13 @@ describe('STRUCT-241.11 hub union splice order and member counts', () => {
       abs('src/engine/cad/cadTransactionsAlignmentCommandTypes.ts'), 'alignment', 'CadAlignmentCommandPayload').length).toBe(6);
     expect(unionMemberDescriptors(
       abs('src/engine/cad/cadTransactionsParcelConstructionCommandTypes.ts'), 'parcel', 'CadParcelConstructionCommandPayload').length).toBe(9);
-    // ... and re-inlining the 241.12 + 241.13 + 241.14 + 241.15 leaves on top
-    // restores the pre-241.11 133.
+    // ... and re-inlining the 241.12 + 241.13 + 241.14 + 241.15 + 241.16 leaves
+    // on top restores the pre-241.11 133.
     expect(unionMemberDescriptors(
       abs('src/engine/cad/cadTransactionsPrimitiveDrawCommandTypes.ts'), 'primitive', 'CadPrimitiveDrawCommandPayload').length).toBe(13);
     expect(unionMemberDescriptors(
       abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'), 'basiccurve', 'CadBasicCurveCommandPayload').length).toBe(6);
-    expect(counts.total + 11 + 8 + 11 + 5 + 6 + 9 + 13 + 6 + 6 + 7 - 10).toBe(133);
+    expect(counts.total + 11 + 8 + 11 + 5 + 6 + 9 + 13 + 6 + 6 + 7 + 6 + 2 - 12).toBe(133);
   });
 
   it('splices both groups with neighbor sentinels in the original position', () => {
@@ -926,7 +936,7 @@ describe('STRUCT-241.11 hub union splice order and member counts', () => {
     // parcel-construction members moved to leaves).
     // STRUCT-241.14 roll-forward: 51 -> 32 inline (19 primitive-draw +
     // basic-curve members moved to leaves).
-    expect(inlineSets.length).toBe(19);
+    expect(inlineSets.length).toBe(11);
     const moved: Set<string> = new Set([...EXPECTED_ANNOTATION_KEYS, ...EXPECTED_ANALYSIS_KEYS]);
     for (const set of inlineSets) {
       for (const key of set) {
@@ -1106,8 +1116,10 @@ describe('STRUCT-241.11 CAD+F2F graph pins', () => {
     // STRUCT-241.15 roll-forward: +2 / +5 (geometry-edit leaf: 3
     // out-edges + hub import; planar leaf: 0 out-edges + hub import;
     // no retired edge).
-    expect(graph.nodes.length).toBe(511);
-    expect(graph.edges.length).toBe(2483);
+    // STRUCT-241.16 roll-forward: +2 / +3 (polyline leaf: 1 out-edge +
+    // hub import; sheet leaf: 0 out-edges + hub import; no retired edge).
+    expect(graph.nodes.length).toBe(513);
+    expect(graph.edges.length).toBe(2486);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1197,8 +1209,10 @@ describe('STRUCT-241.11 full-src graph pins', () => {
     // resolves inside `src`).
     // STRUCT-241.15 roll-forward: the 241.15 leaves add +2 / +5 (same
     // allowlist as the scoped pin; every 241.15 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1683);
-    expect(graph.edges.length).toBe(7594);
+    // STRUCT-241.16 roll-forward: the 241.16 leaves add +2 / +3 (same
+    // allowlist as the scoped pin; every 241.16 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1685);
+    expect(graph.edges.length).toBe(7597);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
@@ -1355,7 +1369,7 @@ describe('STRUCT-241.11 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });
