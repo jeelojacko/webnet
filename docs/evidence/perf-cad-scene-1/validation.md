@@ -2,7 +2,7 @@
 
 - Baseline: `32930bd50615916fe2f8166a63fa64879ed633c3`.
 - Branch: `perf/cad-scene-metadata-reuse-1`.
-- Suite: `tests/cad_display_scene_reuse_perf_cad_scene_1.test.tsx` (24 tests).
+- Suite: `tests/cad_display_scene_reuse_perf_cad_scene_1.test.tsx` (31 tests, after P1).
 
 ## Phase 1 — proof (recorded before the fast path shipped)
 
@@ -61,27 +61,59 @@ two renames produce **0** base builds, and a `LAYER_VISIBILITY` edit still
 rebuilds. (Without the version-stable input contract the shell would rebuild
 on every rename because the contour closure is recreated per project commit.)
 
-## Benchmark (same hardware, logged; 3 runs)
+## P1 correction (controller review of 9de39f50)
 
-`BEFORE build` = the skipped `buildCadDisplayScene` per rename;
-`BEFORE filter` = the filter that BOTH paths still run; `AFTER hookRename` =
-end-to-end controlled commit; `guard` = `canReuseCadDisplaySceneBase`.
+Controller found the shipped `sameVersionedSessionInput` accepted any two
+objects with an equal numeric `version`, without pinning the cache identities
+the renderer actually reads (`tinCache`/`volumeCache`/`contourCache`). Fixed
+in `f398146b` with field-aware comparators: contour slot = presence +
+`version ===` + `contourCache ===` (top-level `surfaceCache` already pinned);
+volume slot = presence + `version ===` + `tinCache ===` + `volumeCache ===`.
+`contourCache` provenance is threaded through `SurveyCadContourInputs`
+(`useSurveyCadContourLifecycle.ts`). `buildingVolumeIds`/`sessionDiagnostics`
+never reach `buildCadDisplayScene` and are deliberately not gated. New fields
+fail closed via own-key-set checks. The cache entry is now published in a
+`useLayoutEffect` keyed on the memo result (no ref write during render).
+Side effect: StrictMode mount builds twice (exactly 2, bounded) because
+neither render pass sees a committed entry; every rename still reuses
+(0 builds). Suite grew 24 -> 31 with same-version cache-swap divergence
+tests (old guard fails them) plus real-hook live surface/volume integration.
 
-| Entities | BEFORE build | BEFORE filter | AFTER hookRename | variability | guard/check | net saving/rename |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1k | 1.06 / 1.08 / 1.10 ms | 0.26–0.28 ms | 2.12 / 2.14 / 2.20 ms | 0.20–0.31 ms | ~0.0033 ms | ~1.05–1.09 ms |
-| 10k | 7.49 / 9.18 / 9.54 ms | 1.94–2.15 ms | 20.0 / 20.6 / 22.1 ms | 2.32–6.20 ms | ~0.0026 ms | ~7.49–9.54 ms |
+## Benchmark (paired end-to-end, same machine/toolchain, corrected HEAD)
 
-- For both sizes `renameBuilds = 0` and `median(build) > median(guard)`.
-- Invalidation is unregressed: a same-size entity edit still rebuilds
-  (`geometryRebuild` 7.5–9.6 ms at 1k, 68.7–70.7 ms at 10k, `builds = 1`).
-- `AFTER hookRename` is dominated by React render/commit overhead
-  (~1–15 ms); the *skipped* work is the `BEFORE build` column, which is
-  removed from the pipeline in the reuse path.
+Reusable harness (kept outside the repo): real-hook `LAYER_RENAME` +
+`replaceCadProject` invalidation timed around `act()`, `vi.mock` build/filter
+counters, fixtures outside timed windows, no contour/surface inputs,
+`ROUNDS=8 x REPS=3` interleaved, Node v26.10.0. BEFORE = temp worktree at
+`32930bd5`; AFTER = temp worktree at corrected `f398146b`. Medians, n=24/side:
+
+| op | 1k BEFORE | 1k AFTER | net | 10k BEFORE | 10k AFTER | net | builds/op |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| rename | 3.114 | 2.733 | **-0.381** | 20.977 | 16.916 | **-4.062** | b1->b0, f1->f1 |
+| invalidate | 2.846 | 3.296 | +0.449 | 18.361 | 21.530 | +3.170 | b1->b1, f1->f1 |
+| micro-build (NOT net) | 0.246 | 0.430 | +0.184 | 3.443 | 4.280 | +0.837 | b1 |
+| micro-filter | 0.031 | 0.032 | +0.001 | 0.358 | 0.361 | +0.003 | f1 |
+
+Rename win is rep-consistent with call-count proof (1->0 base builds, filter
+still 1). Guard overhead is micro (filter delta +0.001..0.003 ms; standalone
+guard ~0.003 ms), exceeded 1000x by the 10k rename saving.
+
+Honest caveat: the 10k invalidate +3.17 ms has IDENTICAL call counts and
+persists invalidate-only (before 18.424 vs after 23.853, fresh processes) and
+reversed-order (after-first 22.729 vs before-second 20.229), so it is not run-
+order bias. It cannot be guard cost (guard is microseconds; micro-filter
+delta +0.003). Supporting artifact evidence: micro-build on the IDENTICAL
+untouched function drifts +0.84 ms, and after-side variance is wider
+(sd 1.73 vs 0.71) — a GC/process signature, plausibly from the one retained
+scene+project in the tight loop. No mechanism proven; production does one op
+per gesture with idle GC, unlike the loop. Correctness unregressed (exactly 1
+rebuild per invalidation both sides). Prior 9de39f50 campaign was near-
+identical (rename -0.73/-4.37; invalidate +0.42/+3.34). Flagged explicitly for
+reviewer/controller adjudication; full logs stay outside the repo.
 
 ## Commands
 
-- New suite: **24/24**.
+- New suite: **31/31** (StrictMode mount now exactly 2 bounded builds, renames 0).
 - **Structural graph pins unchanged** (repo convention "graphs unchanged"):
   the 18 previously-red CAD+F2F / full-`src` import-graph pin suites
   (`STRUCT-241.x` ×15, `STRUCT-195.11/195.12/195.14`) pass **1253/1253** with
@@ -91,6 +123,6 @@ end-to-end controlled commit; `guard` = `canReuseCadDisplaySceneBase`.
   renderer labels/standards, derived-scene/viewport lifecycle, sheet parity,
   persistence/entities, spike model): **12 files / 132 tests**.
 - `npm run typecheck` clean; `npx eslint` on the three changed files clean;
-  `npm run check:portable-paths` **6442 tracked paths / 0 violations**.
+  `npm run check:portable-paths` **6445 tracked paths / 0 violations**.
 - The only remaining agent-tier failures are the 3 known pre-existing
   study-desktop real-data suites (calibration, calibration_v5, preflight).
