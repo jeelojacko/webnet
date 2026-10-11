@@ -89,8 +89,9 @@ migration; no SCC change.
 ## Review
 
 - Independent read-only reviewer on exact integrated final diff (incl.
-  negative controls): PENDING — must return explicit APPROVE, else correct
-  + re-review in same conversation.
+  negative controls): APPROVE (round-1 one test-only low-severity
+  finding remediated same-phase; round-2 FRESH re-review APPROVE on
+  final head, no findings).
 - Stash preservation: 14/14, order intact; worktree contains only the
   24115 scope (hub + 2 leaves + 1 new + 20 rolled-forward tests + TODO +
   2 evidence docs + 2 narrow 24114 evidence doc corrections).

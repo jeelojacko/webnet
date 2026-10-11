@@ -101,4 +101,7 @@ Two DISJOINT contiguous groups inside the `CadCommand` union:
 - Parent owned hub splice, focused 73-test suite, 20-file narrow guard
   roll-forward (6 flatten/count + 8 graph-only + 3 195.x cumulative +
   2413/2417 fan-in), validation, docs, PR.
-- Independent read-only reviewer: PENDING (must APPROVE before handoff).
+- Independent read-only reviewer: APPROVE (round-1 found one test-only
+  low-severity finding — vacuous worktree-clean guard — remediated
+  same-phase with collection-time pristine capture; round-2 FRESH
+  re-review APPROVE on final head, no findings).
