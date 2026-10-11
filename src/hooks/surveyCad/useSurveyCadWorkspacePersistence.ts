@@ -30,12 +30,27 @@ export const useSurveyCadWorkspacePersistence = ({
       // imported states on every external update. A content comparison
       // (not reference equality) keeps the legacy fallback working, since
       // it rebuilds an equivalent document object on every write.
-      if (
-        buildCadProjectSignature(current.project) !==
-        buildCadProjectSignature(syncedDrawing.project)
-      ) {
+      const currentSignature = buildCadProjectSignature(current.project);
+      if (currentSignature !== buildCadProjectSignature(syncedDrawing.project)) {
         return current;
       }
+      // PERF-188 (#188) correction: do NOT skip the clone on a raw
+      // project-signature match. `cloneCadDrawingDocument` is not a
+      // key-order-only normalization: `cloneCadProject` unconditionally
+      // sets `version: 2`, defaults `cogoComputations` to `[]`, migrates
+      // legacy surface point sources (`pointGroupId` -> `pointGroupIds`),
+      // sanitizes surface purpose, and rebuilds nested key order; the
+      // drawing clone also re-sanitizes the draft and defaults
+      // `showParcelLabels`. A controlled drawing (supplied untouched by
+      // `useSurveyCadDrawingSource`) or a legacy drawing document can
+      // therefore carry a supported legacy shape whose project is
+      // raw-equal to `cadProject` while still needing normalization on
+      // publish. Raw equality cannot prove the project is already
+      // canonical, so this path clones first and compares the *cloned*
+      // result, exactly as before PR #262. The workspace wrapper's
+      // reference-based no-op guard still removes the selection-only /
+      // rejected-command clone, and a clone whose result is equal to
+      // `current` is still discarded here.
       const nowIso = new Date().toISOString();
       const nextState = cloneCadDrawingDocument({
         ...current,
@@ -45,10 +60,10 @@ export const useSurveyCadWorkspacePersistence = ({
         showParcelLabels,
       });
       const sigSame =
-        buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project);
+        currentSignature === buildCadProjectSignature(nextState.project);
       const layoutSame =
         JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(nextState.parcelLayout ?? null);
-      const labelsSame = (current?.showParcelLabels ?? true) === nextState.showParcelLabels;
+      const labelsSame = (current.showParcelLabels ?? true) === nextState.showParcelLabels;
       if (sigSame && layoutSame && labelsSame) {
         return current;
       }
