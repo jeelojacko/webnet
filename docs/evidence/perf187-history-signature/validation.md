@@ -93,7 +93,10 @@ toJSON windows with calls > 0.
    (accessor counterexample + stale structural comments — remediated);
    round 7 found two more P2s (unqualified false-direction claim in arch/
    hook docs + stale validation record — remediated this revision);
-   round 8 closing review PENDING.
+   round 8 closing review PENDING. (Superseded: PR #261 merged as
+   `76415916adc87795305b7a7896dc59b098d3b054` with an independent reviewer
+   APPROVE on the final raw-filter revision and exact-head CI 5/5 green. No
+   measurements or history above were altered.)
 
 ## Residual costs and caveats
 

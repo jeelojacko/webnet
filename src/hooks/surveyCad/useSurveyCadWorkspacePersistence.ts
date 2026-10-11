@@ -30,10 +30,22 @@ export const useSurveyCadWorkspacePersistence = ({
       // imported states on every external update. A content comparison
       // (not reference equality) keeps the legacy fallback working, since
       // it rebuilds an equivalent document object on every write.
-      if (
-        buildCadProjectSignature(current.project) !==
-        buildCadProjectSignature(syncedDrawing.project)
-      ) {
+      const currentSignature = buildCadProjectSignature(current.project);
+      if (currentSignature !== buildCadProjectSignature(syncedDrawing.project)) {
+        return current;
+      }
+      // PERF-188 (#188): decide whether a write is needed BEFORE paying for
+      // the full deep clone. The clone only normalizes key order (and
+      // re-sanitizes the draft); it never changes the observable project,
+      // parcel-layout, or label values. When all three already match the
+      // intended target there is nothing to publish and the clone would be
+      // discarded immediately. A genuine change still falls through to the
+      // clone below, so sanitation/normalization on real writes is retained.
+      const projectMatches = currentSignature === buildCadProjectSignature(cadProject);
+      const layoutMatches =
+        JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(parcelLayoutState ?? null);
+      const labelsMatch = (current.showParcelLabels ?? true) === (showParcelLabels ?? true);
+      if (projectMatches && layoutMatches && labelsMatch) {
         return current;
       }
       const nowIso = new Date().toISOString();
@@ -45,10 +57,10 @@ export const useSurveyCadWorkspacePersistence = ({
         showParcelLabels,
       });
       const sigSame =
-        buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project);
+        currentSignature === buildCadProjectSignature(nextState.project);
       const layoutSame =
         JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(nextState.parcelLayout ?? null);
-      const labelsSame = (current?.showParcelLabels ?? true) === nextState.showParcelLabels;
+      const labelsSame = (current.showParcelLabels ?? true) === nextState.showParcelLabels;
       if (sigSame && layoutSame && labelsSame) {
         return current;
       }

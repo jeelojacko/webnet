@@ -115,9 +115,22 @@ export const useSurveyCadWorkspace = (
       // Undo/redo restore the before/after reference, staying atomic.
       let nextDraft: import('../../engine/cad/cadDraftTypes').DraftDocument | null = null;
       let draftChanged = false;
+      // PERF-188 (#188): the published drawing document only carries the
+      // committed project, the sticky draft, and (from props) the parcel
+      // layout + label toggle. A history update that keeps both the project
+      // and draft references identical — selection-only updates, command
+      // state transitions, and rejected commands that return `current` — has
+      // nothing for the drawing to publish. Re-cloning the whole document in
+      // that case was pure waste: the persistence sync then discards the
+      // equal clone. History state (selection/command/undo stacks) still
+      // flows through `applyHistoryUpdateBase`; only the redundant document
+      // write is skipped. A genuine project or draft change still clones, so
+      // draft/sheet propagation and updatedAt semantics are unchanged.
+      let projectChanged = false;
       applyHistoryUpdateBase((current) => {
         const next = updater(current);
         nextProject = next.present.project;
+        projectChanged = nextProject !== current.present.project;
         if (next.present.draft !== current.present.draft) {
           nextDraft = next.present.draft ?? null;
           draftChanged = true;
@@ -125,6 +138,7 @@ export const useSurveyCadWorkspace = (
         return next;
       });
       if (!nextProject) return;
+      if (!projectChanged && !draftChanged) return;
       const propagatedDraft = draftChanged ? nextDraft : undefined;
       onProjectChange((current) => {
         if (!current || current.drawingId !== drawing.drawingId) return current;
