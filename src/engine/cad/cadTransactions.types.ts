@@ -10,7 +10,6 @@ import type {
   CadSurveyTableStyleCommandPayload,
 } from './cadSurveyTables';
 
-import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
 import type { CadGradingGroupResult } from './grading/gradingGroupTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
@@ -49,16 +48,18 @@ import type {
   CadBlockDefinitionCommandPayload,
   CadBlockPreludeCommandPayload,
 } from './cadTransactionsBlockCommandTypes';
+// STRUCT-241.11: annotation (11) + analysis (8) command payload slices are
+// type-only leaves; the hub splices both unions in the original position.
+import type { CadAnnotationCommandPayload } from './cadTransactionsAnnotationCommandTypes';
+import type { CadAnalysisCommandPayload } from './cadTransactionsAnalysisCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
   CadAlignmentElement,
-  CadDimensionKind,
   CadEntityAppearance,
   CadEntityId,
   CadLayerId,
   CadGripHandleKind,
-  CadMTextAttachment,
   CadParcelLayoutSettings,
   CadPointGroup,
   CadPointGroupId,
@@ -72,12 +73,8 @@ import type {
   CadProject,
   CadStationEquation,
   CadSurfacePurpose,
-  CadTextStyleId,
   ImportedTinPayload,
 } from './cadTypes';
-import type { CadAnalysisAppearancePatch } from './cadAnalysisMaps';
-import type { CadAnalysisLegendPatch } from './cadAnalysisLegends';
-import type { CadAnalysisBand, CadAnalysisLegend, CadAnalysisSource } from './cadAnalysisTypes';
 import type {
   ParcelDesignateCommand,
   ParcelNumberCommand,
@@ -812,129 +809,8 @@ export type CadCommand =
     }
   | CadSectionViewDeleteCommand
   | CadBlockDefinitionCommandPayload
-  | {
-      key: 'CREATE_MTEXT';
-      x: number;
-      y: number;
-      text: string;
-      textStyleId?: CadTextStyleId;
-      rotationDeg?: number;
-      attachment?: CadMTextAttachment;
-    }
-  | {
-      key: 'CREATE_LEADER';
-      arrowAnchor: CadAnnotationAnchor;
-      vertices: { x: number; y: number }[];
-      text: string;
-      leaderStyleId?: string;
-      textStyleId?: CadTextStyleId;
-      textAttachment?: CadMTextAttachment;
-    }
-  | {
-      key: 'CREATE_DIMENSION';
-      dimensionKind: CadDimensionKind;
-      anchors: CadAnnotationAnchor[];
-      orientation?: 'horizontal' | 'vertical' | 'aligned';
-      dimLinePoint: { x: number; y: number };
-      textPoint?: { x: number; y: number };
-      dimensionStyleId?: string;
-      textOverride?: string;
-    }
-  | {
-      key: 'CREATE_BEARING_LABEL';
-      sourceEntityId: CadEntityId;
-      labelStyleId?: string;
-      offset?: { x: number; y: number };
-      side?: 'left' | 'right' | 'auto';
-      manualTextOverride?: string;
-    }
-  | {
-      key: 'CREATE_CURVE_LABEL';
-      sourceEntityId: CadEntityId;
-      labelStyleId?: string;
-      offset?: { x: number; y: number };
-      manualTextOverride?: string;
-    }
-  | {
-      key: 'UPDATE_DIMENSION_PLACEMENT';
-      entityId: CadEntityId;
-      dimLinePoint?: { x: number; y: number };
-      textPoint?: { x: number; y: number } | null;
-    }
-  | {
-      key: 'REATTACH_ANNOTATION';
-      entityId: CadEntityId;
-      slot: 'leader-arrow' | 'dimension-anchor' | 'dimension-def-point-1' | 'dimension-def-point-2';
-      index?: number;
-      /** Omitted = convert the slot to a frozen point at its resolved position. */
-      anchor?: CadAnnotationAnchor;
-    }
-  | {
-      key: 'SET_TEXT_OVERRIDE';
-      entityId: CadEntityId;
-      text: string;
-    }
-  | {
-      key: 'CLEAR_TEXT_OVERRIDE';
-      entityId: CadEntityId;
-    }
-  | {
-      key: 'SET_ANNOTATION_SCALE';
-      scaleDenominator: number;
-    }
-  | {
-      key: 'ANNOTATION_COMMIT';
-      /** Validated project from the annotation UI op applier (hook-owned). */
-      project: CadProject;
-      label: string;
-    }
-  // Phase 18U — analysis maps + legends (definitions only; derived band
-  // quantities are session-only and never dirty the drawing).
-  | {
-      key: 'ANALYSIS_MAP_CREATE';
-      name?: string;
-      source: CadAnalysisSource;
-      bands: CadAnalysisBand[];
-      layerId?: CadLayerId;
-      opacity?: number;
-      description?: string;
-    }
-  | {
-      key: 'ANALYSIS_MAP_UPDATE_BANDS';
-      analysisId: string;
-      bands?: CadAnalysisBand[];
-      source?: CadAnalysisSource;
-    }
-  | {
-      key: 'ANALYSIS_MAP_UPDATE_APPEARANCE';
-      analysisId: string;
-      patch: CadAnalysisAppearancePatch;
-    }
-  | {
-      key: 'ANALYSIS_MAP_DELETE';
-      analysisId: string;
-      /** True removes the map + every referencing legend atomically. */
-      deleteLegendsToo?: boolean;
-    }
-  | {
-      key: 'ANALYSIS_LEGEND_CREATE';
-      legend: CadAnalysisLegend;
-    }
-  | {
-      key: 'ANALYSIS_LEGEND_UPDATE';
-      legendId: string;
-      patch: CadAnalysisLegendPatch;
-    }
-  | {
-      key: 'ANALYSIS_LEGEND_MOVE';
-      legendId: string;
-      x: number;
-      y: number;
-    }
-  | {
-      key: 'ANALYSIS_LEGEND_DELETE';
-      legendId: string;
-    }
+  | CadAnnotationCommandPayload
+  | CadAnalysisCommandPayload
   // Phase 20A — 3D feature lines (create + edit + report).
   | {
       key: 'FEATURELINE' | 'FEATURELINECREATE';

@@ -83,12 +83,18 @@ const SURVEY_LEAF = path.join(CAD_DIR, 'cadTransactionsSurveyCommandTypes.ts');
 // STRUCT-241.2 roll-forward: block prelude (2) + definition (7) leaves are
 // expanded by the flattened view so the 168 effective members stay pinned.
 const BLOCK_LEAF = path.join(CAD_DIR, 'cadTransactionsBlockCommandTypes.ts');
+// STRUCT-241.11 roll-forward: annotation (11) + analysis (8) leaves are
+// expanded by the flattened view so the 168 effective members stay pinned.
+const ANN_LEAF = path.join(CAD_DIR, 'cadTransactionsAnnotationCommandTypes.ts');
+const ANL_LEAF = path.join(CAD_DIR, 'cadTransactionsAnalysisCommandTypes.ts');
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 
 const LAYER_ALIAS = 'CadLayerCommandPayload';
 const SURVEY_ALIAS = 'CadSurveyCommandPayload';
 const BLOCK_PRELUDE_ALIAS = 'CadBlockPreludeCommandPayload';
 const BLOCK_DEF_ALIAS = 'CadBlockDefinitionCommandPayload';
+const ANN_ALIAS = 'CadAnnotationCommandPayload';
+const ANL_ALIAS = 'CadAnalysisCommandPayload';
 
 const parseText = (file: string, text: string): ts.SourceFile =>
   ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
@@ -273,6 +279,9 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   // STRUCT-241.2: expand both disjoint block leaves (prelude 2 + definition 7).
   const blockPreludeKeys = unionKeysInOrder(BLOCK_LEAF, 'block prelude leaf', BLOCK_PRELUDE_ALIAS);
   const blockDefKeys = unionKeysInOrder(BLOCK_LEAF, 'block definition leaf', BLOCK_DEF_ALIAS);
+  // STRUCT-241.11: expand the annotation (11) + analysis (8) leaves.
+  const annotationKeys = unionKeysInOrder(ANN_LEAF, 'annotation leaf', ANN_ALIAS);
+  const analysisKeys = unionKeysInOrder(ANL_LEAF, 'analysis leaf', ANL_ALIAS);
   const keyDescriptor = (member: ts.TypeLiteralNode): string | null => {
     const keyProp = member.members.find(
       (m): m is ts.PropertySignature =>
@@ -295,6 +304,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (flat.typeName.text === SURVEY_ALIAS) members.push(...surveyKeys);
       else if (flat.typeName.text === BLOCK_PRELUDE_ALIAS) members.push(...blockPreludeKeys);
       else if (flat.typeName.text === BLOCK_DEF_ALIAS) members.push(...blockDefKeys);
+      else if (flat.typeName.text === ANN_ALIAS) members.push(...annotationKeys);
+      else if (flat.typeName.text === ANL_ALIAS) members.push(...analysisKeys);
       else members.push(flat.typeName.text);
       return;
     }
@@ -1347,7 +1358,10 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // AST-measured (pre-refactor: 168 total = 140 inline + 7 intersections + 21 refs).
     // STRUCT-241.2 roll-forward: 140 -> 133 top-level (101 inline, 25 refs,
     // 7 intersections); flattened effective members stay 168 via block leaves.
-    expect(hubTopLevelCounts()).toEqual({ total: 133, inline: 101, refs: 25, intersections: 7 });
+    // STRUCT-241.11 roll-forward: 133 -> 116 top-level (82 inline, 27 refs,
+    // 7 intersections); flattened effective members stay 168 via the
+    // annotation + analysis leaves.
+    expect(hubTopLevelCounts()).toEqual({ total: 116, inline: 82, refs: 27, intersections: 7 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1380,7 +1394,9 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // counts members, not key literals.)
     const inlineSets = hubInlineKeySets();
     // STRUCT-241.2 roll-forward: 110 -> 101 inline (9 block members moved to leaves).
-    expect(inlineSets.length).toBe(101);
+    // STRUCT-241.11 roll-forward: 101 -> 82 inline (19 annotation +
+    // analysis members moved to leaves).
+    expect(inlineSets.length).toBe(82);
     for (const set of inlineSets) {
       for (const key of set) {
         expect(key.startsWith('LAYER_'), `inline ${key} still in hub`).toBe(false);
