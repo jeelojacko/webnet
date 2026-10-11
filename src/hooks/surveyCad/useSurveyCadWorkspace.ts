@@ -55,6 +55,7 @@ import type {
   CadSnapCandidate,
   CadSnapConstructionContext,
   CadSnapKind,
+  MlightcadSpikeScene,
 } from '../../engine/cad/cadTypes';
 import type { CadEntityId } from '../../engine/cad/cadTypes';
 import { createCadSelectionState } from '../../engine/cad/cadSelection';
@@ -225,7 +226,20 @@ export const useSurveyCadWorkspace = (
       };
     });
   }, [applyHistoryUpdate, cadProject, selection.selectedEntityIds]);
-  const mlightcadScene = useMemo(() => buildMlightcadSpikeScene(cadProject), [cadProject]);
+  // PERF-190: the mlightcad spike scene has no production consumer in the
+  // workspace shell, and building it eagerly on every committed project was
+  // pure per-render cost. Keep the same required read surface but build once,
+  // lazily, on the FIRST read per project identity. The memoized thunk closes
+  // only over the current `cadProject` + its cached scene, so a new project
+  // identity retires the old closure (and its obsolete scene) for GC; there
+  // is no global cache and no rebuild-per-read.
+  const getMlightcadScene = useMemo(() => {
+    let cached: MlightcadSpikeScene | undefined;
+    return (): MlightcadSpikeScene => {
+      if (cached === undefined) cached = buildMlightcadSpikeScene(cadProject);
+      return cached;
+    };
+  }, [cadProject]);
   const {
     propertiesPanelState,
     selectedAlignmentDraft,
@@ -570,7 +584,9 @@ export const useSurveyCadWorkspace = (
   return {
     cadProject,
     displayScene,
-    mlightcadScene,
+    get mlightcadScene() {
+      return getMlightcadScene();
+    },
     gripHandles,
     gripPreviewPrimitives,
     activeGripHandleId: activeGripHandle?.id ?? null,
