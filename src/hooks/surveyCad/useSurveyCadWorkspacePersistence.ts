@@ -34,20 +34,23 @@ export const useSurveyCadWorkspacePersistence = ({
       if (currentSignature !== buildCadProjectSignature(syncedDrawing.project)) {
         return current;
       }
-      // PERF-188 (#188): decide whether a write is needed BEFORE paying for
-      // the full deep clone. The clone only normalizes key order (and
-      // re-sanitizes the draft); it never changes the observable project,
-      // parcel-layout, or label values. When all three already match the
-      // intended target there is nothing to publish and the clone would be
-      // discarded immediately. A genuine change still falls through to the
-      // clone below, so sanitation/normalization on real writes is retained.
-      const projectMatches = currentSignature === buildCadProjectSignature(cadProject);
-      const layoutMatches =
-        JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(parcelLayoutState ?? null);
-      const labelsMatch = (current.showParcelLabels ?? true) === (showParcelLabels ?? true);
-      if (projectMatches && layoutMatches && labelsMatch) {
-        return current;
-      }
+      // PERF-188 (#188) correction: do NOT skip the clone on a raw
+      // project-signature match. `cloneCadDrawingDocument` is not a
+      // key-order-only normalization: `cloneCadProject` unconditionally
+      // sets `version: 2`, defaults `cogoComputations` to `[]`, migrates
+      // legacy surface point sources (`pointGroupId` -> `pointGroupIds`),
+      // sanitizes surface purpose, and rebuilds nested key order; the
+      // drawing clone also re-sanitizes the draft and defaults
+      // `showParcelLabels`. A controlled drawing (supplied untouched by
+      // `useSurveyCadDrawingSource`) or a legacy drawing document can
+      // therefore carry a supported legacy shape whose project is
+      // raw-equal to `cadProject` while still needing normalization on
+      // publish. Raw equality cannot prove the project is already
+      // canonical, so this path clones first and compares the *cloned*
+      // result, exactly as before PR #262. The workspace wrapper's
+      // reference-based no-op guard still removes the selection-only /
+      // rejected-command clone, and a clone whose result is equal to
+      // `current` is still discarded here.
       const nowIso = new Date().toISOString();
       const nextState = cloneCadDrawingDocument({
         ...current,

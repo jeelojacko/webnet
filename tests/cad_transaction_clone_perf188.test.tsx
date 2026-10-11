@@ -2,31 +2,38 @@
 /**
  * PERF-188 (#188) — redundant CAD drawing-document clone elimination.
  *
- * Two independent clone sites were paid on every history update and every
- * persistence sync:
+ * Corrections (P1/P2 review of PR #262):
  *
- *  1. `useSurveyCadWorkspace`'s `applyHistoryUpdate` wrapper unconditionally
- *     published a `cloneCadDrawingDocument` whenever the history updater ran,
- *     even when the updater returned the same history object (rejected
- *     command) or only changed the selection/command state.
- *  2. `useSurveyCadWorkspacePersistence` cloned the full drawing document
- *     BEFORE comparing it against the intended target, then discarded the
- *     clone on the common no-change path.
+ *  - The persistence path keeps its original clone-then-compare shape. The
+ *    pre-clone raw `buildCadProjectSignature` early return was removed because
+ *    the drawing clone is NOT a key-order-only normalization: `cloneCadProject`
+ *    sets `version: 2`, defaults `cogoComputations`, migrates legacy surface
+ *    point sources (`pointGroupId` -> `pointGroupIds`), sanitizes surface
+ *    purpose, and rebuilds nested key order; the drawing clone also
+ *    re-sanitizes the draft. A controlled/legacy drawing can be raw-equal to
+ *    `cadProject` yet still need that normalization on publish.
+ *  - The `useSurveyCadWorkspace` wrapper's reference-based no-op guard is
+ *    retained: selection-only and rejected-command updates publish nothing.
+ *    A genuine commit still publishes through the wrapper *and* the
+ *    persistence normalization sync, so real commit/undo/redo clone twice
+ *    (same as before #262); only the no-op paths drop to zero.
  *
  * This suite drives the REAL hooks through a `react-dom/client` probe (the
  * established workspace harness) with a module-level `vi.mock` that actually
  * intercepts the hook's own imports of `cloneCadDrawingDocument` /
- * `cloneCadProject`. Every "zero clone" assertion is a negative control: the
- * pre-fix code produced at least one clone on each such path, so reverting
- * the optimization fails these tests.
+ * `cloneCadProject`. The zero-clone assertions are negative controls: the
+ * pre-#262 code produced at least one clone on each such path, and the
+ * unsafe early return produced zero normalization clones where one is owed.
  *
  * Covered: (a) mount, (b) successful commit, (c) undo, (d) redo,
  * (e) no-op / selection-only, (f) persistence rerender no-change,
  * (g) genuine external project update, (h) drawing-switch stale callback,
  * (i) legacy `onPersistedStateChange` fallback, (j) controlled mode,
  * (k) LandXML imported-TIN clone + undo, (l) draft/plotFrame:false +
- * parcelLayout/showParcelLabels propagation, plus deep-value snapshot
- * invariants and a clone-count / elapsed perf sample (logged, never gated).
+ * parcelLayout/showParcelLabels propagation, (m) controlled legacy surface
+ * `pointGroupId` normalization, (n) key-reordered imported-TIN normalization,
+ * plus deep-value snapshot invariants and a clone-count / elapsed perf sample
+ * (logged, never gated).
  */
 import { readFileSync } from 'node:fs';
 import React from 'react';
@@ -90,6 +97,7 @@ import type {
   CadEntity,
   CadParcelLayoutUiState,
   CadProject,
+  CadSurface,
   SurveyCadPersistedState,
 } from '../src/engine/cad/cadTypes';
 import type { DraftDocument } from '../src/engine/cad/cadDraftTypes';
@@ -179,6 +187,50 @@ const buildDrawing = (
   ...(project ? { project } : {}),
   ...overrides,
 });
+
+/**
+ * A supported legacy point source (`pointGroupId`) as permitted by
+ * `CadSurfacePointSource`. `cloneCadSurfaceDefinition` migrates it to the
+ * canonical one-element `pointGroupIds` list, so a raw project signature is
+ * NOT normalization-stable.
+ */
+const legacyPointGroupSurfaceProject = (): CadProject => {
+  const base = buildProjectWithEntities(2);
+  const surface: CadSurface = {
+    id: 'surface:legacy-point-group',
+    name: 'Legacy Point Group Surface',
+    definition: { pointSource: { kind: 'point-group', pointGroupId: 'g1' } },
+  };
+  return { ...base, surfaces: [surface] };
+};
+
+/**
+ * An imported-TIN surface with deliberately non-canonical key order
+ * (`pointSource` before `importedTin`; the TIN payload keys reversed).
+ * `cloneCadSurfaceDefinition` rebuilds both, so raw equality does not imply
+ * normalization stability.
+ */
+const reorderedImportedTinSurfaceProject = (): CadProject => {
+  const base = buildProjectWithEntities(2);
+  const surface = {
+    id: 'surface:reordered-tin',
+    name: 'Reordered Imported TIN',
+    definition: {
+      pointSource: { kind: 'points', pointEntityIds: [] },
+      importedTin: {
+        provenance: {
+          kind: 'webnet-bake',
+          sourceSurfaceId: 'seed',
+          sourceSurfaceName: 'seed',
+          sourceRevision: 'srev1:seed',
+        },
+        faces: [0, 1, 2],
+        vertices: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      },
+    },
+  } as unknown as CadSurface;
+  return { ...base, surfaces: [surface] };
+};
 
 const parcelLayoutSnapshot = (
   overrides: Partial<CadParcelLayoutUiState> = {},
@@ -461,17 +513,21 @@ afterEach(async () => {
 // ---------------------------------------------------------------------------
 
 describe('PERF-188 clone budget', () => {
-  it('(a) mount builds no drawing/project clone', async () => {
+  it('(a) mount normalizes once through the persistence sync (spy armed before mount)', async () => {
     const project = buildProjectWithEntities(3);
+    // The spy is intentionally NOT reset after mount: this observes the real
+    // mount cost. The wrapper's no-op guard never runs on mount; the
+    // persistence sync normalizes the drawing once (one drawing clone + its
+    // nested project clone). The pre-#262 path cloned here too, so the
+    // corrected code matches that baseline.
     const harness = await createControlledHarness(buildDrawing(project));
-    resetClones();
 
     expect(harness.api().cadProject).toBe(project);
-    expect(clones().drawing).toBe(0);
-    expect(clones().project).toBe(0);
+    expect(clones().drawing).toBe(1);
+    expect(clones().project).toBe(1);
   });
 
-  it('(b) a successful commit clones exactly once (wrapper) and no longer twice', async () => {
+  it('(b) a successful commit clones twice (wrapper publish + persistence normalization)', async () => {
     const project = buildProjectWithEntities(5);
     const harness = await createControlledHarness(buildDrawing(project));
     const layerId = project.layers[0]!.id;
@@ -481,14 +537,18 @@ describe('PERF-188 clone budget', () => {
       expect(renameLayer(harness.api(), layerId, 'renamed-once')).toBe(true);
     });
 
+    // Same as before #262: the wrapper publishes the committed project, then
+    // the persistence sync clones once more to normalize/compare (and
+    // discards the equal result). The reference-based no-op guard only
+    // removes the wrapper clone when nothing changed.
     const counts = clones();
-    expect(counts.drawing).toBe(1);
-    expect(counts.project).toBe(1);
+    expect(counts.drawing).toBe(2);
+    expect(counts.project).toBe(2);
     expect(harness.api().historyDepth).toBe(1);
     expect(harness.drawing().project.layers[0]!.name).toBe('renamed-once');
   });
 
-  it('(c) undo clones exactly once and restores the pre-commit project deeply', async () => {
+  it('(c) undo clones twice and restores the pre-commit project deeply', async () => {
     const project = buildProjectWithEntities(5);
     const harness = await createControlledHarness(buildDrawing(project));
     const layerId = project.layers[0]!.id;
@@ -501,14 +561,14 @@ describe('PERF-188 clone budget', () => {
       harness.api().undo();
     });
 
-    expect(clones().drawing).toBe(1);
+    expect(clones().drawing).toBe(2);
     expect(harness.api().historyDepth).toBe(0);
     expect(harness.api().canRedo).toBe(true);
     expect(deepValue(harness.api().cadProject)).toEqual(deepValue(project));
     expect(deepValue(harness.drawing().project)).toEqual(deepValue(project));
   });
 
-  it('(d) redo clones exactly once and restores the committed project deeply', async () => {
+  it('(d) redo clones twice and restores the committed project deeply', async () => {
     const project = buildProjectWithEntities(5);
     const harness = await createControlledHarness(buildDrawing(project));
     const layerId = project.layers[0]!.id;
@@ -525,7 +585,7 @@ describe('PERF-188 clone budget', () => {
       harness.api().redo();
     });
 
-    expect(clones().drawing).toBe(1);
+    expect(clones().drawing).toBe(2);
     expect(harness.api().historyDepth).toBe(1);
     expect(deepValue(harness.api().cadProject)).toEqual(committed);
     expect(deepValue(harness.drawing().project)).toEqual(committed);
@@ -562,12 +622,12 @@ describe('PERF-188 clone budget', () => {
     await act(async () => {
       expect(renameLayer(harness.api(), project.layers[0]!.id, 'renamed-live')).toBe(true);
     });
-    expect(clones().drawing).toBe(1);
+    expect(clones().drawing).toBe(2);
     expect(harness.api().selectedEntityIds).toEqual([secondEntity!.id]);
     expect(firstEntity).toBe(project.entities[0]);
   });
 
-  it('(f) a persistence effect re-run with equal content clones zero times', async () => {
+  it('(f) a persistence effect re-run with canonical equal content clones once (normalization sync)', async () => {
     const project = buildProjectWithEntities(4);
     const initialLayout = parcelLayoutSnapshot();
     const harness = await createControlledHarness(buildDrawing(project), {
@@ -576,17 +636,18 @@ describe('PERF-188 clone budget', () => {
     await harness.settle();
     resetClones();
 
-    // New object identity, identical content: the effect re-runs but the
-    // precheck proves no write is needed.
+    // New object identity, identical content: the effect re-runs and the
+    // persistence normalization clone runs even though the result is
+    // discarded (raw equality cannot prove the target is already canonical).
     await harness.setParcelLayout(parcelLayoutSnapshot());
     await harness.settle();
 
-    expect(clones().drawing).toBe(0);
-    expect(clones().project).toBe(0);
+    expect(clones().drawing).toBe(1);
+    expect(clones().project).toBe(1);
     expect(harness.drawing().parcelLayout).toEqual(initialLayout);
   });
 
-  it('(g) a genuine external project update adopts without a redundant clone', async () => {
+  it('(g) a genuine external project update adopts and normalizes through the sync', async () => {
     const project = buildProjectWithEntities(4);
     const harness = await createControlledHarness(buildDrawing(project));
     await harness.settle();
@@ -600,7 +661,7 @@ describe('PERF-188 clone budget', () => {
     await harness.settle();
 
     expect(harness.api().cadProject).toBe(external);
-    expect(clones().drawing).toBe(0);
+    expect(clones().drawing).toBe(1);
     expect(harness.api().historyDepth).toBe(0);
   });
 
@@ -658,14 +719,14 @@ describe('PERF-188 clone budget', () => {
     });
 
     // Legacy round-trip: the migrated drawing project is key-order-different
-    // from the raw history project, so the raw precheck still falls through
-    // once. The pre-fix path paid THREE clones here (wrapper + repeated
-    // persistence syncs); the precheck removes one. The persisted state must
-    // still reflect the committed project exactly. (Legacy round-trips also
-    // reset the workspace history baseline; that is pre-existing behavior and
+    // from the raw history project, so the persistence sync clones once to
+    // normalize (and discards the equal result) on addition to the wrapper
+    // publish: 3 total, the pre-#262 baseline. The persisted state must still
+    // reflect the committed project exactly. (Legacy round-trips also reset
+    // the workspace history baseline; that is pre-existing behavior,
     // independent of this optimization.)
     const counts = clones();
-    expect(counts.drawing).toBe(2);
+    expect(counts.drawing).toBe(3);
     expect(harness.persisted()?.project.layers[0]!.name).toBe('legacy-renamed');
     expect(harness.api().cadProject.layers[0]!.name).toBe('legacy-renamed');
   });
@@ -699,9 +760,10 @@ describe('PERF-188 clone budget', () => {
     });
 
     // The imported-TIN definition normalizes its key order on clone, so the
-    // raw persistence precheck falls through: wrapper clone + discarded sync
-    // clone. Undo returns to the canonical blank project and skips the sync;
-    // redo re-imports and pays the fall-through again.
+    // persistence sync clones once more (and discards the equal result):
+    // wrapper clone + normalization sync = 2, the pre-#262 baseline. Undo
+    // returns to the canonical blank project and likewise pays the sync;
+    // redo re-imports and pays it again.
     const afterCommit = clones();
     expect(afterCommit.drawing).toBe(2);
     expect(harness.api().historyDepth).toBe(1);
@@ -713,7 +775,7 @@ describe('PERF-188 clone budget', () => {
     await act(async () => {
       harness.api().undo();
     });
-    expect(clones().drawing).toBe(1);
+    expect(clones().drawing).toBe(2);
     expect(harness.api().historyDepth).toBe(0);
     expect(harness.api().canRedo).toBe(true);
     expect(harness.api().cadProject.entities).toHaveLength(0);
@@ -755,6 +817,55 @@ describe('PERF-188 clone budget', () => {
     await harness.settle();
     expect(clones().drawing).toBe(1);
     expect(harness.drawing().showParcelLabels).toBe(false);
+  });
+
+  it('(m) a controlled legacy pointGroupId surface normalizes on the persistence boundary (idempotent, no history wipe)', async () => {
+    const project = legacyPointGroupSurfaceProject();
+    const harness = await createControlledHarness(buildDrawing(project));
+    await harness.settle();
+
+    // The raw project was NOT normalization-stable: the published drawing
+    // must carry the canonical one-element list, not the legacy single id.
+    const source = harness.drawing().project.surfaces![0]!.definition.pointSource;
+    expect(source).toEqual({ kind: 'point-group', pointGroupIds: ['g1'] });
+    expect('pointGroupId' in source).toBe(false);
+
+    // Idempotent: once normalized, rerenders do not re-publish the document.
+    const settled = harness.drawing();
+    await harness.settle();
+    await harness.bump();
+    await harness.settle();
+    expect(harness.drawing()).toBe(settled);
+
+    // No history wipe: a real commit keeps exactly one undo entry and the
+    // normalized shape survives it.
+    await act(async () => {
+      expect(renameLayer(harness.api(), project.layers[0]!.id, 'legacy-commit')).toBe(true);
+    });
+    expect(harness.api().historyDepth).toBe(1);
+    expect(harness.api().canUndo).toBe(true);
+    expect(harness.drawing().project.surfaces![0]!.definition.pointSource).toEqual({
+      kind: 'point-group',
+      pointGroupIds: ['g1'],
+    });
+  });
+
+  it('(n) a controlled key-reordered imported-TIN normalizes on the persistence boundary', async () => {
+    const project = reorderedImportedTinSurfaceProject();
+    // Sanity: the input really is non-canonically ordered.
+    expect(Object.keys(project.surfaces![0]!.definition)).toEqual(['pointSource', 'importedTin']);
+
+    const harness = await createControlledHarness(buildDrawing(project));
+    await harness.settle();
+
+    // Pre-#262 baseline: the persistence clone rebuilds nested key order.
+    const publishedDefinition = harness.drawing().project.surfaces![0]!.definition;
+    expect(Object.keys(publishedDefinition)).toEqual(['importedTin', 'pointSource']);
+    expect(Object.keys(publishedDefinition.importedTin!)).toEqual([
+      'vertices',
+      'faces',
+      'provenance',
+    ]);
   });
 });
 
@@ -853,7 +964,7 @@ describe('PERF-188 negative controls', () => {
     await act(async () => {
       renameLayer(harness.api(), project.layers[0]!.id, 'budget-liveness');
     });
-    expect(clones().drawing).toBe(1);
+    expect(clones().drawing).toBe(2);
     expect(() => expect(clones().drawing).toBe(0)).toThrow();
   });
 });
@@ -940,9 +1051,9 @@ describe('PERF-188 clone/time sample (logged)', () => {
           `noOpClones=${noOpClones} noOpMs=${noOpElapsed.toFixed(2)}`,
       );
 
-      expect(commitClones).toBe(sample.iterations);
-      expect(undoClones).toBe(sample.iterations);
-      expect(redoClones).toBe(sample.iterations);
+      expect(commitClones).toBe(2 * sample.iterations);
+      expect(undoClones).toBe(2 * sample.iterations);
+      expect(redoClones).toBe(2 * sample.iterations);
       expect(noOpClones).toBe(0);
     }
   });
