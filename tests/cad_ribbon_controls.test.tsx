@@ -377,6 +377,22 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
       </div>,
     );
 
+  // Deterministic frame control for the induced-scroll exemption: the split
+  // button arms the exemption on open and disarms it in an unqualified-global
+  // requestAnimationFrame callback. Queueing that callback (instead of letting
+  // the real scheduler fire across an awaited act) proves a synthetic scroll
+  // below lands in the exemption's active frame. Scoped per-test and restored
+  // in finally so no stub leaks into neighboring tests.
+  type RafCallback = (_timestamp: number) => void;
+  const stubRafQueue = (): { queue: RafCallback[]; restore: () => void } => {
+    const queue: RafCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: RafCallback): number => {
+      queue.push(callback);
+      return queue.length;
+    });
+    return { queue, restore: () => vi.unstubAllGlobals() };
+  };
+
   it('L1-A: keeps the flyout open when the flyout itself scrolls', async () => {
     const { container, root } = await render(
       <SplitHarness toolFamily={family('arc')} snapshot={stubSnapshot(arcKeys)} actions={stubActions()} initialVariantId="arc-3pt" />,
@@ -413,23 +429,57 @@ describe('post-L1 flyout scroll / anchor contract (L1)', () => {
   });
 
   it('L1-B2: ignores the strip\'s same-frame bring-into-view scroll, but only once', async () => {
-    const { container, root } = await renderInStrip();
-    await openArcFlyout(container);
-    const strip = container.querySelector('.cad-shell-ribbon-groups');
-    // jsdom rects are zero-origin, so the caret reads the same position at open
-    // and at scroll time — the browser's own bring-into-view scroll of the
-    // ribbon strip (issued while resolving the click, delivered after mount).
-    // It is not a user scroll, so the menu stays open.
-    await act(async () => {
-      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
-    });
-    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
-    // One-shot: a second strip scroll is genuine and closes.
-    await act(async () => {
-      strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
-    });
-    expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
-    await cleanup(container, root);
+    const { queue, restore } = stubRafQueue();
+    try {
+      const { container, root } = await renderInStrip();
+      await openArcFlyout(container);
+      // The disarm callback is queued but not yet run: the exemption is still
+      // armed, so the scroll below is provably same-frame — no wall-clock race
+      // with the real animation scheduler across the awaited act above.
+      expect(queue).toHaveLength(1);
+      const strip = container.querySelector('.cad-shell-ribbon-groups');
+      // jsdom rects are zero-origin, so the caret reads the same position at open
+      // and at scroll time — the browser's own bring-into-view scroll of the
+      // ribbon strip (issued while resolving the click, delivered after mount).
+      // It is not a user scroll, so the menu stays open.
+      await act(async () => {
+        strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+      });
+      expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).not.toBeNull();
+      // One-shot: a second strip scroll is genuine and closes.
+      await act(async () => {
+        strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+      });
+      expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+      await cleanup(container, root);
+    } finally {
+      restore();
+    }
+  });
+
+  it('L1-B2-expiry: a strip scroll after the frame boundary closes as genuine', async () => {
+    const { queue, restore } = stubRafQueue();
+    try {
+      const { container, root } = await renderInStrip();
+      await openArcFlyout(container);
+      expect(queue).toHaveLength(1);
+      // Simulate the frame boundary: run the queued disarm callback, exactly
+      // what the real scheduler would do before the next frame's events.
+      await act(async () => {
+        queue.splice(0).forEach((callback) => callback(16));
+      });
+      // The exemption has expired, so even the FIRST strip scroll is genuine.
+      // This guard fails if the disarm runs before the simulated 'same-frame'
+      // scroll: it proves L1-B2 above tests the armed frame, not a dead window.
+      const strip = container.querySelector('.cad-shell-ribbon-groups');
+      await act(async () => {
+        strip?.dispatchEvent(new Event('scroll', { bubbles: false }));
+      });
+      expect(container.querySelector('[data-cad-ribbon-flyout="arc"]')).toBeNull();
+      await cleanup(container, root);
+    } finally {
+      restore();
+    }
   });
 
   it('L1-B3: closes when a genuine ribbon scroll pans the caret', async () => {
