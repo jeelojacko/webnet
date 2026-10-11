@@ -51,7 +51,8 @@
 ## Review
 
 - Independent read-only reviewer on exact integrated final diff (incl.
-  negative controls): verdict recorded below before PR hand-off.
+  negative controls): APPROVE, no findings (head 58425f97). PR #255 OPEN
+  UNMERGED.
 - Stash preservation: 14/14, order intact; worktree contains only the
   241.12 scope (hub + 2 leaves + 1 new + 15 rolled-forward tests).
 
