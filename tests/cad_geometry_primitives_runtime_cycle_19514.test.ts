@@ -608,6 +608,8 @@ describe('STRUCT-195.14 geometry graph guard', () => {
     expect(seven).toEqual([...HISTORICAL_GEOMETRY_SCC.map(abs)].sort());
   });
 
+  // In-memory graph rebuild is cold/CPU-heavy under full-suite CI contention.
+  // Preserve all SCC assertions; extend only this test's Vitest timeout.
   it('mutation control: a forbidden core -> leaf return import recreates a cycle, then restores clean', () => {
     const mutatedSource = `${fs.readFileSync(abs(PRIMITIVES), 'utf8')}\nimport { cadArcStartPoint } from './cadGeometryArcPrimitives';\nvoid cadArcStartPoint;\n`;
     const mutated = buildScopeGraph(new Map([[abs(PRIMITIVES), mutatedSource]]));
@@ -621,7 +623,7 @@ describe('STRUCT-195.14 geometry graph guard', () => {
     const clean = currentGraph();
     expect(findCycles(clean.nodes, clean.value).cyclic.length).toBe(0);
     expect(findCycles(clean.nodes, clean.type).cyclic.length).toBe(0);
-  });
+  }, 30_000);
 });
 
 // ===========================================================================

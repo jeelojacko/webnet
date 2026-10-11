@@ -98,6 +98,11 @@ above).
 - Added an explicit regression pin for the original comment plus a negative in-memory mutation that removes the comment and must fail the positive pin.
 - This documentation/test-only correction does not change the hub or either leaf's emitted runtime JavaScript, dependency graphs, persisted schema or CAD behavior. The previous 5/5 CI success applied to the pre-correction head; a new exact-head CI run is required before merge.
 
+## Exact-head CI graph-test timeout correction
+
+- On commit `164694a70817171aa250a77593dee61ef6ddfbcb`, GitHub Actions run `38098784229` had classify/static/numerical/build-smoke SUCCESS, 10,887 tests passed, and only the legacy `tests/cad_geometry_primitives_runtime_cycle_19514.test.ts` mutation-control test timed out at Vitest's default 5 seconds while performing an in-memory cold dependency-graph rebuild. No graph assertion failure was reported.
+- Controller applied a narrowly scoped 30-second per-test timeout to that single historical mutation test; all original graph/SCC assertions remain intact, with no global timeout change or runtime code change. New exact-head CI success is required before merge.
+
 ## Risks / non-goals
 
 - Cohesion-only extraction; zero runtime behavior delta (emit + digests
