@@ -346,11 +346,17 @@ const hasOnlyKnownKeys = (value: object, knownKeys: ReadonlySet<string>): boolea
  * invariant returns identical output across the accepted edit.
  */
 const sameContourInputs = (previous: unknown, next: unknown): boolean => {
+  // Key validation MUST precede the `===` shortcut: the (reference-stable)
+  // volume-style input object is reused across renames, so an unknown field
+  // added to that SAME object must fail closed instead of riding identity
+  // past the allowlist. When `previous === next`, checking `previous` suffices.
+  if (previous != null && typeof previous === 'object') {
+    if (!hasOnlyKnownKeys(previous, CONTOUR_INPUT_KNOWN_KEYS)) return false;
+  }
   if (previous === next) return true;
   if (previous == null || next == null) return false;
   if (typeof previous !== 'object' || typeof next !== 'object') return false;
   if (!sameKeys(previous, next)) return false;
-  if (!hasOnlyKnownKeys(previous, CONTOUR_INPUT_KNOWN_KEYS)) return false;
   if (!hasOnlyKnownKeys(next, CONTOUR_INPUT_KNOWN_KEYS)) return false;
   const previousInput = previous as ContourSessionInput;
   const nextInput = next as ContourSessionInput;
@@ -361,11 +367,17 @@ const sameContourInputs = (previous: unknown, next: unknown): boolean => {
 };
 
 const sameVolumeInputs = (previous: unknown, next: unknown): boolean => {
+  // Key validation MUST precede the `===` shortcut: this wrapper is the one
+  // the shell reuses by reference across renames, so a future scene-relevant
+  // field added to the same object must fail closed, not bypass the
+  // allowlist via identity. When `previous === next`, checking one side suffices.
+  if (previous != null && typeof previous === 'object') {
+    if (!hasOnlyKnownKeys(previous, VOLUME_INPUT_KNOWN_KEYS)) return false;
+  }
   if (previous === next) return true;
   if (previous == null || next == null) return false;
   if (typeof previous !== 'object' || typeof next !== 'object') return false;
   if (!sameKeys(previous, next)) return false;
-  if (!hasOnlyKnownKeys(previous, VOLUME_INPUT_KNOWN_KEYS)) return false;
   if (!hasOnlyKnownKeys(next, VOLUME_INPUT_KNOWN_KEYS)) return false;
   const previousInput = previous as VolumeSessionInput;
   const nextInput = next as VolumeSessionInput;
@@ -389,6 +401,7 @@ const sameInputs = (
 
 /** Every top-level project slice except `layers` must be the same reference. */
 const sameNonLayerProjectSlices = (previous: CadProject, next: CadProject): boolean => {
+  // Same reference implies every non-layer slice is unchanged (sound shortcut).
   if (previous === next) return true;
   if (!sameKeys(previous, next)) return false;
   const previousRecord = previous as unknown as Record<string, unknown>;
@@ -400,6 +413,7 @@ const sameNonLayerProjectSlices = (previous: CadProject, next: CadProject): bool
 
 /** One layer pair is equivalent when only `name` may differ. */
 const layerEqualsExceptName = (previous: CadLayer, next: CadLayer): boolean => {
+  // Same reference implies every field (name included) is unchanged (sound shortcut).
   if (previous === next) return true;
   if (previous.id !== next.id) return false;
   if (!sameKeys(previous, next)) return false;
@@ -415,6 +429,7 @@ const layersDifferOnlyByName = (
   previous: readonly CadLayer[],
   next: readonly CadLayer[],
 ): boolean => {
+  // Same array reference implies same length/order/fields (sound shortcut).
   if (previous === next) return true;
   if (previous.length !== next.length) return false;
   return previous.every((layer, index) => layerEqualsExceptName(layer, next[index]!));

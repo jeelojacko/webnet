@@ -1593,6 +1593,56 @@ describe('PERF-CAD-SCENE.1 guard unit contract', () => {
     ).toBe(true);
   });
 
+  it('fails closed when a SAME-IDENTITY contour/volume input carries an unknown key', () => {
+    const project = lineProject(2);
+    const contourCache = { cache: 'contour' };
+    const tinCache = { cache: 'tin' };
+    const volumeCache = { cache: 'volume' };
+    // Same object reference on BOTH sides: the `===` fast path must not skip
+    // the own-key allowlist. The volume wrapper is reference-stable across
+    // renames in production, so an unknown future field must fail closed.
+    const dirtyContour = {
+      version: 7,
+      contourCache,
+      getContours: () => null,
+      extraProvenance: { cache: 'unpinned' },
+    };
+    const dirtyVolume = { version: 2, tinCache, volumeCache, extraProvenance: {} };
+    expect(
+      canReuseCadDisplaySceneBase(
+        entryFor(project, { surfaceContourInputs: dirtyContour }),
+        project,
+        { ...inputs, surfaceContourInputs: dirtyContour },
+      ),
+    ).toBe(false);
+    expect(
+      canReuseCadDisplaySceneBase(
+        entryFor(project, { surfaceVolumeInputs: dirtyVolume }),
+        project,
+        { ...inputs, surfaceVolumeInputs: dirtyVolume },
+      ),
+    ).toBe(false);
+    // Positive control: same-identity CLEAN inputs still reuse, proving the
+    // `===` shortcut survives for the reference-stable volume wrapper.
+    const cleanContour = { version: 7, contourCache, getContours: () => null };
+    const cleanVolume = { version: 2, tinCache, volumeCache };
+    const cleanInputs: CadDisplaySceneBuildInputs = {
+      ...inputs,
+      surfaceContourInputs: cleanContour,
+      surfaceVolumeInputs: cleanVolume,
+    };
+    expect(
+      canReuseCadDisplaySceneBase(
+        entryFor(project, {
+          surfaceContourInputs: cleanContour,
+          surfaceVolumeInputs: cleanVolume,
+        }),
+        project,
+        cleanInputs,
+      ),
+    ).toBe(true);
+  });
+
   it('falsifiability: a loosened guard that ignores entities would pass an entity edit', () => {
     const project = lineProject(4);
     const moved = replaceCadProjectEntities(
