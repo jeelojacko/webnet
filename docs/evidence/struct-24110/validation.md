@@ -74,7 +74,9 @@ adjacency pin (`header + single empty line + export`) plus
 change/delete in-memory negative controls on the SAME assertion.
 Runtime emit unaffected (comments stripped): hub still 680 chars
 sha37445357, both leaves `export {};`. No production, graph, or other
-test changes.
+test changes. (The controller pushed the identical correction to this
+branch in parallel as a2658bab; merged here without force-push and
+de-duplicated to one pin set — leaf bytes were already identical.)
 
 ## Reviewer disposition
 
