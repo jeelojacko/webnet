@@ -61,7 +61,7 @@ vi.mock('../src/engine/cad/cadViewportAppearance', async (importOriginal) => {
   };
 });
 
-import { buildCadDisplayScene } from '../src/engine/cad/cadRenderer';
+import { buildCadDisplayScene, type BuildCadDisplaySceneOptions } from '../src/engine/cad/cadRenderer';
 import {
   canReuseCadDisplaySceneBase,
   filterCadDisplaySceneForViewport,
@@ -85,9 +85,29 @@ import type {
   CadDrawingDocument,
   CadEntity,
   CadProject,
+  CadSurveyPointEntity,
+  CadVolumeResult,
   SurveyCadPersistedState,
 } from '../src/engine/cad/cadTypes';
 import type { CadCommand } from '../src/engine/cad/cadTransactions.types';
+import { createCadSurfaceCache, type CadSurfaceCache } from '../src/engine/cad/cadSurfaceCache';
+import {
+  createCadSurfaceContourCache,
+  type CadSurfaceContourCache,
+} from '../src/engine/cad/surfaceContourCache';
+import {
+  createCadSurfaceVolumeCache,
+  type CadSurfaceVolumeCache,
+} from '../src/engine/cad/surfaceVolumeCache';
+import { buildCadSurface, computeCadSurfaceSourceRevision } from '../src/engine/cad/cadSurfaces';
+import { computeVolumeSurfaceRevision } from '../src/engine/cad/cadVolumeSurfaces';
+import { contourLevelSpecFromStyle } from '../src/engine/cad/cadSurfaceContourView';
+import {
+  computeContourGeometryRevision,
+  toContourGeometrySpec,
+} from '../src/engine/cad/surfaceContours/contourStyleRevision';
+import type { CadSurfaceContourSet } from '../src/engine/cad/surfaceContours/contourTypes';
+import type { SurfaceContourDisplayInput } from '../src/engine/cad/cadSurfaceView';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -404,6 +424,415 @@ const renameCommand = (layerId: string, name: string): CadCommand => ({
   name,
 });
 
+// ---------------------------------------------------------------------------
+// Provenance fixtures: real surface/volume caches for the field-aware guard
+// ---------------------------------------------------------------------------
+
+const CONTOUR_STYLE_ID = 'contour-style';
+
+const surfacePoint = (
+  id: string,
+  stationId: string,
+  x: number,
+  y: number,
+  z: number,
+): CadSurveyPointEntity => ({
+  id,
+  type: 'survey-point',
+  layerId: 'general',
+  visible: true,
+  locked: false,
+  stationId,
+  x,
+  y,
+  z,
+  pointClass: 'free',
+  source: 'parsed-input',
+});
+
+const provenanceProject = (): CadProject => {
+  const base = createBlankCadProject({ name: 'provenance', units: 'm' });
+  const points: CadSurveyPointEntity[] = [
+    surfacePoint('b1', 'B1', 0, 0, 0),
+    surfacePoint('b2', 'B2', 10, 0, 0),
+    surfacePoint('b3', 'B3', 10, 10, 0),
+    surfacePoint('b4', 'B4', 0, 10, 0),
+    surfacePoint('c1', 'C1', 0, 0, 2),
+    surfacePoint('c2', 'C2', 10, 0, 2),
+    surfacePoint('c3', 'C3', 10, 10, 2),
+    surfacePoint('c4', 'C4', 0, 10, 2),
+  ];
+  return {
+    ...base,
+    entities: points,
+    surfaces: [
+      {
+        id: 'base-1',
+        name: 'Base',
+        styleId: CONTOUR_STYLE_ID,
+        definition: { pointSource: { kind: 'points', pointEntityIds: ['b1', 'b2', 'b3', 'b4'] } },
+        cachedRevision: null,
+      },
+      {
+        id: 'cmp-1',
+        name: 'Comparison',
+        definition: { pointSource: { kind: 'points', pointEntityIds: ['c1', 'c2', 'c3', 'c4'] } },
+        cachedRevision: null,
+      },
+    ],
+    surfaceStyles: [
+      {
+        ...base.surfaceStyles![0]!,
+        id: CONTOUR_STYLE_ID,
+        name: 'Contour',
+        showContours: true,
+        minorContourInterval: 1,
+        majorContourEvery: 5,
+        contourBaseElevation: 0,
+      },
+    ],
+    volumeSurfaces: [
+      {
+        id: 'vol-1',
+        name: 'Earthwork',
+        baseSurfaceId: 'base-1',
+        comparisonSurfaceId: 'cmp-1',
+        styleId: 'vol-style',
+      },
+    ],
+    volumeSurfaceStyles: [
+      {
+        id: 'vol-style',
+        name: 'Volume',
+        showCut: true,
+        showFill: true,
+        cutColor: '#ff0000',
+        fillColor: '#00ff00',
+        opacity: 1,
+      },
+    ],
+  };
+};
+
+const makeContourSet = (
+  surfaceId: string,
+  surfaceRevision: string,
+  styleRevision: string,
+  width: number,
+): CadSurfaceContourSet => ({
+  surfaceId,
+  surfaceRevision,
+  styleRevision,
+  minorPaths: [
+    { elevation: 1, kind: 'minor', closed: false, points: [{ x: 0, y: 0 }, { x: width, y: 0.5 }] },
+  ],
+  majorPaths: [],
+  minLevel: 1,
+  maxLevel: 1,
+  stats: {
+    levelCount: 1,
+    minorLevelCount: 1,
+    majorLevelCount: 0,
+    minorPathCount: 1,
+    majorPathCount: 0,
+    totalLength: width,
+    segmentCount: 1,
+  },
+});
+
+const makeVolumeResult = (revision: string, display: boolean): CadVolumeResult => ({
+  baseSurfaceId: 'base-1',
+  comparisonSurfaceId: 'cmp-1',
+  revision,
+  overlapArea: display ? 10 : 0,
+  cutArea: display ? 10 : 0,
+  fillArea: 0,
+  cutVolume: display ? 10 : 0,
+  fillVolume: 0,
+  netVolume: display ? -10 : 0,
+  averageCutDepth: display ? 1 : 0,
+  averageFillDepth: 0,
+  maxCutDepth: display ? 1 : 0,
+  maxFillDepth: 0,
+  minDelta: display ? -1 : 0,
+  maxDelta: 0,
+  baseArea: 50,
+  comparisonArea: 50,
+  displayRegions: display
+    ? [{ kind: 'cut', vertices: [{ x: 1, y: 1 }, { x: 4, y: 1 }, { x: 4, y: 4 }, { x: 1, y: 4 }] }]
+    : [],
+  stats: {},
+});
+
+interface ProvenanceFixture {
+  project: CadProject;
+  tinCache: CadSurfaceCache;
+  surfaceRevisionIndex: ReadonlyMap<string, readonly string[]>;
+  contourCache: CadSurfaceContourCache;
+  volumeCache: CadSurfaceVolumeCache;
+  baseRevision: string;
+  comparisonRevision: string;
+  geometryRevision: string;
+}
+
+const buildProvenanceFixture = (project: CadProject, scope: string): ProvenanceFixture => {
+  const tinCache = createCadSurfaceCache(scope);
+  const contourCache = createCadSurfaceContourCache(scope);
+  const volumeCache = createCadSurfaceVolumeCache(scope);
+  const surfaceRevisionIndex = new Map<string, readonly string[]>();
+  const revisions = new Map<string, string>();
+  for (const surface of project.surfaces ?? []) {
+    const revision = computeCadSurfaceSourceRevision(project, surface);
+    revisions.set(surface.id, revision);
+    const built = buildCadSurface(project, surface);
+    tinCache.set(surface.id, revision, {
+      revision,
+      points: built.points,
+      triangles: built.triangles,
+      stats: built.stats,
+      grid: built.grid,
+      adjacency: built.adjacency,
+      edgeKinds: built.edgeKinds,
+    });
+    surfaceRevisionIndex.set(surface.id, [revision]);
+    if (surface.id !== 'base-1') continue;
+    const style = (project.surfaceStyles ?? []).find((entry) => entry.id === surface.styleId);
+    const spec = style ? contourLevelSpecFromStyle(style) : null;
+    if (!spec) continue;
+    const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
+    contourCache.set(surface.id, makeContourSet(surface.id, revision, geometryRevision, 4));
+  }
+  const style = (project.surfaceStyles ?? []).find((entry) => entry.id === CONTOUR_STYLE_ID);
+  const spec = style ? contourLevelSpecFromStyle(style) : null;
+  const geometryRevision = spec ? computeContourGeometryRevision(toContourGeometrySpec(spec)) : '';
+  const baseRevision = revisions.get('base-1')!;
+  const comparisonRevision = revisions.get('cmp-1')!;
+  const volumeRevision = computeVolumeSurfaceRevision({
+    baseId: 'base-1',
+    baseRev: baseRevision,
+    cmpId: 'cmp-1',
+    cmpRev: comparisonRevision,
+  });
+  volumeCache.set('vol-1', makeVolumeResult(volumeRevision, true));
+  return {
+    project,
+    tinCache,
+    surfaceRevisionIndex,
+    contourCache,
+    volumeCache,
+    baseRevision,
+    comparisonRevision,
+    geometryRevision,
+  };
+};
+
+const makeContourGetter =
+  (project: CadProject, tinCache: CadSurfaceCache, contourCache: CadSurfaceContourCache) =>
+  (surfaceId: string): SurfaceContourDisplayInput | null => {
+    const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
+    if (!surface) return null;
+    const style = (project.surfaceStyles ?? []).find((entry) => entry.id === surface.styleId);
+    const spec = style ? contourLevelSpecFromStyle(style) : null;
+    if (!spec) return null;
+    const revision = computeCadSurfaceSourceRevision(project, surface);
+    if (!tinCache.get(surfaceId, revision)) return null;
+    const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
+    const set = contourCache.get(surfaceId, revision, geometryRevision);
+    return set ? { set } : null;
+  };
+
+interface SessionInputs {
+  surfaceCache?: CadSurfaceCache;
+  surfaceRevisionIndex?: ReadonlyMap<string, readonly string[]>;
+  contour?: {
+    version: number;
+    contourCache: CadSurfaceContourCache;
+  };
+  volume?: {
+    version: number;
+    tinCache: CadSurfaceCache;
+    volumeCache: CadSurfaceVolumeCache;
+  };
+}
+
+interface SessionHarness {
+  api: () => UseSurveyCadWorkspaceResult;
+  commit: (_command: CadCommand) => Promise<boolean>;
+  setSession: (_patch: Partial<SessionInputs>) => Promise<void>;
+  sceneOptions: () => BuildCadDisplaySceneOptions;
+}
+
+/**
+ * Real `useSurveyCadWorkspace` probe with live session caches. Mirrors the
+ * production shell's identity behavior: the contour input object is rebuilt
+ * on every project commit (its memo closes over `cadProject`) while the
+ * volume input object stays reference-stable across a commit.
+ */
+const createSessionHarness = async (
+  initialProject: CadProject,
+  initial: SessionInputs,
+): Promise<SessionHarness> => {
+  const controls: {
+    api: UseSurveyCadWorkspaceResult | null;
+    drawing: CadDrawingDocument;
+    session: SessionInputs;
+    setSession: React.Dispatch<React.SetStateAction<SessionInputs>> | null;
+    setDrawing: React.Dispatch<React.SetStateAction<CadDrawingDocument | null>> | null;
+  } = {
+    api: null,
+    drawing: {
+      ...createBlankCadDrawingDocument({ units: 'm' }),
+      drawingId: 'provenance-drawing',
+      project: initialProject,
+    },
+    session: initial,
+    setSession: null,
+    setDrawing: null,
+  };
+
+  const Inner: React.FC<{
+    drawing: CadDrawingDocument;
+    session: SessionInputs;
+    onProjectChange: React.Dispatch<React.SetStateAction<CadDrawingDocument | null>>;
+  }> = ({ drawing, session, onProjectChange }) => {
+    const contourInputs = React.useMemo(
+      () =>
+        session.contour && session.surfaceCache
+          ? {
+              version: session.contour.version,
+              contourCache: session.contour.contourCache,
+              getContours: makeContourGetter(
+                drawing.project,
+                session.surfaceCache,
+                session.contour.contourCache,
+              ),
+            }
+          : undefined,
+      [drawing.project, session.contour, session.surfaceCache],
+    );
+    const volumeInputs = React.useMemo(
+      () =>
+        session.volume
+          ? {
+              version: session.volume.version,
+              tinCache: session.volume.tinCache,
+              volumeCache: session.volume.volumeCache,
+              buildingVolumeIds: new Set<string>(),
+              sessionDiagnostics: new Map<string, string>(),
+            }
+          : undefined,
+      [session.volume],
+    );
+    const ws = useSurveyCadWorkspace(
+      drawing.project,
+      drawing.drawingId,
+      onProjectChange,
+      drawing,
+      undefined,
+      true,
+      false,
+      'thin',
+      session.surfaceCache,
+      session.surfaceRevisionIndex,
+      contourInputs,
+      volumeInputs,
+    );
+    React.useEffect(() => {
+      controls.api = ws;
+    });
+    return null;
+  };
+
+  const Probe: React.FC = () => {
+    const [drawing, setDrawing] = React.useState<CadDrawingDocument | null>(controls.drawing);
+    const [session, setSession] = React.useState<SessionInputs>(controls.session);
+    React.useEffect(() => {
+      controls.setDrawing = setDrawing;
+      controls.setSession = setSession;
+      controls.session = session;
+      if (drawing) controls.drawing = drawing;
+    }, [drawing, session]);
+    if (!drawing) return null;
+    return <Inner drawing={drawing} session={session} onProjectChange={setDrawing} />;
+  };
+
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const root: Root = createRoot(container);
+  mounted.push({ root, container });
+  await act(async () => {
+    root.render(<Probe />);
+  });
+  await act(async () => {});
+
+  const settle = async (): Promise<void> => {
+    await act(async () => {});
+  };
+
+  return {
+    api: () => controls.api!,
+    commit: async (_command) => {
+      let applied = false;
+      await act(async () => {
+        applied = controls.api!.runLayerCommand(_command);
+      });
+      await settle();
+      return applied;
+    },
+    setSession: async (_patch) => {
+      await act(async () => {
+        controls.setSession!((previous) => ({ ...previous, ..._patch }));
+      });
+      await settle();
+    },
+    sceneOptions: () => {
+      const session = controls.session;
+      return {
+        lineweightDisplay: 'thin',
+        ...(session.surfaceCache
+          ? {
+              surfaceCache: session.surfaceCache,
+              ...(session.surfaceRevisionIndex
+                ? { surfaceRevisionIndex: session.surfaceRevisionIndex }
+                : {}),
+            }
+          : {}),
+        ...(session.contour && session.surfaceCache
+          ? {
+              surfaceContours: (surfaceId: string) =>
+                makeContourGetter(
+                  controls.drawing.project,
+                  session.surfaceCache!,
+                  session.contour!.contourCache,
+                )(surfaceId) ?? undefined,
+            }
+          : {}),
+        ...(session.volume
+          ? {
+              surfaceVolume: {
+                tinCache: session.volume.tinCache,
+                volumeCache: session.volume.volumeCache,
+              },
+            }
+          : {}),
+      };
+    },
+  };
+};
+
+/** Fast-path scene must equal the uncached pipeline with the SAME session options. */
+const expectSessionParity = (
+  api: UseSurveyCadWorkspaceResult,
+  options: BuildCadDisplaySceneOptions,
+): void => {
+  const live = api.displayScene;
+  const baseline = filterCadDisplaySceneForViewport(
+    api.cadProject,
+    buildCadDisplayScene(api.cadProject, options),
+  );
+  expect(JSON.stringify(live)).toBe(JSON.stringify(baseline));
+};
+
 beforeEach(() => {
   resetSpies();
 });
@@ -475,9 +904,11 @@ describe('PERF-CAD-SCENE.1 LAYER_RENAME reuses the base scene', () => {
   it('StrictMode mount stays bounded and reuses on rename', async () => {
     const project = lineProject(100);
     const harness = await createHarness(project, { strict: true });
-    // StrictMode double-invokes the mount render; the hook-local ref reuses
-    // the first base scene on the second invocation (one build, never two).
-    expect(baseBuilds()).toBe(1);
+    // StrictMode double-invokes the mount render. The base-scene entry is now
+    // published in a layout effect (never written during render), so neither
+    // render pass sees a committed entry and each builds once: the mount stays
+    // bounded at exactly two, and every rename below still reuses.
+    expect(baseBuilds()).toBe(2);
     resetSpies();
     expect(await harness.commit(renameCommand(project.layers[0]!.id, 'strict-rename'))).toBe(true);
     expect(baseBuilds()).toBe(0);
@@ -604,6 +1035,114 @@ describe('PERF-CAD-SCENE.1 production SurveyCadWorkspace shell', () => {
     });
     expect(baseBuilds()).toBeGreaterThanOrEqual(1);
   }, 30_000);
+});
+
+// ---------------------------------------------------------------------------
+// A3. PROVENANCE: field-aware guard on real session caches
+// ---------------------------------------------------------------------------
+
+describe('PERF-CAD-SCENE.1 session-cache provenance', () => {
+  const sessionFor = (fx: ProvenanceFixture): SessionInputs => ({
+    surfaceCache: fx.tinCache,
+    surfaceRevisionIndex: fx.surfaceRevisionIndex,
+    contour: {
+      version: 1,
+      contourCache: fx.contourCache,
+    },
+    volume: { version: 1, tinCache: fx.tinCache, volumeCache: fx.volumeCache },
+  });
+
+  it('mounts a real surface + volume scene and reuses it on a rename', async () => {
+    const fx = buildProvenanceFixture(provenanceProject(), 'provenance-rename');
+    const harness = await createSessionHarness(fx.project, sessionFor(fx));
+    const initial = harness.api().displayScene;
+    expect(initial.surfaceLayers?.length).toBeGreaterThan(0);
+    expect(initial.volumeLayers?.length).toBeGreaterThan(0);
+    expect(initial.surfaceLayers?.[0]?.minorContoursD).toBeTruthy();
+    resetSpies();
+    expect(await harness.commit(renameCommand(fx.project.layers[0]!.id, 'renamed'))).toBe(true);
+    // Identity-churning contour input, reference-stable volume input, same
+    // provenance -> reuse. The viewport filter still runs on the current project.
+    expect(baseBuilds()).toBe(0);
+    expect(sceneSpy.filter).toBe(1);
+    expectSessionParity(harness.api(), harness.sceneOptions());
+  });
+
+  it('rebuilds when the volume cache is swapped at the same version', async () => {
+    const project = provenanceProject();
+    const fx = buildProvenanceFixture(project, 'provenance-volume-base');
+    const emptyVolumeCache = createCadSurfaceVolumeCache('provenance-volume-empty');
+    const harness = await createSessionHarness(project, sessionFor(fx));
+    expect(harness.api().displayScene.volumeLayers!.length).toBeGreaterThan(0);
+    resetSpies();
+    await harness.setSession({
+      volume: { version: 1, tinCache: fx.tinCache, volumeCache: emptyVolumeCache },
+    });
+    // Same numeric version, but the getter now reads a different cache.
+    expect(baseBuilds()).toBeGreaterThanOrEqual(1);
+    expect(harness.api().displayScene.volumeLayers).toEqual([]);
+    expectSessionParity(harness.api(), harness.sceneOptions());
+  });
+
+  it('rebuilds when the volume TIN cache is swapped at the same version', async () => {
+    const project = provenanceProject();
+    const fx = buildProvenanceFixture(project, 'provenance-tin-base');
+    const emptyTinCache = createCadSurfaceCache('provenance-tin-empty');
+    const harness = await createSessionHarness(project, sessionFor(fx));
+    expect(harness.api().displayScene.volumeLayers!.length).toBeGreaterThan(0);
+    resetSpies();
+    await harness.setSession({
+      volume: { version: 1, tinCache: emptyTinCache, volumeCache: fx.volumeCache },
+    });
+    // The volume TIN cache is NOT the top-level surface cache, so a
+    // version-only guard would reuse; the field-aware guard rebuilds.
+    expect(baseBuilds()).toBeGreaterThanOrEqual(1);
+    expect(harness.api().displayScene.volumeLayers).toEqual([]);
+    expectSessionParity(harness.api(), harness.sceneOptions());
+  });
+
+  it('rebuilds when the contour cache is swapped at the same version', async () => {
+    const project = provenanceProject();
+    const fx = buildProvenanceFixture(project, 'provenance-contour-base');
+    const swappedContourCache = createCadSurfaceContourCache('provenance-contour-swapped');
+    swappedContourCache.set(
+      'base-1',
+      makeContourSet('base-1', fx.baseRevision, fx.geometryRevision, 9),
+    );
+    const harness = await createSessionHarness(project, sessionFor(fx));
+    const before = harness.api().displayScene.surfaceLayers![0]!.minorContoursD;
+    resetSpies();
+    await harness.setSession({
+      contour: {
+        version: 1,
+        contourCache: swappedContourCache,
+      },
+    });
+    expect(baseBuilds()).toBeGreaterThanOrEqual(1);
+    const after = harness.api().displayScene.surfaceLayers![0]!.minorContoursD;
+    expect(after).not.toBe(before);
+    expect(after).toContain('9');
+    expectSessionParity(harness.api(), harness.sceneOptions());
+  });
+
+  it('rebuilds on a version bump and on a presence change', async () => {
+    const project = provenanceProject();
+    const fx = buildProvenanceFixture(project, 'provenance-version');
+    const harness = await createSessionHarness(project, sessionFor(fx));
+    resetSpies();
+    await harness.setSession({
+      volume: { version: 2, tinCache: fx.tinCache, volumeCache: fx.volumeCache },
+    });
+    expect(baseBuilds()).toBeGreaterThanOrEqual(1);
+    resetSpies();
+    await harness.setSession({ contour: undefined });
+    expect(baseBuilds()).toBeGreaterThanOrEqual(1);
+    expect(harness.api().displayScene.surfaceLayers?.[0]?.minorContoursD).toBe('');
+    resetSpies();
+    await harness.setSession({ volume: undefined });
+    expect(baseBuilds()).toBeGreaterThanOrEqual(1);
+    expect(harness.api().displayScene.volumeLayers).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -843,30 +1382,120 @@ describe('PERF-CAD-SCENE.1 guard unit contract', () => {
     ).toBe(false);
   });
 
-  it('accepts a version-stable contour/volume input but rejects a version bump or presence change', () => {
+  it('accepts a provenance-stable contour/volume input but rejects a version bump or presence change', () => {
     const project = lineProject(2);
-    const contour = { version: 7, getContours: () => null };
-    const volume = { version: 2, tinCache: {}, volumeCache: {} };
+    const contourCache = { cache: 'contour' };
+    const tinCache = { cache: 'tin' };
+    const volumeCache = { cache: 'volume' };
+    const contour = { version: 7, contourCache, getContours: () => null };
+    const volume = { version: 2, tinCache, volumeCache };
     const entry = entryFor(project, { surfaceContourInputs: contour, surfaceVolumeInputs: volume });
-    // Same version, new identity (the shell rebuilds the closure on a rename).
+    // Same version + provenance, new closure identity (the shell rebuilds the
+    // getter closure per project commit; only provenance is pinned).
     expect(
       canReuseCadDisplaySceneBase(entry, project, {
         ...inputs,
-        surfaceContourInputs: { version: 7, getContours: () => null },
-        surfaceVolumeInputs: { version: 2, tinCache: {}, volumeCache: {} },
+        surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+        surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
       }),
     ).toBe(true);
     // Version bump: contour/volume results may have changed.
     expect(
       canReuseCadDisplaySceneBase(entry, project, {
         ...inputs,
-        surfaceContourInputs: { version: 8, getContours: () => null },
+        surfaceContourInputs: { version: 8, contourCache, getContours: () => null },
       }),
     ).toBe(false);
     // Presence change changes the scene shape (contour layers appear/vanish).
     expect(canReuseCadDisplaySceneBase(entry, project, inputs)).toBe(false);
     expect(
       canReuseCadDisplaySceneBase(entry, project, { ...inputs, surfaceContourInputs: contour }),
+    ).toBe(false);
+  });
+
+  it('rejects a same-version session-cache swap (the old version-only guard accepted it)', () => {
+    const project = lineProject(2);
+    const contourCacheA = { cache: 'contour-a' };
+    const contourCacheB = { cache: 'contour-b' };
+    const tinCacheA = { cache: 'tin-a' };
+    const tinCacheB = { cache: 'tin-b' };
+    const volumeCacheA = { cache: 'volume-a' };
+    const volumeCacheB = { cache: 'volume-b' };
+    const entry = entryFor(project, {
+      surfaceContourInputs: { version: 7, contourCache: contourCacheA, getContours: () => null },
+      surfaceVolumeInputs: { version: 2, tinCache: tinCacheA, volumeCache: volumeCacheA },
+    });
+    const candidate = (
+      contourCache: unknown,
+      tinCache: unknown,
+      volumeCache: unknown,
+    ): CadDisplaySceneBuildInputs => ({
+      ...inputs,
+      surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+      surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+    });
+    // Sanity: identical provenance still reuses.
+    expect(
+      canReuseCadDisplaySceneBase(entry, project, candidate(contourCacheA, tinCacheA, volumeCacheA)),
+    ).toBe(true);
+    // Each swapped provenance slot must force a rebuild...
+    expect(
+      canReuseCadDisplaySceneBase(entry, project, candidate(contourCacheB, tinCacheA, volumeCacheA)),
+    ).toBe(false);
+    expect(
+      canReuseCadDisplaySceneBase(entry, project, candidate(contourCacheA, tinCacheB, volumeCacheA)),
+    ).toBe(false);
+    expect(
+      canReuseCadDisplaySceneBase(entry, project, candidate(contourCacheA, tinCacheA, volumeCacheB)),
+    ).toBe(false);
+    // ...while the old version-only guard would have accepted every swap.
+    const versionOnlyAccept = (previous: unknown, next: unknown): boolean => {
+      const a = previous as { version?: unknown };
+      const b = next as { version?: unknown };
+      return typeof a.version === 'number' && a.version === b.version;
+    };
+    for (const swapped of [
+      candidate(contourCacheB, tinCacheA, volumeCacheA),
+      candidate(contourCacheA, tinCacheB, volumeCacheA),
+      candidate(contourCacheA, tinCacheA, volumeCacheB),
+    ]) {
+      expect(
+        versionOnlyAccept(entry.inputs.surfaceContourInputs, swapped.surfaceContourInputs) &&
+          versionOnlyAccept(entry.inputs.surfaceVolumeInputs, swapped.surfaceVolumeInputs),
+      ).toBe(true);
+      expect(canReuseCadDisplaySceneBase(entry, project, swapped)).toBe(false);
+    }
+  });
+
+  it('fails closed when a contour/volume input gains a new provenance field', () => {
+    const project = lineProject(2);
+    const contourCache = { cache: 'contour' };
+    const tinCache = { cache: 'tin' };
+    const volumeCache = { cache: 'volume' };
+    const entry = entryFor(project, {
+      surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+      surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+    });
+    // A getter that starts reading a NEW provenance field must rebuild until
+    // the guard explicitly pins that field (own-key set must match).
+    expect(
+      canReuseCadDisplaySceneBase(entry, project, {
+        ...inputs,
+        surfaceContourInputs: {
+          version: 7,
+          contourCache,
+          extraProvenance: { cache: 'unpinned' },
+          getContours: () => null,
+        },
+        surfaceVolumeInputs: { version: 2, tinCache, volumeCache },
+      }),
+    ).toBe(false);
+    expect(
+      canReuseCadDisplaySceneBase(entry, project, {
+        ...inputs,
+        surfaceContourInputs: { version: 7, contourCache, getContours: () => null },
+        surfaceVolumeInputs: { version: 2, tinCache, volumeCache, extraProvenance: {} },
+      }),
     ).toBe(false);
   });
 

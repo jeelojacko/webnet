@@ -241,10 +241,11 @@ export const viewportHiddenEntityIds = (
 /**
  * The build inputs whose identity/version participates in the base scene
  * (mirrors the display-scene memo dependencies). `surfaceCache` and
- * `surfaceRevisionIndex` are pinned by identity; `surfaceContourInputs` /
- * `surfaceVolumeInputs` are pinned by their stable `version` tag (their
- * closures are recreated per project commit — see
- * `sameVersionedSessionInput`).
+ * `surfaceRevisionIndex` are pinned by identity; `surfaceContourInputs`
+ * churns in identity on every project commit while `surfaceVolumeInputs` is
+ * reference-stable unless its caches/version change. Both session slots are
+ * pinned by presence + `version` + their session-cache provenance (see
+ * `sameContourInputs` / `sameVolumeInputs`).
  */
 export interface CadDisplaySceneBuildInputs {
   lineweightDisplay: LineweightDisplayMode;
@@ -266,29 +267,20 @@ interface VersionedSessionInput {
   version?: unknown;
 }
 
-/**
- * Contour/volume scene inputs are rebuilt by the shell whenever `cadProject`
- * changes, so their object identity changes on a layer-only edit even though
- * their content does not. They are interchangeable when BOTH are present and
- * expose the SAME numeric `version` tag: the getters derive contour/volume
- * geometry from non-layer project slices (surfaces/styles/geometry sources)
- * plus the session caches, all of which this guard independently pins by
- * reference. A presence change (`undefined` <-> object) changes the scene
- * shape and always forces a rebuild.
- *
- * INVARIANT (guarded by tests): the contour/volume getters must never read
- * layer NAMES. `layersDifferOnlyByName` already requires every non-layer
- * project slice to be reference-identical, so any getter that satisfies this
- * invariant returns identical output across the accepted edit.
- */
-const sameVersionedSessionInput = (previous: unknown, next: unknown): boolean => {
-  if (previous === next) return true;
-  if (previous == null || next == null) return false;
-  if (typeof previous !== 'object' || typeof next !== 'object') return false;
-  const previousVersion = (previous as VersionedSessionInput).version;
-  const nextVersion = (next as VersionedSessionInput).version;
-  return typeof previousVersion === 'number' && previousVersion === nextVersion;
-};
+/** Contour slot provenance threaded from the contour lifecycle hook. */
+interface ContourSessionInput extends VersionedSessionInput {
+  contourCache?: unknown;
+}
+
+/** Volume slot provenance threaded from the workspace shell. */
+interface VolumeSessionInput extends VersionedSessionInput {
+  tinCache?: unknown;
+  volumeCache?: unknown;
+}
+
+/** Numeric `version` tags are the only encoding accepted (fail-closed). */
+const versionMatches = (previous: VersionedSessionInput, next: VersionedSessionInput): boolean =>
+  typeof previous.version === 'number' && previous.version === next.version;
 
 const ownKeys = (value: object): string[] => Object.keys(value as Record<string, unknown>);
 
@@ -299,15 +291,69 @@ const sameKeys = (first: object, second: object): boolean => {
   return firstKeys.every((key) => Object.prototype.hasOwnProperty.call(second, key));
 };
 
+/**
+ * The contour scene input is rebuilt by the shell whenever `cadProject`
+ * changes, so its object identity churns on a layer-only edit even though its
+ * content does not; the volume input is reference-stable unless its
+ * caches/version change. Field-aware comparators accept a new identity only
+ * when presence matches, the numeric `version` tag is equal, and every
+ * session-cache object the getter reads is reference-identical:
+ *
+ *  - contour: `surfaceCache` is pinned at the top level; the getter's only
+ *    other mutable provenance is `contourCache` (identity stable across a
+ *    layer rename — it is memoized on the drawing id — and every mutation
+ *    bumps `version`);
+ *  - volume: the getter reads `tinCache` + `volumeCache`; both are stable
+ *    across a layer rename and every volume mutation bumps `version`.
+ *
+ * `version` alone is NOT sufficient (a cache can be swapped without a bump);
+ * each slot is therefore pinned by presence + version + cache identity. The
+ * own-key set must also match, so a newly added input field fails closed
+ * until it is explicitly gated. A presence change (`undefined` <-> object)
+ * changes the scene shape and always forces a rebuild.
+ *
+ * INVARIANT (guarded by tests): the contour/volume getters must never read
+ * layer NAMES. `layersDifferOnlyByName` already requires every non-layer
+ * project slice to be reference-identical, so any getter that satisfies this
+ * invariant returns identical output across the accepted edit.
+ */
+const sameContourInputs = (previous: unknown, next: unknown): boolean => {
+  if (previous === next) return true;
+  if (previous == null || next == null) return false;
+  if (typeof previous !== 'object' || typeof next !== 'object') return false;
+  if (!sameKeys(previous, next)) return false;
+  const previousInput = previous as ContourSessionInput;
+  const nextInput = next as ContourSessionInput;
+  return (
+    versionMatches(previousInput, nextInput) &&
+    previousInput.contourCache === nextInput.contourCache
+  );
+};
+
+const sameVolumeInputs = (previous: unknown, next: unknown): boolean => {
+  if (previous === next) return true;
+  if (previous == null || next == null) return false;
+  if (typeof previous !== 'object' || typeof next !== 'object') return false;
+  if (!sameKeys(previous, next)) return false;
+  const previousInput = previous as VolumeSessionInput;
+  const nextInput = next as VolumeSessionInput;
+  return (
+    versionMatches(previousInput, nextInput) &&
+    previousInput.tinCache === nextInput.tinCache &&
+    previousInput.volumeCache === nextInput.volumeCache
+  );
+};
+
 const sameInputs = (
   previous: CadDisplaySceneBuildInputs,
   next: CadDisplaySceneBuildInputs,
 ): boolean =>
+  sameKeys(previous, next) &&
   previous.lineweightDisplay === next.lineweightDisplay &&
   previous.surfaceCache === next.surfaceCache &&
   previous.surfaceRevisionIndex === next.surfaceRevisionIndex &&
-  sameVersionedSessionInput(previous.surfaceContourInputs, next.surfaceContourInputs) &&
-  sameVersionedSessionInput(previous.surfaceVolumeInputs, next.surfaceVolumeInputs);
+  sameContourInputs(previous.surfaceContourInputs, next.surfaceContourInputs) &&
+  sameVolumeInputs(previous.surfaceVolumeInputs, next.surfaceVolumeInputs);
 
 /** Every top-level project slice except `layers` must be the same reference. */
 const sameNonLayerProjectSlices = (previous: CadProject, next: CadProject): boolean => {

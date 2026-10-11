@@ -54,8 +54,9 @@ inputs)`. It accepts reuse iff:
 
 - `entry` exists;
 - build inputs are compatible: `lineweightDisplay` identical,
-  `surfaceCache`/`surfaceRevisionIndex` identity-identical, and the
-  contour/volume session inputs are interchangeable (see below);
+  `surfaceCache`/`surfaceRevisionIndex` identity-identical, and each
+  contour/volume session input is pinned by presence + version + its own
+  session-cache provenance (see below);
 - **every** top-level project slice except `layers` is reference-identical
   (same key set too — a gained/lost key forces a rebuild);
 - `layers` has the same length and id order, and every layer field except
@@ -78,7 +79,10 @@ const scoped =
 const baseScene = canReuseCadDisplaySceneBase(scoped, cadProject, buildInputs)
   ? scoped.scene
   : buildCadDisplayScene(cadProject, { ...sessionOptions });
-displaySceneCacheRef.current = { drawingId: drawing.drawingId, entry: { project: cadProject, scene: baseScene, inputs: buildInputs } };
+// Memo (pure) computes { drawingId, entry, scene } and returns scene.
+useLayoutEffect(() => {
+  displaySceneCacheRef.current = { drawingId: build.drawingId, entry: build.entry };
+}, [build]);
 return filterCadDisplaySceneForViewport(cadProject, baseScene); // ALWAYS current project
 ```
 
@@ -97,25 +101,47 @@ updating every structural pin. The guard adds no new import edge
 reuses `useSurveyCadWorkspace`'s existing `cadRenderer`/`cadViewportAppearance`
 edges, so the pinned graphs (CAD+F2F 513/2486; full-src 1685/7597; digests)
 are byte-identical. `cadViewportAppearance.ts` remains well within the file
-size target and `useSurveyCadWorkspace.ts` stays under 900 lines.
+size target; `useSurveyCadWorkspace.ts` is over the 900-line soft target (as
+it already was before this fix) but remains well under the 1,200-line hard
+cap, and was not split in this correctness-only change.
 
-### Contour/volume session inputs (version-stable)
+### Contour/volume session inputs (provenance-pinned)
 
-The shell always passes `surfaceContourInputs`, and its memo closes over
-`cadProject`, so its **object identity changes on every project commit** even
-though contour geometry does not. A strict reference check would therefore
-never reuse in production.
+The shell passes `surfaceContourInputs` from the contour lifecycle hook, whose
+**object identity is rebuilt on every project commit** (its memo closes over
+`cadProject`) even though contour geometry does not. The volume inputs
+(`surfaceVolumeInputs`) are memoized without a `cadProject` dependency, so
+their **object identity is reference-stable across a project commit** and only
+changes when their caches or `version` change. A strict reference check would
+therefore never reuse the contour path in production.
 
 `buildContourLookup` derives from `project.surfaces`, `project.surfaceStyles`,
 the session `surfaceCache`/`contourCache`, and the surface source revision
-(geometry/point sources) — **never layer names**. The guard therefore accepts
-two contour/volume inputs that differ in identity but share the same numeric
-`version` tag (`sameVersionedSessionInput`). This is sound only in combination
-with the project check above: reuse additionally requires every non-layer
-project slice to be reference-identical, so the only accepted project
-difference is layer names, which the getters do not read. A `version` bump or
-a presence change (`undefined` ↔ object, which changes the scene shape) forces
-a rebuild.
+(geometry/point sources) — **never layer names**. `buildVolumeDisplayLayers`
+derives from `project.surfaces`/`volumeSurfaces`/styles plus `tinCache` and
+`volumeCache` — also **never layer names**. The guard therefore does NOT trust
+a bare `version` tag (a cache can be swapped without a bump). Each session
+slot is accepted only when its own-key set matches and:
+
+- **contour**: presence matches, `version` is an equal number, and
+  `contourCache` is reference-identical (`surfaceCache` is already pinned at
+  the top level);
+- **volume**: presence matches, `version` is an equal number, and `tinCache` +
+  `volumeCache` are reference-identical.
+
+`buildingVolumeIds`/`sessionDiagnostics` never reach the scene and are
+deliberately not gated on, but a gained/lost key still fails closed. This is
+sound only in combination with the project check above: reuse additionally
+requires every non-layer project slice to be reference-identical, so the only
+accepted project difference is layer names, which the getters do not read. A
+`version` bump, a provenance cache-identity swap, or a presence change
+(`undefined` ↔ object, which changes the scene shape) forces a rebuild.
+
+The base-scene cache entry is computed in the display-scene memo but published
+to the hook-local ref only from a `useLayoutEffect` after commit — never
+written during render. The memo returns its own scene and reads the last
+committed entry on its next invocation, so a discarded render can never
+publish a stale entry.
 
 ## Invalidation posture
 
@@ -129,8 +155,9 @@ Must rebuild (covered by negative controls in the suite):
 - style library, point/label styles, point groups, block definitions,
   dimension/leader/bearing/curve styles;
 - surfaces/surface styles/volume tables; `surfaceCache`/`surfaceRevisionIndex`
-  identity changes; contour/volume `version` bumps; drawing switch; undo/redo
-  of a scene-relevant op.
+  identity changes; contour/volume `version` bumps, session-cache identity
+  swaps (`contourCache`/`tinCache`/`volumeCache`), and presence changes;
+  drawing switch; undo/redo of a scene-relevant op.
 
 Undo/redo of a **rename** reuses (only layer names differ) — the correct,
 content-preserving outcome.

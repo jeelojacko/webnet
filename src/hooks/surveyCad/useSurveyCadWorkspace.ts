@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { cadIntersectLineLikeEntities } from '../../engine/cad/cadCogo';
 import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
@@ -90,6 +90,8 @@ export const useSurveyCadWorkspace = (
   // changes; getter resolves the display input per surface.
   surfaceContourInputs?: {
     version: number;
+    /** Contour-cache provenance pinned by the display-scene reuse guard. */
+    contourCache: unknown;
     getContours: (_surfaceId: string) => SurfaceContourDisplayInput | null;
   },
   // Phase 18I: session volume cache (+ TIN cache for CURRENT gating).
@@ -218,7 +220,11 @@ export const useSurveyCadWorkspace = (
   // when only layer NAMES changed; the filter always runs on the CURRENT
   // project, so OFF/frozen/visibility edits still hide immediately.
   const displaySceneCacheRef = useRef<{ drawingId: string; entry: CadDisplaySceneBaseCacheEntry } | null>(null);
-  const displayScene = useMemo(() => {
+  // Build + guard run in the memo (pure); the cache entry is PUBLISHED only
+  // after commit in a layout effect, never written during render. The memo
+  // reads the last committed entry to decide reuse and returns its own scene,
+  // so React's render output stays authoritative.
+  const displaySceneBuild = useMemo(() => {
     const buildInputs = {
       lineweightDisplay,
       surfaceCache,
@@ -250,11 +256,11 @@ export const useSurveyCadWorkspace = (
               }
             : {}),
         });
-    displaySceneCacheRef.current = {
+    return {
       drawingId: drawing.drawingId,
       entry: { project: cadProject, scene: baseScene, inputs: buildInputs },
+      scene: filterCadDisplaySceneForViewport(cadProject, baseScene),
     };
-    return filterCadDisplaySceneForViewport(cadProject, baseScene);
   }, [
     drawing.drawingId,
     cadProject,
@@ -264,6 +270,13 @@ export const useSurveyCadWorkspace = (
     surfaceContourInputs,
     surfaceVolumeInputs,
   ]);
+  useLayoutEffect(() => {
+    displaySceneCacheRef.current = {
+      drawingId: displaySceneBuild.drawingId,
+      entry: displaySceneBuild.entry,
+    };
+  }, [displaySceneBuild]);
+  const displayScene = displaySceneBuild.scene;
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
   // PERF-186.1 (#189): the indexed hidden set is computed once per render; the
   // history updater reuses it only while the committed project is the same

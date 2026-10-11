@@ -56,6 +56,14 @@ export interface SurveyCadContourLifecycleArgs {
 
 export interface SurveyCadContourInputs {
   version: number;
+  /**
+   * Provenance pinned by the display-scene reuse guard: the getter derives
+   * only from the project (independent of layer names) plus this cache, whose
+   * identity is stable across a layer rename and whose every mutation bumps
+   * `version`. Exposed so the guard can require cache-reference equality
+   * instead of trusting a bare version tag.
+   */
+  contourCache: CadSurfaceContourCache;
   getContours: (_surfaceId: string) => SurfaceContourDisplayInput | null;
 }
 
@@ -223,6 +231,7 @@ export const useSurveyCadContourLifecycle = ({
   const surfaceContourInputs = useMemo(
     () => ({
       version: contourVersion,
+      contourCache,
       getContours: buildContourLookup(cadProject, surfaceCache, contourCache),
     }),
     [contourVersion, surfaceCache, contourCache, cadProject],
