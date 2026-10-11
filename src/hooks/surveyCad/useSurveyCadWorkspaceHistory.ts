@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createCadHistoryState, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import { buildStableCadProjectSignature } from '../../engine/cad/cadProjectState';
+import { areCadProjectsCanonicallyEqual } from '../../engine/cad/cadProjectState';
 import type { CadProject } from '../../engine/cad/cadTypes';
 
 export const useSurveyCadWorkspaceHistory = (
@@ -53,9 +53,26 @@ export const useSurveyCadWorkspaceHistory = (
   // the just-committed transaction and disable undo/redo.
   // Signature-guarded: the workspace's own persistence writes compare
   // equal, so no update loop is possible.
+  // PERF-187: the previous double `buildStableCadProjectSignature` call paid
+  // two complete canonical traversals + allocations + JSON.stringify per
+  // effect run. `areCadProjectsCanonicallyEqual` keeps the same
+  // key-order-insensitive equivalence (clone-normalized TIN surfaces stay
+  // equal; genuine external edits still adopt) via a same-reference fast path;
+  // for distinct references it first runs two native `JSON.stringify` calls and
+  // returns `true` when they match. When the raw strings differ, a stringify
+  // throws, or a raw result is `undefined`, it falls back to the original
+  // double `buildStableCadProjectSignature` serializer. Non-inert inputs
+  // whose raw strings differ, or whose serialization throws (proxies,
+  // cycles), route through the canonical oracle; a raw-equal `Array`
+  // subclass returns `true` as a documented safe-direction exclusion (K1),
+  // and stateful accessors are documented exclusions in `cadProjectState`
+  // (multi-pass reads can advance getter state, so the inert-data parity
+  // guarantee does not extend to them). On real project data — always
+  // inert plain JSON — undo is never lost.
   useEffect(() => {
     if (resetKeyRef.current !== resetKey) return;
-    if (buildStableCadProjectSignature(history.present.project) === buildStableCadProjectSignature(baseProject)) return;
+    if (history.present.project === baseProject) return;
+    if (areCadProjectsCanonicallyEqual(history.present.project, baseProject)) return;
     replaceHistory(
       createCadHistoryState(
         baseProject,

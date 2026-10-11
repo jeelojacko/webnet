@@ -239,3 +239,89 @@ const canonicalizeSignatureValue = (value: unknown): unknown => {
 
 export const buildStableCadProjectSignature = (project: CadProject): string =>
   JSON.stringify(canonicalizeSignatureValue(project));
+
+/**
+ * PERF-187 P1: raw-JSON fast path for history-adoption canonical equality.
+ *
+ * Contract (inert JSON / engine-clone-producible data): identical top-level
+ * references return `true`; every other accepted value returns exactly
+ * `buildStableCadProjectSignature(first) ===
+ * buildStableCadProjectSignature(second)`, and it throws wherever that
+ * canonical oracle throws. The non-inert exclusions documented below are the
+ * only known divergences.
+ *
+ * Why raw equality implies canonical equality (inert data): two distinct
+ * references with identical `JSON.stringify` output denote the same observable
+ * JSON structure, key order included. `canonicalizeSignatureValue` is
+ * deterministic over that structure (arrays map in index order; object keys
+ * are read from `Object.keys` and sorted), so canonicalizing two raw-equal
+ * values yields equal canonical output.
+ *
+ * SAFETY DIRECTION: for inert JSON / engine-clone-producible data,
+ * false-direction parity is total — the raw fast path can only ever err toward
+ * `true` (identical observable JSON -> keep the current history, never wipe
+ * it), while `false` is produced exclusively by the exact canonical oracle
+ * fallback. The hook adopts only when this returns `false`, so for that data
+ * no input can cause a spurious history wipe beyond what the oracle itself
+ * orders.
+ *
+ * Documented exclusions (production-impossible inputs):
+ *  - `Array`-subclass family: `JSON.stringify` serializes any `Array.isArray`
+ *    value by index, while the canonicalizer maps through
+ *    `Array.prototype.map`, which honors `Symbol.species` and an overridden
+ *    `map`. The raw pair can therefore return `true` where the oracle returns
+ *    `false` (K1): an intentional SAFE-DIRECTION divergence (`true` = keep
+ *    history), not a faithful route to the oracle. `JSON.parse`, structured
+ *    clone, and every engine clone yield only plain `Array.prototype` arrays
+ *    (verified zero non-plain arrays on a real 10k-entity project), so this
+ *    hole is unreachable.
+ *  - Stateful accessors: the raw pass reads each getter once and, when the raw
+ *    strings differ (e.g. key order), the canonical fallback reads them again,
+ *    so the helper may observe a different value than the oracle, which
+ *    canonicalizes each side exactly once. Example: side A
+ *    `{ x: <counter getter: 1 then 2>, y }` vs side B `{ y, x: 1 }` — the
+ *    oracle reads the getter once and reports `true`, while the helper's raw
+ *    pass consumes read 1 and its fallback re-reads 2, so the helper reports
+ *    `false`. Inert data has data descriptors only (`JSON.parse`/engine clones
+ *    never produce getters), so this is production-impossible; the test file
+ *    pins the divergence as a documented exclusion.
+ *  - An identity-sensitive `toJSON` (reading mutable identity) is likewise a
+ *    documented exclusion, the same accepted family as proxies.
+ *
+ * Cost model (honest): same reference = 0 work. The common order-preserved
+ * clone (the production drawing-sync path) pays two native `JSON.stringify`
+ * calls and skips the canonical traversal entirely: measured ~2-4x faster than
+ * the old two-canonical-tree path on equal objects. A reordered clone or a
+ * genuine change (rare) wastes the raw pair and still runs the full canonical
+ * oracle, ~1.4-2x slower than the old path on that branch. This is NOT a
+ * zero-allocation fast path: it avoids building canonical full deep-copy
+ * objects, but on the common branch the only large allocations are the two raw
+ * JSON strings themselves (the old path allocated two canonical trees, two
+ * strings, and the string compare). Exact measurements live in the PERF-187
+ * evidence docs.
+ *
+ * Cycles and proxies are outside the raw domain; the raw pair is wrapped in
+ * `try`/`catch` and otherwise routes to the canonical oracle, whose evaluation
+ * order (first, then second) and throw behavior are preserved. The
+ * `Array`-subclass family additionally diverges in the safe direction per the
+ * K1 exclusion above.
+ */
+export const areCadProjectsCanonicallyEqual = (first: CadProject, second: CadProject): boolean => {
+  if (first === second) return true;
+  if (first === null || second === null || typeof first !== 'object' || typeof second !== 'object') {
+    return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
+  }
+  let rawFirst: string | undefined;
+  let rawSecond: string | undefined;
+  try {
+    rawFirst = JSON.stringify(first);
+    rawSecond = JSON.stringify(second);
+  } catch {
+    return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
+  }
+  if (rawFirst === undefined || rawSecond === undefined) {
+    return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
+  }
+  if (rawFirst === rawSecond) return true;
+  return buildStableCadProjectSignature(first) === buildStableCadProjectSignature(second);
+};
