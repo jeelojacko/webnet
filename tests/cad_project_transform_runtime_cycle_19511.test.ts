@@ -125,6 +125,14 @@ const STRUCT_2418_ADDED_EDGES = 4;
 // no VALUE/MIXED change).
 const STRUCT_2419_ADDED_NODES = 2;
 const STRUCT_2419_ADDED_EDGES = 6;
+// STRUCT-241.10 measured delta (two cadTypes type-only leaves: surface
+// definition + surface model/style; nine scoped type edges: definition
+// leaf 3 out-edges (core primitives + surface-edit + TIN provenance) +
+// hub import-type + hub export-type, model leaf one-way B->A + core
+// out-edge + hub import-type + hub export-type, no retired hub edge;
+// no VALUE/MIXED change).
+const STRUCT_24110_ADDED_NODES = 2;
+const STRUCT_24110_ADDED_EDGES = 9;
 
 // STRUCT-195.12 cumulative scope: the parcel-diagnostics cycle break adds one
 // node (cadCogoParcelLineworkTopology) and repoints value edges among the 5
@@ -667,8 +675,8 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     // two type-only leaves with seven type edges, also outside the slice;
     // VALUE SCC
     // expectations below are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES);
     // STRUCT-195.13 is a net-zero value-edge repoint and STRUCT-195.14 is a
     // net-zero total-edge relocation (-6/+6), so the cumulative edge count
     // is unchanged from the 195.12 measurement; nodes gain exactly the

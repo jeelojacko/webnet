@@ -174,8 +174,16 @@ const STRUCT_2418_ADDED_EDGES = 4;
 // hub edge); the golden VALUE fingerprint above is untouched.
 const STRUCT_2419_ADDED_NODES = 2;
 const STRUCT_2419_ADDED_EDGES = 6;
-const EXPECTED_NODE_COUNT = 483 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES;
-const EXPECTED_EDGE_COUNT = 2400 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES;
+// STRUCT-241.10 adds exactly two type-only leaf nodes
+// (cadSurfaceDefinitionTypes.ts + cadSurfaceModelStyleTypes.ts) with nine
+// scoped type edges (definition leaf 3 out + hub import-type + hub
+// export-type, model leaf one-way B->A + core out + hub import-type + hub
+// export-type, no retired hub edge);
+// the golden VALUE fingerprint above is untouched.
+const STRUCT_24110_ADDED_NODES = 2;
+const STRUCT_24110_ADDED_EDGES = 9;
+const EXPECTED_NODE_COUNT = 483 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES;
+const EXPECTED_EDGE_COUNT = 2400 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES;
 
 /** Independently measured STRUCT-195.14 removal allowlist (6 edges, all kinds). */
 const EXPECTED_REMOVED = [
@@ -600,6 +608,8 @@ describe('STRUCT-195.14 geometry graph guard', () => {
     expect(seven).toEqual([...HISTORICAL_GEOMETRY_SCC.map(abs)].sort());
   });
 
+  // In-memory graph rebuild is cold/CPU-heavy under full-suite CI contention.
+  // Preserve all SCC assertions; extend only this test's Vitest timeout.
   it('mutation control: a forbidden core -> leaf return import recreates a cycle, then restores clean', () => {
     const mutatedSource = `${fs.readFileSync(abs(PRIMITIVES), 'utf8')}\nimport { cadArcStartPoint } from './cadGeometryArcPrimitives';\nvoid cadArcStartPoint;\n`;
     const mutated = buildScopeGraph(new Map([[abs(PRIMITIVES), mutatedSource]]));
@@ -613,7 +623,7 @@ describe('STRUCT-195.14 geometry graph guard', () => {
     const clean = currentGraph();
     expect(findCycles(clean.nodes, clean.value).cyclic.length).toBe(0);
     expect(findCycles(clean.nodes, clean.type).cyclic.length).toBe(0);
-  });
+  }, 30_000);
 });
 
 // ===========================================================================

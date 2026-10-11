@@ -682,13 +682,40 @@ export interface MlightcadSpikeScene {
   extents: CadBounds | null;
 }
 
-/** Phase 18F: TIN surface model (engine only; never triangle entities). */
-
-export type CadSurfacePointSource =
-  /* Multi-group: canonical list is pointGroupIds (added order); pointGroupId
-     is the legacy single-source shape, migrated on load. */
-  | { kind: 'point-group'; pointGroupIds?: string[]; pointGroupId?: string }
-  | { kind: 'points'; pointEntityIds: CadEntityId[] };
+// STRUCT-241.10: the six surface-definition contracts and the five
+// surface-model/style contracts live in dedicated type-only leaves. They are
+// imported here for local use and re-exported so existing `from './cadTypes'`
+// consumers keep compiling unchanged.
+import type {
+  CadSurfaceBoundary,
+  CadSurfaceBreakline,
+  CadSurfaceBreaklineSource,
+  CadSurfaceBuildOptions,
+  CadSurfaceDefinition,
+  CadSurfacePointSource,
+} from './cadSurfaceDefinitionTypes';
+export type {
+  CadSurfaceBoundary,
+  CadSurfaceBreakline,
+  CadSurfaceBreaklineSource,
+  CadSurfaceBuildOptions,
+  CadSurfaceDefinition,
+  CadSurfacePointSource,
+} from './cadSurfaceDefinitionTypes';
+import type {
+  CadContourAppearance,
+  CadSurface,
+  CadSurfacePurpose,
+  CadSurfaceStatus,
+  CadSurfaceStyle,
+} from './cadSurfaceModelStyleTypes';
+export type {
+  CadContourAppearance,
+  CadSurface,
+  CadSurfacePurpose,
+  CadSurfaceStatus,
+  CadSurfaceStyle,
+} from './cadSurfaceModelStyleTypes';
 
 /** Canonical group ids for a surface point source (legacy -> one-element list). */
 export const surfacePointGroupIds = (source: CadSurfacePointSource): string[] => {
@@ -696,57 +723,6 @@ export const surfacePointGroupIds = (source: CadSurfacePointSource): string[] =>
   if (source.pointGroupIds != null) return [...source.pointGroupIds];
   return source.pointGroupId != null ? [source.pointGroupId] : [];
 };
-
-export type CadSurfaceBreaklineSource =
-  | { kind: 'point-chain'; pointEntityIds: CadEntityId[] }
-  | { kind: 'entity'; entityId: CadEntityId };
-
-export interface CadSurfaceBreakline {
-  id: string;
-  source: CadSurfaceBreaklineSource;
-  /** Only 'standard' in 18F; future types (proximity/wall) are out of scope. */
-  type: 'standard';
-  name?: string;
-}
-
-export interface CadSurfaceBoundary {
-  type: 'outer' | 'void';
-  sourceEntityId: CadEntityId;
-}
-
-export interface CadSurfaceBuildOptions {
-  /** Post-build filter: drop triangles with any edge longer than this (drawing units). */
-  maxEdgeLength?: number;
-  /**
-   * Phase 20A: max plan deviation (metres) when linearizing feature-line
-   * arc courses into breakline segments. Effective value is always finite
-   * and positive (absent/invalid reads as 0.001); it joins the source
-   * revision so a tolerance change rebuilds. Never touches TIN numerics.
-   */
-  breaklineChordTolerance?: number;
-}
-
-
-export interface CadSurfaceDefinition {
-  pointSource: CadSurfacePointSource;
-  breaklines?: CadSurfaceBreakline[];
-  boundaries?: CadSurfaceBoundary[];
-  buildOptions?: CadSurfaceBuildOptions;
-  /**
-   * Phase 18S: ordered TIN edit stack (array order authoritative, no
-   * canonical sort). Absent = no edits (legacy behavior). Additive.
-   */
-  edits?: CadSurfaceEdit[];
-  /**
-   * Phase 18L: absent/'native' = entity-derived TIN (18F model); 'imported-tin'
-   * = explicit imported topology (importedTin required). Additive — legacy
-   * drawings load as native, migration is idempotent.
-   * Phase 18X: 'explicit-tin' = baked explicit topology (same importedTin
-   * payload shape, provenance format 'explicit'). No new persisted key.
-   */
-  sourceKind?: 'native' | 'imported-tin' | 'explicit-tin';
-  importedTin?: ImportedTinPayload;
-}
 
 /**
  * Phase 18X fail-closed explicit-topology predicate: any non-native
@@ -777,82 +753,4 @@ export const isNativeSurfaceDefinition = (
  * phase so 18L call sites keep compiling; migrate to the explicit predicate).
  */
 export const isImportedTinDefinition = isExplicitTopologyDefinition;
-
-
-export type CadSurfaceStatus =
-  | 'UNBUILT'
-  | 'CURRENT'
-  | 'NEEDS_REBUILD'
-  | 'BUILDING'
-  | 'FAILED'
-  | 'BROKEN_REFERENCE'
-  | 'INSUFFICIENT_DATA';
-
-export type CadSurfacePurpose =
-  | 'existing-ground'
-  | 'design'
-  | 'design-patch'
-  | 'reference'
-  | 'other';
-
-export interface CadSurface {
-  id: string;
-  name: string;
-  definition: CadSurfaceDefinition;
-  /**
-   * Phase 20D workflow role (Existing Ground vs Design vs patch vs reference).
-   * Operator-authored metadata ONLY — never inferred, never geometry: excluded
-   * from the geometry revision by construction (revision hashes the definition).
-   * Absent = legacy neutral surface.
-   */
-  purpose?: CadSurfacePurpose;
-  styleId?: string;
-  /** Geometry-only revision of the last successful build; absent = never built. */
-  cachedRevision?: string | null;
-  /** Display/lock layer; absent = ByLayer-default (visible, unlocked). */
-  layerId?: CadLayerId;
-  /** Last worker/transport failure; derived status stays authoritative. */
-  buildDiagnostic?: string;
-}
-
-/** Phase 18H: per-kind contour line appearance (display only, never geometry). */
-export interface CadContourAppearance {
-  color?: string;
-  lineweight?: number;
-  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
-  opacity?: number;
-}
-
-/** Phase 18F: surface display styling ONLY (never affects geometry/revision). */
-export interface CadSurfaceStyle {
-  id: string;
-  name: string;
-  color?: string;
-  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
-  opacity?: number;
-  showTriangles?: boolean;
-  showContours?: boolean;
-  /** Display-only extras for the seed styles (never affect geometry). */
-  showPoints?: boolean;
-  showBoundary?: boolean;
-  description?: string;
-  /**
-   * Phase 18H contour display intent. Major model is major-every-N minor
-   * levels (NOT an explicit major interval): a level with index k is major
-   * when k is a multiple of majorContourEvery (mirrors computeContourLevels).
-   * Absent on legacy styles = no contour display (display-time default).
-   */
-  minorContourInterval?: number;
-  majorContourEvery?: number;
-  contourBaseElevation?: number;
-  minorContour?: CadContourAppearance;
-  majorContour?: CadContourAppearance;
-  showContourLabels?: boolean;
-  /** Default true: label major contours only. */
-  labelMajorOnly?: boolean;
-  /** Along-path label spacing in drawing units. */
-  contourLabelSpacing?: number;
-  /** Decimals for label text (elevation in drawing units, no suffix). */
-  contourLabelPrecision?: number;
-}
 

@@ -721,7 +721,11 @@ describe('STRUCT-241.9 hub facade re-exports', () => {
     }
   });
 
-  it('keeps unrelated surface/style contracts in the hub', () => {
+  it('keeps no original surface source/definition or model/style declarations in the hub (moved by STRUCT-241.10)', () => {
+    // STRUCT-241.10 roll-forward: the 6 surface-definition + 5
+    // surface-model/style contracts now live in cadSurfaceDefinitionTypes
+    // and cadSurfaceModelStyleTypes; the hub keeps only the grouped
+    // `import type` + `export type` facade so legacy paths compile.
     const hub = hubSource();
     for (const decl of [
       'export type CadSurfacePointSource',
@@ -729,7 +733,10 @@ describe('STRUCT-241.9 hub facade re-exports', () => {
       'export type CadSurfaceStatus',
       'export interface CadSurfaceDefinition {',
     ]) {
-      expect(hub).toContain(decl);
+      expect(hub).not.toContain(decl);
+    }
+    for (const specifier of ['./cadSurfaceDefinitionTypes', './cadSurfaceModelStyleTypes']) {
+      expect(hub).toContain(`} from '${specifier}';`);
     }
   });
 });
@@ -932,9 +939,12 @@ describe('STRUCT-241.9 CAD+F2F graph pins', () => {
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
     // 241.8 baseline 497 / 2444; the type-only 241.9 leaves add +2 nodes
     // and +6 type edges (per leaf: 1 out-edge to core primitives + hub
-    // import + hub export; no retired hub edge).
-    expect(graph.nodes.length).toBe(499);
-    expect(graph.edges.length).toBe(2450);
+    // import + hub export; no retired hub edge). STRUCT-241.10 adds +2
+    // nodes and +9 type edges (definition leaf: 3 out-edges + hub import +
+    // hub export; model leaf: one-way B->A + core out-edge + hub import +
+    // hub export; no retired hub edge).
+    expect(graph.nodes.length).toBe(501);
+    expect(graph.edges.length).toBe(2459);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1001,9 +1011,11 @@ describe('STRUCT-241.9 full-src graph pins', () => {
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // 241.8 baseline 1669 / 7555; the 241.9 leaves add +2 nodes and +6
     // type edges (same allowlist as the scoped pin; every 241.9 edge
-    // resolves inside `src`).
-    expect(graph.nodes.length).toBe(1671);
-    expect(graph.edges.length).toBe(7561);
+    // resolves inside `src`). STRUCT-241.10 adds +2 nodes and +9 type
+    // edges (same allowlist as the scoped pin; every 241.10 edge resolves
+    // inside `src`).
+    expect(graph.nodes.length).toBe(1673);
+    expect(graph.edges.length).toBe(7570);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

@@ -758,8 +758,8 @@ describe('STRUCT-241.2 CAD+F2F graph pins', () => {
     // STRUCT-241.7 adds +2 nodes / +7 type edges (documented roll-forward:
     // layout 1 out + hub import + hub export, grip 2 out + hub import +
     // hub export, no retired hub edge).
-    expect(graph.nodes.length).toBe(499);
-    expect(graph.edges.length).toBe(2450);
+    expect(graph.nodes.length).toBe(501);
+    expect(graph.edges.length).toBe(2459);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -809,8 +809,8 @@ describe('STRUCT-241.2 full-src graph pins', () => {
     // STRUCT-241.5 adds +2 nodes / +8 edges (documented roll-forward).
     // STRUCT-241.6 adds +2 nodes / +9 edges (documented roll-forward).
     // STRUCT-241.7 adds +2 nodes / +7 edges (documented roll-forward).
-    expect(graph.nodes.length).toBe(1671);
-    expect(graph.edges.length).toBe(7561);
+    expect(graph.nodes.length).toBe(1673);
+    expect(graph.edges.length).toBe(7570);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
