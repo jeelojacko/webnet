@@ -8,8 +8,10 @@ import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import type { CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
 import type { LineweightDisplayMode } from '../../engine/cad/cadViewportAppearance';
 import {
+  canReuseCadDisplaySceneBase,
   filterCadDisplaySceneForViewport,
   viewportHiddenEntityIds,
+  type CadDisplaySceneBaseCacheEntry,
 } from '../../engine/cad/cadViewportAppearance';
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
@@ -212,11 +214,25 @@ export const useSurveyCadWorkspace = (
   // View-layer filter (spec §6): OFF/frozen-layer primitives hide at the
   // viewport consumer — never inside buildCadDisplayScene (export scene
   // needs hidden primitives). Unknown/missing layers default visible.
-  const displayScene = useMemo(
-    () =>
-      filterCadDisplaySceneForViewport(
-        cadProject,
-        buildCadDisplayScene(cadProject, {
+  // PERF-CAD-SCENE.1: the base scene is reused (hook-local, drawing-scoped)
+  // when only layer NAMES changed; the filter always runs on the CURRENT
+  // project, so OFF/frozen/visibility edits still hide immediately.
+  const displaySceneCacheRef = useRef<{ drawingId: string; entry: CadDisplaySceneBaseCacheEntry } | null>(null);
+  const displayScene = useMemo(() => {
+    const buildInputs = {
+      lineweightDisplay,
+      surfaceCache,
+      surfaceRevisionIndex,
+      surfaceContourInputs,
+      surfaceVolumeInputs,
+    };
+    const scoped =
+      displaySceneCacheRef.current?.drawingId === drawing.drawingId
+        ? displaySceneCacheRef.current.entry
+        : null;
+    const baseScene = canReuseCadDisplaySceneBase(scoped, cadProject, buildInputs)
+      ? scoped!.scene
+      : buildCadDisplayScene(cadProject, {
           lineweightDisplay,
           ...(surfaceCache ? { surfaceCache, ...(surfaceRevisionIndex ? { surfaceRevisionIndex } : {}) } : {}),
           ...(surfaceContourInputs
@@ -233,10 +249,21 @@ export const useSurveyCadWorkspace = (
                 },
               }
             : {}),
-        }),
-      ),
-    [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex, surfaceContourInputs, surfaceVolumeInputs],
-  );
+        });
+    displaySceneCacheRef.current = {
+      drawingId: drawing.drawingId,
+      entry: { project: cadProject, scene: baseScene, inputs: buildInputs },
+    };
+    return filterCadDisplaySceneForViewport(cadProject, baseScene);
+  }, [
+    drawing.drawingId,
+    cadProject,
+    lineweightDisplay,
+    surfaceCache,
+    surfaceRevisionIndex,
+    surfaceContourInputs,
+    surfaceVolumeInputs,
+  ]);
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
   // PERF-186.1 (#189): the indexed hidden set is computed once per render; the
   // history updater reuses it only while the committed project is the same

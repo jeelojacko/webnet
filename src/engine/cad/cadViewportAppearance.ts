@@ -9,6 +9,7 @@ import { getCadViewportVisibilityIndex, type CadViewportVisibilityIndex } from '
 import type {
   CadDisplayScene,
   CadEntityId,
+  CadLayer,
   CadProject,
 } from './cadTypes';
 
@@ -220,4 +221,140 @@ export const filterCadDerivedLayersForViewport = (
 export const viewportHiddenEntityIds = (
   project: CadProject,
 ): ReadonlySet<CadEntityId> => getCadViewportVisibilityIndex(project).hiddenEntityIds;
+
+// ---------------------------------------------------------------------------
+// PERF-CAD-SCENE.1 — base display-scene reuse guard (pure, no React).
+//
+// `useSurveyCadWorkspace` builds the BASE scene (before viewport filtering)
+// once per committed project. `buildCadDisplayScene` never reads a layer NAME
+// (lookups are by id, and layer styling reads color/lineTypeId/lineweightMm/
+// transparency only), so a `LAYER_RENAME` — a shallow project spread with a new
+// `layers` array and every other slice reference-identical — can reuse the
+// previous base scene and only re-run the viewport filter on the CURRENT
+// project. The guard is intentionally fail-closed: every top-level project
+// slice EXCEPT `layers` must be reference-identical, and `layers` must have
+// the same length/order/ids with every field except `name` equal. A field
+// added later to `CadProject` therefore defaults to forcing a rebuild. No JSON
+// signatures, no traversal of entity/style tables, no timing assumptions.
+// ---------------------------------------------------------------------------
+
+/**
+ * The build inputs whose identity/version participates in the base scene
+ * (mirrors the display-scene memo dependencies). `surfaceCache` and
+ * `surfaceRevisionIndex` are pinned by identity; `surfaceContourInputs` /
+ * `surfaceVolumeInputs` are pinned by their stable `version` tag (their
+ * closures are recreated per project commit — see
+ * `sameVersionedSessionInput`).
+ */
+export interface CadDisplaySceneBuildInputs {
+  lineweightDisplay: LineweightDisplayMode;
+  surfaceCache?: unknown;
+  surfaceRevisionIndex?: unknown;
+  surfaceContourInputs?: unknown;
+  surfaceVolumeInputs?: unknown;
+}
+
+/** Per-workspace (hook-instance-local) cached base scene; never global. */
+export interface CadDisplaySceneBaseCacheEntry {
+  project: CadProject;
+  scene: CadDisplayScene;
+  inputs: CadDisplaySceneBuildInputs;
+}
+
+/** Session inputs whose identity churns but whose `version` tag is stable. */
+interface VersionedSessionInput {
+  version?: unknown;
+}
+
+/**
+ * Contour/volume scene inputs are rebuilt by the shell whenever `cadProject`
+ * changes, so their object identity changes on a layer-only edit even though
+ * their content does not. They are interchangeable when BOTH are present and
+ * expose the SAME numeric `version` tag: the getters derive contour/volume
+ * geometry from non-layer project slices (surfaces/styles/geometry sources)
+ * plus the session caches, all of which this guard independently pins by
+ * reference. A presence change (`undefined` <-> object) changes the scene
+ * shape and always forces a rebuild.
+ *
+ * INVARIANT (guarded by tests): the contour/volume getters must never read
+ * layer NAMES. `layersDifferOnlyByName` already requires every non-layer
+ * project slice to be reference-identical, so any getter that satisfies this
+ * invariant returns identical output across the accepted edit.
+ */
+const sameVersionedSessionInput = (previous: unknown, next: unknown): boolean => {
+  if (previous === next) return true;
+  if (previous == null || next == null) return false;
+  if (typeof previous !== 'object' || typeof next !== 'object') return false;
+  const previousVersion = (previous as VersionedSessionInput).version;
+  const nextVersion = (next as VersionedSessionInput).version;
+  return typeof previousVersion === 'number' && previousVersion === nextVersion;
+};
+
+const ownKeys = (value: object): string[] => Object.keys(value as Record<string, unknown>);
+
+const sameKeys = (first: object, second: object): boolean => {
+  const firstKeys = ownKeys(first);
+  const secondKeys = ownKeys(second);
+  if (firstKeys.length !== secondKeys.length) return false;
+  return firstKeys.every((key) => Object.prototype.hasOwnProperty.call(second, key));
+};
+
+const sameInputs = (
+  previous: CadDisplaySceneBuildInputs,
+  next: CadDisplaySceneBuildInputs,
+): boolean =>
+  previous.lineweightDisplay === next.lineweightDisplay &&
+  previous.surfaceCache === next.surfaceCache &&
+  previous.surfaceRevisionIndex === next.surfaceRevisionIndex &&
+  sameVersionedSessionInput(previous.surfaceContourInputs, next.surfaceContourInputs) &&
+  sameVersionedSessionInput(previous.surfaceVolumeInputs, next.surfaceVolumeInputs);
+
+/** Every top-level project slice except `layers` must be the same reference. */
+const sameNonLayerProjectSlices = (previous: CadProject, next: CadProject): boolean => {
+  if (previous === next) return true;
+  if (!sameKeys(previous, next)) return false;
+  const previousRecord = previous as unknown as Record<string, unknown>;
+  const nextRecord = next as unknown as Record<string, unknown>;
+  return ownKeys(previous).every(
+    (key) => key === 'layers' || previousRecord[key] === nextRecord[key],
+  );
+};
+
+/** One layer pair is equivalent when only `name` may differ. */
+const layerEqualsExceptName = (previous: CadLayer, next: CadLayer): boolean => {
+  if (previous === next) return true;
+  if (previous.id !== next.id) return false;
+  if (!sameKeys(previous, next)) return false;
+  const previousRecord = previous as unknown as Record<string, unknown>;
+  const nextRecord = next as unknown as Record<string, unknown>;
+  return ownKeys(previous).every(
+    (key) => key === 'name' || previousRecord[key] === nextRecord[key],
+  );
+};
+
+/** Layer tables match by length, id order, and every field except `name`. */
+const layersDifferOnlyByName = (
+  previous: readonly CadLayer[],
+  next: readonly CadLayer[],
+): boolean => {
+  if (previous === next) return true;
+  if (previous.length !== next.length) return false;
+  return previous.every((layer, index) => layerEqualsExceptName(layer, next[index]!));
+};
+
+/**
+ * True when `project` can reuse `entry.scene` as the base display scene:
+ * identical build inputs, identical non-layer slices, and layers that differ
+ * only by name. `null`/undefined entry always rebuilds.
+ */
+export const canReuseCadDisplaySceneBase = (
+  entry: CadDisplaySceneBaseCacheEntry | null | undefined,
+  project: CadProject,
+  inputs: CadDisplaySceneBuildInputs,
+): boolean => {
+  if (entry == null) return false;
+  if (!sameInputs(entry.inputs, inputs)) return false;
+  if (!sameNonLayerProjectSlices(entry.project, project)) return false;
+  return layersDifferOnlyByName(entry.project.layers, project.layers);
+};
 
