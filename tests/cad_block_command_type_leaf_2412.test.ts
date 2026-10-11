@@ -308,6 +308,10 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   // curve (6) leaves so the 168 effective members stay pinned.
   const primitive = unionMemberDescriptors(abs('src/engine/cad/cadTransactionsPrimitiveDrawCommandTypes.ts'), 'primitive', 'CadPrimitiveDrawCommandPayload');
   const basiccurve = unionMemberDescriptors(abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'), 'basiccurve', 'CadBasicCurveCommandPayload');
+  // STRUCT-241.15 roll-forward: expand the planar-transform (6) +
+  // geometry-edit (7) leaves so the 168 effective members stay pinned.
+  const planar = unionMemberDescriptors(abs('src/engine/cad/cadTransactionsPlanarTransformCommandTypes.ts'), 'planar', 'CadPlanarTransformCommandPayload');
+  const geometryedit = unionMemberDescriptors(abs('src/engine/cad/cadTransactionsGeometryEditCommandTypes.ts'), 'geometryedit', 'CadGeometryEditCommandPayload');
   const alias = findAlias(hub, 'hub', 'CadCommand');
   const members: string[] = [];
   const visit = (node: ts.TypeNode): void => {
@@ -330,6 +334,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (name === 'CadParcelConstructionCommandPayload') members.push(...parcelConstruction);
       else if (name === 'CadPrimitiveDrawCommandPayload') members.push(...primitive);
       else if (name === 'CadBasicCurveCommandPayload') members.push(...basiccurve);
+      else if (name === 'CadPlanarTransformCommandPayload') members.push(...planar);
+      else if (name === 'CadGeometryEditCommandPayload') members.push(...geometryedit);
       else members.push(name);
       return;
     }
@@ -621,13 +627,15 @@ describe('STRUCT-241.2 baseline shapes: Extract<CadCommand> vs leaf vs Base*', (
 });
 
 describe('STRUCT-241.2 hub union splice order and member counts', () => {
-  it('measures 72 top-level members and documents the 89 -> 72 extraction', () => {
+  it('measures 61 top-level members and documents the 72 -> 61 extraction', () => {
     const counts = hubTopLevelCounts();
     // STRUCT-241.13 roll-forward: 15 alignment + parcel-construction inline
     // members replaced by 2 alias references (51 inline, 31 refs, 7 intersections).
     // STRUCT-241.14 roll-forward: 19 primitive-draw + basic-curve inline
     // members replaced by 2 alias references (32 inline, 33 refs, 7 intersections).
-    expect(counts).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 });
+    // STRUCT-241.15 roll-forward: 13 planar-transform + geometry-edit inline
+    // members replaced by 2 alias references (19 inline, 35 refs, 7 intersections).
+    expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 });
     // Re-inlining the block leaves restores the pre-241.2 140 = 110 + 23 + 7
     // top-level shape only once every extracted family is re-inlined (see below).
     const preludeSize = unionKeysInOrder(LEAF, 'leaf', PRELUDE_ALIAS).length;
@@ -669,7 +677,16 @@ describe('STRUCT-241.2 hub union splice order and member counts', () => {
       abs('src/engine/cad/cadTransactionsBasicCurveCommandTypes.ts'),
       'basiccurve', 'CadBasicCurveCommandPayload').length;
     expect([primitiveSize, basiccurveSize]).toEqual([13, 6]);
-    expect(counts.total + preludeSize + definitionSize + annotationSize + analysisSize + featurelineSize + designsurfaceSize + alignmentSize + parcelConstructionSize + primitiveSize + basiccurveSize - 10).toBe(140);
+    // STRUCT-241.15 roll-forward: the planar-transform (6) + geometry-edit (7)
+    // leaves join the re-inlined set.
+    const planarSize = unionMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsPlanarTransformCommandTypes.ts'),
+      'planar', 'CadPlanarTransformCommandPayload').length;
+    const geometryeditSize = unionMemberDescriptors(
+      abs('src/engine/cad/cadTransactionsGeometryEditCommandTypes.ts'),
+      'geometryedit', 'CadGeometryEditCommandPayload').length;
+    expect([planarSize, geometryeditSize]).toEqual([6, 7]);
+    expect(counts.total + preludeSize + definitionSize + annotationSize + analysisSize + featurelineSize + designsurfaceSize + alignmentSize + parcelConstructionSize + primitiveSize + basiccurveSize + planarSize + geometryeditSize - 12).toBe(140);
   });
 
   it('splices both groups with neighbor sentinels', () => {
@@ -718,7 +735,7 @@ describe('STRUCT-241.2 hub union splice order and member counts', () => {
     // parcel-construction members moved to leaves).
     // STRUCT-241.14 roll-forward: 51 -> 32 inline (19 primitive-draw +
     // basic-curve members moved to leaves).
-    expect(inlineSets.length).toBe(32);
+    expect(inlineSets.length).toBe(19);
     for (const set of inlineSets) {
       for (const key of set) expect(key.startsWith('BLOCK_'), `inline ${key} still in hub`).toBe(false);
     }
@@ -877,8 +894,11 @@ describe('STRUCT-241.2 CAD+F2F graph pins', () => {
     // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges
     // (primitive-draw leaf 2 out-edges + hub import; basic-curve leaf
     // 0 out-edges + hub import; 1 retired hub tangent-solver edge).
-    expect(graph.nodes.length).toBe(509);
-    expect(graph.edges.length).toBe(2478);
+    // STRUCT-241.15 roll-forward: +2 nodes / +5 type edges
+    // (geometry-edit leaf 3 out-edges + hub import; planar leaf
+    // 0 out-edges + hub import; no retired edge).
+    expect(graph.nodes.length).toBe(511);
+    expect(graph.edges.length).toBe(2483);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -936,8 +956,10 @@ describe('STRUCT-241.2 full-src graph pins', () => {
     // as the scoped pin; every 241.13 edge resolves inside `src`).
     // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (same allowlist
     // as the scoped pin; every 241.14 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1681);
-    expect(graph.edges.length).toBe(7589);
+    // STRUCT-241.15 roll-forward: +2 nodes / +5 type edges (same allowlist
+    // as the scoped pin; every 241.15 edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1683);
+    expect(graph.edges.length).toBe(7594);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

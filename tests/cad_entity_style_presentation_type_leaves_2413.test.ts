@@ -636,8 +636,9 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     // 4 out-edges + hub import; analysis leaf 4 out-edges + hub import;
     // 4 retired hub edges to the anchor barrel + analysis modules).
     // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (2 hub imports + 2 primitive-draw out-edges + 0 basic-curve out-edges - 1 retired hub tangent-solver edge).
-    expect(graph.nodes.length).toBe(509);
-    expect(graph.edges.length).toBe(2478);
+    // STRUCT-241.15 roll-forward: +2 nodes / +5 type edges (2 hub imports + 3 geometry-edit out-edges + 0 planar out-edges, no retired edge).
+    expect(graph.nodes.length).toBe(511);
+    expect(graph.edges.length).toBe(2483);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -645,7 +646,7 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     });
   }, 30_000);
 
-  it('adds exactly the fourteen allow-listed TYPE edges incident to the leaves (6 + 4 for 241.4 + 2 for 241.5 + 2 for 241.6)', () => {
+  it('adds exactly the fifteen allow-listed TYPE edges incident to the leaves (6 + 4 for 241.4 + 2 for 241.5 + 2 for 241.6 + 1 for 241.15)', () => {
     const graph = cadF2fGraph();
     const foundation = path.resolve(FOUNDATION_LEAF);
     const survey = path.resolve(SURVEY_LEAF);
@@ -671,14 +672,19 @@ describe('STRUCT-241.3 CAD+F2F graph pins', () => {
     // the same foundation leaf, adding two further siblings (alphabetical
     // by source path: annotation, linear-design, parcel, primitive/geometry,
     // survey-table, hub).
+    // STRUCT-241.15 roll-forward: the geometry-edit leaf imports the same
+    // foundation leaf, adding one further sibling (between survey-table
+    // and hub in source-path order).
     const linearToFoundation = { from: path.resolve(path.join(CAD_DIR, 'cadLinearDesignEntityTypes.ts')), to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
     const parcelToFoundation = { from: path.resolve(path.join(CAD_DIR, 'cadParcelEntityTypes.ts')), to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
+    const geometryEditToFoundation = { from: path.resolve(path.join(CAD_DIR, 'cadTransactionsGeometryEditCommandTypes.ts')), to: foundation, specifier: './cadEntityFoundationTypes', kind: 'type' };
     expect(graph.edges.filter((edge) => edge.to === foundation)).toEqual([
       annotationToFoundation,
       linearToFoundation,
       parcelToFoundation,
       primitiveGeometryToFoundation,
       surveyTableToFoundation,
+      geometryEditToFoundation,
       hubToFoundation,
       hubToFoundation,
     ]);
@@ -746,8 +752,8 @@ describe('STRUCT-241.3 full-src graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
     // STRUCT-241.14 roll-forward: +2 nodes / +3 type edges (same allowlist as the scoped pin; every 241.14 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1681);
-    expect(graph.edges.length).toBe(7589);
+    expect(graph.nodes.length).toBe(1683);
+    expect(graph.edges.length).toBe(7594);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

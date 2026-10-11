@@ -61,14 +61,16 @@ import type { CadParcelConstructionCommandPayload } from './cadTransactionsParce
 // type-only leaves; the hub splices both unions in the original position.
 import type { CadPrimitiveDrawCommandPayload } from './cadTransactionsPrimitiveDrawCommandTypes';
 import type { CadBasicCurveCommandPayload } from './cadTransactionsBasicCurveCommandTypes';
+// STRUCT-241.15: planar-transform (6) + geometry-edit (7) command payload slices are
+// type-only leaves; the hub splices both unions in the original position.
+import type { CadPlanarTransformCommandPayload } from './cadTransactionsPlanarTransformCommandTypes';
+import type { CadGeometryEditCommandPayload } from './cadTransactionsGeometryEditCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
   CadAlignmentElement,
-  CadEntityAppearance,
   CadEntityId,
   CadLayerId,
-  CadGripHandleKind,
   CadPointGroup,
   CadPointGroupId,
   CadPointGroupQuery,
@@ -414,42 +416,7 @@ export type CadCommand =
       tableEntityId: CadEntityId;
       edit: CadSurveyTableEdit;
     }
-  | {
-      key: 'MOVE';
-      deltaX: number;
-      deltaY: number;
-    }
-  | {
-      key: 'COPY';
-      deltaX: number;
-      deltaY: number;
-    }
-  | {
-      key: 'ROTATE';
-      baseX: number;
-      baseY: number;
-      angleDeg: number;
-    }
-  | {
-      key: 'SCALE';
-      baseX: number;
-      baseY: number;
-      factor: number;
-    }
-  | {
-      key: 'MIRROR';
-      p1: { x: number; y: number };
-      p2: { x: number; y: number };
-      eraseSource: boolean;
-    }
-  | {
-      key: 'ALIGN2D';
-      source1: { x: number; y: number };
-      source2: { x: number; y: number };
-      target1: { x: number; y: number };
-      target2: { x: number; y: number };
-      scaleToFit: boolean;
-    }
+  | CadPlanarTransformCommandPayload
   | {
       key: 'HELMERT2D';
       pairs: HelmertControlPair[];
@@ -466,67 +433,7 @@ export type CadCommand =
       key: 'PROJECTTRANSFORM';
       request: ProjectTransformRequest;
     }
-  | {
-      key: 'EXTEND';
-      boundaryEntityIds: CadEntityId[];
-      targetEntityId: CadEntityId;
-      targetPickPoint: { x: number; y: number };
-      targetSegmentId?: string;
-    }
-  | {
-      key: 'FILLET';
-      radius: number;
-      firstEntityId: CadEntityId;
-      firstPickPoint: { x: number; y: number };
-      firstSegmentId?: string;
-      secondEntityId: CadEntityId;
-      secondPickPoint: { x: number; y: number };
-      secondSegmentId?: string;
-    }
-  | {
-      key: 'PASTE';
-      deltaX: number;
-      deltaY: number;
-      entityIds: CadEntityId[];
-    }
-  | {
-      key: 'TRIM';
-      cuttingEntityIds: CadEntityId[];
-      targetEntityId: CadEntityId;
-      pickPoint: { x: number; y: number };
-      targetSegmentId?: string;
-    }
-  | {
-      key: 'INTERSECT_POINT';
-      x: number;
-      y: number;
-      label?: string;
-      firstLabel: string;
-      secondLabel: string;
-    }
-  | {
-      key: 'EDIT_ENTITY';
-      entityId: CadEntityId;
-      edit:
-        | { kind: 'entity-name'; value: string }
-        | { kind: 'point-x'; value: number }
-        | { kind: 'point-y'; value: number }
-        | { kind: 'point-z'; value: number | null }
-        | { kind: 'line-end'; toX: number; toY: number }
-        | { kind: 'arc-radius'; value: number }
-        | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
-        | { kind: 'polyline-vertices'; vertices: Array<{ vertexIndex: number; x: number; y: number }> }
-        | { kind: 'entity-layer'; layerId: CadLayerId }
-        | { kind: 'entity-appearance'; patch: CadEntityAppearance };
-    }
-  | {
-      key: 'GRIP_EDIT';
-      entityId: CadEntityId;
-      gripKind: CadGripHandleKind;
-      x: number;
-      y: number;
-      vertexIndex?: number;
-    }
+  | CadGeometryEditCommandPayload
   | {
       key: 'SHEET_ADD';
       sheetId: string;

@@ -97,6 +97,10 @@ const PC_LEAF = path.join(CAD_DIR, 'cadTransactionsParcelConstructionCommandType
 // are expanded by the flattened view so the 168 effective members stay pinned.
 const PR_LEAF = path.join(CAD_DIR, 'cadTransactionsPrimitiveDrawCommandTypes.ts');
 const BC_LEAF = path.join(CAD_DIR, 'cadTransactionsBasicCurveCommandTypes.ts');
+// STRUCT-241.15 roll-forward: planar-transform (6) + geometry-edit (7) leaves
+// are expanded by the flattened view so the 168 effective members stay pinned.
+const PT_LEAF24115 = path.join(CAD_DIR, 'cadTransactionsPlanarTransformCommandTypes.ts');
+const GE_LEAF24115 = path.join(CAD_DIR, 'cadTransactionsGeometryEditCommandTypes.ts');
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 
 const LAYER_ALIAS = 'CadLayerCommandPayload';
@@ -336,6 +340,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
     PR_LEAF, 'primitive leaf', 'CadPrimitiveDrawCommandPayload');
   const basiccurveKeys = unionMemberDescriptors(
     BC_LEAF, 'basiccurve leaf', 'CadBasicCurveCommandPayload');
+  // STRUCT-241.15 roll-forward: expand the planar-transform (6) +
+  // geometry-edit (7) leaves (all single-keyed, no widening).
+  const planarKeys = unionMemberDescriptors(
+    PT_LEAF24115, 'planar leaf', 'CadPlanarTransformCommandPayload');
+  const geometryeditKeys = unionMemberDescriptors(
+    GE_LEAF24115, 'geometryedit leaf', 'CadGeometryEditCommandPayload');
   const keyDescriptor = (member: ts.TypeLiteralNode): string | null => {
     const keyProp = member.members.find(
       (m): m is ts.PropertySignature =>
@@ -366,6 +376,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (flat.typeName.text === 'CadParcelConstructionCommandPayload') members.push(...parcelConstructionKeys);
       else if (flat.typeName.text === 'CadPrimitiveDrawCommandPayload') members.push(...primitiveKeys);
       else if (flat.typeName.text === 'CadBasicCurveCommandPayload') members.push(...basiccurveKeys);
+      else if (flat.typeName.text === 'CadPlanarTransformCommandPayload') members.push(...planarKeys);
+      else if (flat.typeName.text === 'CadGeometryEditCommandPayload') members.push(...geometryeditKeys);
       else members.push(flat.typeName.text);
       return;
     }
@@ -1430,7 +1442,10 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.14 roll-forward: 89 -> 72 top-level (32 inline, 33 refs,
     // 7 intersections); flattened effective members stay 168 via the
     // primitive-draw + basic-curve leaves.
-    expect(hubTopLevelCounts()).toEqual({ total: 72, inline: 32, refs: 33, intersections: 7 });
+    // STRUCT-241.15 roll-forward: 72 -> 61 top-level (19 inline, 35 refs,
+    // 7 intersections); flattened effective members stay 168 via the
+    // planar-transform + geometry-edit leaves.
+    expect(hubTopLevelCounts()).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1469,7 +1484,7 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // parcel-construction members moved to leaves).
     // STRUCT-241.14 roll-forward: 51 -> 32 inline (19 primitive-draw +
     // basic-curve members moved to leaves).
-    expect(inlineSets.length).toBe(32);
+    expect(inlineSets.length).toBe(19);
     for (const set of inlineSets) {
       for (const key of set) {
         expect(key.startsWith('LAYER_'), `inline ${key} still in hub`).toBe(false);

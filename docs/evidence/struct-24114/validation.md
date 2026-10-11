@@ -67,8 +67,7 @@
 ## Review
 
 - Independent read-only reviewer on exact integrated final diff (incl.
-  negative controls): PENDING — must return explicit APPROVE, else correct
-  + re-review in same conversation.
+  negative controls): APPROVE (round-2 APPROVE on implementation head 2133cb7f; PR #257 merged to origin/main e3d44c75; exact-head CI run 38137026114 all five jobs green, independently verified).
 - Stash preservation: 14/14, order intact; worktree contains only the
   241.14 scope (hub + 2 leaves + 1 new + 15 rolled-forward tests + TODO +
   2 evidence docs).
