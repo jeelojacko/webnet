@@ -7,6 +7,8 @@ import type { CadEntityId } from './cadCorePrimitiveTypes';
 import type { CadSurfaceEdit } from './cadSurfaceEditTypes';
 import type { ImportedTinPayload } from './cadTinProvenanceTypes';
 
+/** Phase 18F: TIN surface model (engine only; never triangle entities). */
+
 export type CadSurfacePointSource =
   /* Multi-group: canonical list is pointGroupIds (added order); pointGroupId
      is the legacy single-source shape, migrated on load. */
