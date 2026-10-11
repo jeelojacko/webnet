@@ -30,7 +30,10 @@ import { useSurveyCadWorkspaceActions } from './surveyCadWorkspaceActions';
 import { buildSurveyCadWorkspaceParcelReports } from './surveyCadWorkspaceParcelReports';
 import { useSurveyCadWorkspaceCommandController } from './useSurveyCadWorkspaceCommandController';
 import { useSurveyCadWorkspaceHistory } from './useSurveyCadWorkspaceHistory';
-import { useSurveyCadWorkspacePersistence } from './useSurveyCadWorkspacePersistence';
+import {
+  useCadNormalizedSyncCertificate,
+  useSurveyCadWorkspacePersistence,
+} from './useSurveyCadWorkspacePersistence';
 import { useSurveyCadWorkspacePreviews } from './useSurveyCadWorkspacePreviews';
 import { buildCadAnnotationSnapshot } from './surveyCadAnnotationSnapshot';
 import { applyCadAnnotationUiOp, buildLeaderAnchorCommand } from './surveyCadAnnotationOps';
@@ -101,6 +104,12 @@ export const useSurveyCadWorkspace = (
     baseProject,
     resetKey,
   );
+  // PERF-188.2: per-workspace provenance certificate. Written ONLY where the
+  // wrapper deliberately clones at the ownership boundary below; read by the
+  // persistence sync to skip its redundant normalization clone. One entry,
+  // most recent publish only; no global cache and no raw-signature equality.
+  const { cert: normalizedSyncCertRef, beginPublish, record: recordNormalizedSyncCertificate } =
+    useCadNormalizedSyncCertificate(drawing, resetKey);
   // Memoized so viewport effects (e.g. hidden-selection retirement) can depend on it.
   const applyHistoryUpdate = useCallback(
     (
@@ -140,28 +149,43 @@ export const useSurveyCadWorkspace = (
       if (!nextProject) return;
       if (!projectChanged && !draftChanged) return;
       const propagatedDraft = draftChanged ? nextDraft : undefined;
+      const normalizedSyncPublishId = beginPublish();
       onProjectChange((current) => {
         if (!current || current.drawingId !== drawing.drawingId) return current;
-        if (propagatedDraft === undefined) {
-          return cloneCadDrawingDocument({
-            ...current,
-            updatedAt: new Date().toISOString(),
-            project: nextProject!,
-            parcelLayout: parcelLayoutState,
-            showParcelLabels,
-          });
-        }
-        return cloneCadDrawingDocument({
+        // A changed draft is always published (`!== undefined`), including a
+        // cleared draft (`null`): `cloneCadDrawingDocument` rebuilds a blank
+        // draft for a null/undefined draft, so mapping null -> undefined at
+        // this boundary yields the same clear-to-blank result while staying
+        // assignable to `CadDrawingDocument.draft?: DraftDocument`. An
+        // unchanged draft (`undefined`) omits the key so the sticky current
+        // draft is retained. Single site for the provenance certificate.
+        const nextState = cloneCadDrawingDocument({
           ...current,
           updatedAt: new Date().toISOString(),
           project: nextProject!,
-          ...(propagatedDraft ? { draft: propagatedDraft } : {}),
+          ...(propagatedDraft !== undefined ? { draft: propagatedDraft ?? undefined } : {}),
           parcelLayout: parcelLayoutState,
           showParcelLabels,
         });
+        recordNormalizedSyncCertificate(
+          normalizedSyncPublishId,
+          nextState,
+          nextProject!,
+          parcelLayoutState,
+          showParcelLabels,
+        );
+        return nextState;
       });
     },
-    [applyHistoryUpdateBase, drawing.drawingId, onProjectChange, parcelLayoutState, showParcelLabels],
+    [
+      applyHistoryUpdateBase,
+      beginPublish,
+      drawing.drawingId,
+      onProjectChange,
+      parcelLayoutState,
+      recordNormalizedSyncCertificate,
+      showParcelLabels,
+    ],
   );
   const cadProject = history.present.project;
   const selection = history.present.selection;
@@ -535,6 +559,7 @@ export const useSurveyCadWorkspace = (
     onDrawingChange: onProjectChange,
     parcelLayoutState,
     showParcelLabels,
+    cert: normalizedSyncCertRef,
   });
 
   const parcelReportActions = buildSurveyCadWorkspaceParcelReports({
