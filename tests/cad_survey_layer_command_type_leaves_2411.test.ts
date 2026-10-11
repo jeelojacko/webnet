@@ -89,6 +89,10 @@ const ANN_LEAF = path.join(CAD_DIR, 'cadTransactionsAnnotationCommandTypes.ts');
 const ANL_LEAF = path.join(CAD_DIR, 'cadTransactionsAnalysisCommandTypes.ts');
 const FL_LEAF = path.join(CAD_DIR, 'cadTransactionsFeatureLineCommandTypes.ts');
 const DS_LEAF = path.join(CAD_DIR, 'cadTransactionsDesignSurfaceCommandTypes.ts');
+// STRUCT-241.13 roll-forward: alignment (6) + parcel-construction (9) leaves
+// are expanded by the flattened view so the 168 effective members stay pinned.
+const AL_LEAF = path.join(CAD_DIR, 'cadTransactionsAlignmentCommandTypes.ts');
+const PC_LEAF = path.join(CAD_DIR, 'cadTransactionsParcelConstructionCommandTypes.ts');
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 
 const LAYER_ALIAS = 'CadLayerCommandPayload';
@@ -316,6 +320,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
     FL_LEAF, 'featureline leaf', 'CadFeatureLineCommandPayload');
   const designsurfaceKeys = unionMemberDescriptors(
     DS_LEAF, 'designsurface leaf', 'CadDesignSurfaceCommandPayload');
+  // STRUCT-241.13 roll-forward: expand the alignment (6) +
+  // parcel-construction (9) leaves (all single-keyed, no widening).
+  const alignmentKeys = unionMemberDescriptors(
+    AL_LEAF, 'alignment leaf', 'CadAlignmentCommandPayload');
+  const parcelConstructionKeys = unionMemberDescriptors(
+    PC_LEAF, 'parcel leaf', 'CadParcelConstructionCommandPayload');
   const keyDescriptor = (member: ts.TypeLiteralNode): string | null => {
     const keyProp = member.members.find(
       (m): m is ts.PropertySignature =>
@@ -342,6 +352,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (flat.typeName.text === ANL_ALIAS) members.push(...analysisKeys);
       else if (flat.typeName.text === 'CadFeatureLineCommandPayload') members.push(...featurelineKeys);
       else if (flat.typeName.text === 'CadDesignSurfaceCommandPayload') members.push(...designsurfaceKeys);
+      else if (flat.typeName.text === 'CadAlignmentCommandPayload') members.push(...alignmentKeys);
+      else if (flat.typeName.text === 'CadParcelConstructionCommandPayload') members.push(...parcelConstructionKeys);
       else members.push(flat.typeName.text);
       return;
     }
@@ -1400,7 +1412,10 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.12 roll-forward: 116 -> 102 top-level (66 inline, 29 refs,
     // 7 intersections); flattened effective members stay 168 via the
     // feature-line + design-surface leaves.
-    expect(hubTopLevelCounts()).toEqual({ total: 102, inline: 66, refs: 29, intersections: 7 });
+    // STRUCT-241.13 roll-forward: 102 -> 89 top-level (51 inline, 31 refs,
+    // 7 intersections); flattened effective members stay 168 via the
+    // alignment + parcel-construction leaves.
+    expect(hubTopLevelCounts()).toEqual({ total: 89, inline: 51, refs: 31, intersections: 7 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1435,9 +1450,9 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.2 roll-forward: 110 -> 101 inline (9 block members moved to leaves).
     // STRUCT-241.11 roll-forward: 101 -> 82 inline (19 annotation +
     // analysis members moved to leaves).
-    // STRUCT-241.12 roll-forward: 82 -> 66 inline (16 feature-line +
-    // design-surface members moved to leaves).
-    expect(inlineSets.length).toBe(66);
+    // STRUCT-241.13 roll-forward: 66 -> 51 inline (15 alignment +
+    // parcel-construction members moved to leaves).
+    expect(inlineSets.length).toBe(51);
     for (const set of inlineSets) {
       for (const key of set) {
         expect(key.startsWith('LAYER_'), `inline ${key} still in hub`).toBe(false);

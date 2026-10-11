@@ -713,8 +713,8 @@ describe('STRUCT-241.7 CAD+F2F graph pins', () => {
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (annotation leaf
     // 4 out-edges + hub import; analysis leaf 4 out-edges + hub import;
     // 4 retired hub edges to the anchor barrel + analysis modules).
-    expect(graph.nodes.length).toBe(505);
-    expect(graph.edges.length).toBe(2470);
+    expect(graph.nodes.length).toBe(507);
+    expect(graph.edges.length).toBe(2475);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -729,8 +729,17 @@ describe('STRUCT-241.7 CAD+F2F graph pins', () => {
       { from: leaf, to: path.resolve(path.join(CAD_DIR, 'cadCorePrimitiveTypes.ts')), specifier: './cadCorePrimitiveTypes', kind: 'type' },
     ]);
     // One `import type` edge plus one `export type ... from` edge.
+    // STRUCT-241.13 roll-forward: the parcel-construction leaf adds one
+    // inbound `import type { CadParcelLayoutSettings }` edge (first in edge
+    // order); still type-only, still no value edge.
     const hubToLeaf = { from: path.resolve(HUB), to: leaf, specifier: LAY_SPECIFIER, kind: 'type' };
-    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([hubToLeaf, hubToLeaf]);
+    expect(graph.edges.filter((edge) => edge.to === leaf)).toEqual([
+      {
+        from: path.resolve(path.join(CAD_DIR, 'cadTransactionsParcelConstructionCommandTypes.ts')),
+        to: leaf, specifier: './cadParcelLayoutTypes', kind: 'type',
+      },
+      hubToLeaf, hubToLeaf,
+    ]);
     expect(graph.nodes.filter((node) => node === leaf)).toHaveLength(1);
     expect(graph.edges.filter(
       (edge) => (edge.from === leaf || edge.to === leaf) && edge.kind !== 'type',
@@ -782,8 +791,8 @@ describe('STRUCT-241.7 full-src graph pins', () => {
     // inside `src`).
     // STRUCT-241.11 roll-forward: +2 nodes / +6 type edges (same
     // allowlist as the scoped pin; every 241.11 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1677);
-    expect(graph.edges.length).toBe(7581);
+    expect(graph.nodes.length).toBe(1679);
+    expect(graph.edges.length).toBe(7586);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,

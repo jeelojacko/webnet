@@ -54,6 +54,10 @@ import type { CadAnalysisCommandPayload } from './cadTransactionsAnalysisCommand
 // type-only leaves; the hub splices both unions in the original position.
 import type { CadFeatureLineCommandPayload } from './cadTransactionsFeatureLineCommandTypes';
 import type { CadDesignSurfaceCommandPayload } from './cadTransactionsDesignSurfaceCommandTypes';
+// STRUCT-241.13: alignment (6) + parcel-construction (9) command payload slices are
+// type-only leaves; the hub splices both unions in the original position.
+import type { CadAlignmentCommandPayload } from './cadTransactionsAlignmentCommandTypes';
+import type { CadParcelConstructionCommandPayload } from './cadTransactionsParcelConstructionCommandTypes';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -62,7 +66,6 @@ import type {
   CadEntityId,
   CadLayerId,
   CadGripHandleKind,
-  CadParcelLayoutSettings,
   CadPointGroup,
   CadPointGroupId,
   CadPointGroupQuery,
@@ -509,108 +512,8 @@ export type CadCommand =
       aheadTangentPoint: { x: number; y: number; label: string };
       radius: number;
     }
-  | {
-      key: 'ALIGNMENT_CREATE';
-      sourceEntityIds: CadEntityId[];
-      name?: string;
-      startStation?: number;
-    }
-  | {
-      key: 'ALIGNMENT_OFFSET_CREATE';
-      alignmentEntityId: CadEntityId;
-      offset: number;
-      name?: string;
-    }
-  | {
-      key: 'ALIGNMENT_STATION_REPORT';
-      alignmentEntityId: CadEntityId;
-      pointEntityId: CadEntityId;
-    }
-  | {
-      key: 'ALIGNMENT_STATION_EQUATION';
-      alignmentEntityId: CadEntityId;
-      backStation: number;
-      aheadStation: number;
-    }
-  | {
-      key: 'ALIGNMENT_OFFSET_POINT';
-      alignmentEntityId: CadEntityId;
-      station: number;
-      offset: number;
-      label?: string;
-    }
-  | {
-      key: 'ALIGNMENT_INTERVAL_POINTS';
-      alignmentEntityId: CadEntityId;
-      interval: number;
-      startStation?: number;
-      endStation?: number;
-      labelPrefix?: string;
-    }
-  | {
-      key: 'PARCEL_CREATE';
-      sourceEntityIds: CadEntityId[];
-    }
-  | {
-      key: 'PARCEL_SPLIT';
-      parcelEntityId: CadEntityId;
-      splitLineEntityId: CadEntityId;
-    }
-  | {
-      key: 'PARCEL_SPLIT_BEARING';
-      parcelEntityId: CadEntityId;
-      throughPointX: number;
-      throughPointY: number;
-      throughPointLabel?: string;
-      bearing: string;
-    }
-  | {
-      key: 'PARCEL_SPLIT_AREA';
-      parcelEntityId: CadEntityId;
-      throughPointX: number;
-      throughPointY: number;
-      throughPointLabel?: string;
-      targetAreaSquareMeters: number;
-    }
-  | {
-      key: 'PARCEL_SPLIT_SLIDE';
-      parcelEntityId: CadEntityId;
-      frontageEntityId?: CadEntityId | null;
-      frontageParcelSegmentIds?: string[] | null;
-      targetAreaSquareMeters: number;
-      minFrontageMeters: number;
-      alternative: 'start' | 'end';
-      settings: CadParcelLayoutSettings;
-    }
-  | {
-      key: 'PARCEL_SPLIT_SWING';
-      parcelEntityId: CadEntityId;
-      frontageEntityId?: CadEntityId | null;
-      frontageParcelSegmentIds?: string[] | null;
-      targetAreaSquareMeters: number;
-      minFrontageMeters: number;
-      alternative: 'start' | 'end';
-      settings: CadParcelLayoutSettings;
-    }
-  | {
-      key: 'PARCELCOURSEARC';
-      parcelEntityId: CadEntityId;
-      courseId: string;
-      arcEntityId: CadEntityId;
-    }
-  | {
-      key: 'PARCELCOURSELINE';
-      parcelEntityId: CadEntityId;
-      courseId: string;
-    }
-  | {
-      key: 'PARCEL_LAYOUT_AUTO';
-      parcelEntityId: CadEntityId;
-      frontageEntityId?: CadEntityId | null;
-      frontageParcelSegmentIds?: string[] | null;
-      tool: 'slide' | 'swing';
-      settings: CadParcelLayoutSettings;
-    }
+  | CadAlignmentCommandPayload
+  | CadParcelConstructionCommandPayload
   | ({ key: 'LINETABLE' } & CadSurveyTableCreatePayload)
   | ({ key: 'CURVETABLE' } & CadSurveyTableCreatePayload)
   | ({ key: 'PARCELTABLE' } & CadSurveyTableCreatePayload)
