@@ -246,6 +246,10 @@ export const viewportHiddenEntityIds = (
  * reference-stable unless its caches/version change. Both session slots are
  * pinned by presence + `version` + their session-cache provenance (see
  * `sameContourInputs` / `sameVolumeInputs`).
+ *
+ * The top-level key set is itself fail-closed: `sameInputs` validates both
+ * sides against `TOP_INPUT_KNOWN_KEYS` before comparing fields, so a newly
+ * added build input (present on both sides) forces a rebuild until gated.
  */
 export interface CadDisplaySceneBuildInputs {
   lineweightDisplay: LineweightDisplayMode;
@@ -317,6 +321,22 @@ const VOLUME_INPUT_KNOWN_KEYS: ReadonlySet<string> = new Set([
 /** True only when every own key of `value` is in the slot's allowlist. */
 const hasOnlyKnownKeys = (value: object, knownKeys: ReadonlySet<string>): boolean =>
   ownKeys(value).every((key) => knownKeys.has(key));
+
+/**
+ * Known own-keys for the TOP-LEVEL build inputs. Mirrors the per-slot session
+ * allowlists: `sameKeys` alone proves only that the two key SETS match, so a
+ * new scene-relevant input key present on BOTH sides (even with equal values)
+ * would compare equal field-by-field while bypassing the guard. Validating
+ * both sides against this allowlist BEFORE any field comparison keeps a newly
+ * added top-level input fail-closed until it is explicitly gated here.
+ */
+const TOP_INPUT_KNOWN_KEYS: ReadonlySet<string> = new Set([
+  'lineweightDisplay',
+  'surfaceCache',
+  'surfaceRevisionIndex',
+  'surfaceContourInputs',
+  'surfaceVolumeInputs',
+]);
 
 /**
  * The contour scene input is rebuilt by the shell whenever `cadProject`
@@ -391,13 +411,21 @@ const sameVolumeInputs = (previous: unknown, next: unknown): boolean => {
 const sameInputs = (
   previous: CadDisplaySceneBuildInputs,
   next: CadDisplaySceneBuildInputs,
-): boolean =>
-  sameKeys(previous, next) &&
-  previous.lineweightDisplay === next.lineweightDisplay &&
-  previous.surfaceCache === next.surfaceCache &&
-  previous.surfaceRevisionIndex === next.surfaceRevisionIndex &&
-  sameContourInputs(previous.surfaceContourInputs, next.surfaceContourInputs) &&
-  sameVolumeInputs(previous.surfaceVolumeInputs, next.surfaceVolumeInputs);
+): boolean => {
+  // Allowlist MUST precede field comparison (mirrors the session slots): a new
+  // top-level input key present on BOTH sides with different OR equal values is
+  // unproven provenance, so the guard fails closed until the key is gated.
+  if (!hasOnlyKnownKeys(previous, TOP_INPUT_KNOWN_KEYS)) return false;
+  if (!hasOnlyKnownKeys(next, TOP_INPUT_KNOWN_KEYS)) return false;
+  return (
+    sameKeys(previous, next) &&
+    previous.lineweightDisplay === next.lineweightDisplay &&
+    previous.surfaceCache === next.surfaceCache &&
+    previous.surfaceRevisionIndex === next.surfaceRevisionIndex &&
+    sameContourInputs(previous.surfaceContourInputs, next.surfaceContourInputs) &&
+    sameVolumeInputs(previous.surfaceVolumeInputs, next.surfaceVolumeInputs)
+  );
+};
 
 /** Every top-level project slice except `layers` must be the same reference. */
 const sameNonLayerProjectSlices = (previous: CadProject, next: CadProject): boolean => {

@@ -1643,6 +1643,56 @@ describe('PERF-CAD-SCENE.1 guard unit contract', () => {
     ).toBe(true);
   });
 
+  it('fails closed when the TOP-LEVEL build inputs gain an unknown key', () => {
+    const project = lineProject(2);
+    // Same unknown key on BOTH sides with DIFFERENT values: `sameKeys` alone
+    // would accept it while the five named fields compare equal, so the
+    // top-level allowlist must reject it before any field comparison.
+    expect(
+      canReuseCadDisplaySceneBase(
+        {
+          project,
+          scene: emptyScene(),
+          inputs: { ...inputs, extraBuildKey: { v: 'previous' } } as CadDisplaySceneBuildInputs,
+        },
+        project,
+        { ...inputs, extraBuildKey: { v: 'next' } } as CadDisplaySceneBuildInputs,
+      ),
+    ).toBe(false);
+    // Same unknown key on BOTH sides with an EQUAL (same-reference) value is
+    // still unproven provenance — the allowlist fails closed, not value-diff.
+    const extraBuildKey = { v: 'same' };
+    expect(
+      canReuseCadDisplaySceneBase(
+        {
+          project,
+          scene: emptyScene(),
+          inputs: { ...inputs, extraBuildKey } as CadDisplaySceneBuildInputs,
+        },
+        project,
+        { ...inputs, extraBuildKey } as CadDisplaySceneBuildInputs,
+      ),
+    ).toBe(false);
+    // SAME-IDENTITY build-inputs object carrying an unknown key fails closed:
+    // no identity shortcut may bypass the top-level allowlist.
+    const dirtyInputs = { ...inputs, extraBuildKey: {} } as CadDisplaySceneBuildInputs;
+    expect(
+      canReuseCadDisplaySceneBase(
+        { project, scene: emptyScene(), inputs: dirtyInputs },
+        project,
+        dirtyInputs,
+      ),
+    ).toBe(false);
+    // Positive control: the KNOWN five-field shape still reuses.
+    expect(
+      canReuseCadDisplaySceneBase(
+        { project, scene: emptyScene(), inputs: { ...inputs } },
+        project,
+        { ...inputs },
+      ),
+    ).toBe(true);
+  });
+
   it('falsifiability: a loosened guard that ignores entities would pass an entity edit', () => {
     const project = lineProject(4);
     const moved = replaceCadProjectEntities(
