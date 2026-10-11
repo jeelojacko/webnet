@@ -1224,7 +1224,8 @@ describe('PERF-188.2 benchmark (logged)', () => {
           `redo=${redoClones}clones/${median(redoMs).toFixed(2)}ms ` +
           `noOp=${noOpClones}clones ` +
           `BEFORE +skippedClone=${median(skippedCloneMs).toFixed(2)}ms/clone ` +
-          `(unoptimized estimate commit=${median(commitMs).toFixed(2)}+${median(skippedCloneMs).toFixed(2)}ms)`,
+          `(skipped-clone-only estimate, NOT a paired BEFORE measurement; see ` +
+          `docs/evidence/perf1882-certified-normalized-sync/validation.md for paired results)`,
       );
 
       expect(commitClones).toBe(ROUNDS);
@@ -1299,5 +1300,223 @@ describe('PERF-188.2 benchmark (logged)', () => {
     expect(normalizationMountClones).toBeGreaterThanOrEqual(1);
     expect(certifiedClones).toBe(1);
     expect(noOpClones).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// H. Load-bearing second-normalization-discard proof
+// ---------------------------------------------------------------------------
+//
+// The certificate short-circuits the persistence sync before the clone-first
+// fall-through at useSurveyCadWorkspacePersistence.ts:183-196. That fall-through
+// clones `{ ...current, updatedAt: fresh ISO, project: cadProject,
+// parcelLayout, showParcelLabels }` through `cloneCadDrawingDocument`, then
+// discards the clone when the cloned signature/layout/labels equal `current`'s.
+// The certificate is only sound if re-running that exact logic on the
+// just-published certified document would ALSO discard the clone. These tests
+// replay the fall-through verbatim on the published certified document and
+// assert the discard. Each scenario carries a non-canonical control proving the
+// same assertion is falsifiable (not tautological).
+
+interface PersistenceRerun {
+  next: CadDrawingDocument;
+  sigSame: boolean;
+  layoutSame: boolean;
+  labelsSame: boolean;
+  discarded: boolean;
+}
+
+/**
+ * Exact reproduction of the persistence fall-through the certificate skips
+ * (useSurveyCadWorkspacePersistence.ts:183-196). `current` is the published
+ * certified document; `cadProject` is the current history project.
+ */
+const rerunPersistenceNormalization = (
+  current: CadDrawingDocument,
+  cadProject: CadProject,
+  parcelLayout: CadParcelLayoutUiState | undefined,
+  showParcelLabels: boolean,
+): PersistenceRerun => {
+  const currentSignature = buildCadProjectSignature(current.project);
+  const next = cloneCadDrawingDocument({
+    ...current,
+    updatedAt: new Date().toISOString(),
+    project: cadProject,
+    parcelLayout,
+    showParcelLabels,
+  });
+  const sigSame = currentSignature === buildCadProjectSignature(next.project);
+  const layoutSame =
+    JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(next.parcelLayout ?? null);
+  const labelsSame = (current.showParcelLabels ?? true) === next.showParcelLabels;
+  return { next, sigSame, layoutSame, labelsSame, discarded: sigSame && layoutSame && labelsSame };
+};
+
+/**
+ * The load-bearing proof assertion: re-cloning the certified document is a
+ * discarded no-op, and the published drawing is value-identical to the clone.
+ * Any meaningful normalization divergence (key order, purpose, legacy point
+ * source, layout, labels) flips `sigSame`/`discarded` and fails here.
+ */
+const expectCertifiedRerunDiscards = (
+  published: CadDrawingDocument,
+  cadProject: CadProject,
+): void => {
+  const rerun = rerunPersistenceNormalization(
+    published,
+    cadProject,
+    published.parcelLayout,
+    published.showParcelLabels ?? true,
+  );
+  expect(rerun.sigSame).toBe(true);
+  expect(rerun.layoutSame).toBe(true);
+  expect(rerun.labelsSame).toBe(true);
+  expect(rerun.discarded).toBe(true);
+  // The published drawing behaves identically to the re-cloned output.
+  expect(deepValue(rerun.next.project)).toEqual(deepValue(published.project));
+  expect(deepValue(rerun.next.parcelLayout ?? null)).toEqual(
+    deepValue(published.parcelLayout ?? null),
+  );
+  expect(rerun.next.showParcelLabels).toBe(published.showParcelLabels ?? true);
+};
+
+/**
+ * Control: the SAME assertion must fail on a non-canonical input. The clone
+ * migrates/sanitizes/reorders, so the clone is NOT discarded and the certified
+ * no-op assertion throws. Proves `expectCertifiedRerunDiscards` is falsifiable.
+ */
+const expectNonCanonicalRerunDiverges = (
+  current: CadDrawingDocument,
+  cadProject: CadProject,
+): void => {
+  const rerun = rerunPersistenceNormalization(
+    current,
+    cadProject,
+    current.parcelLayout,
+    current.showParcelLabels ?? true,
+  );
+  expect(rerun.sigSame).toBe(false);
+  expect(rerun.discarded).toBe(false);
+  expect(deepValue(rerun.next.project)).not.toEqual(deepValue(current.project));
+  expect(() => expectCertifiedRerunDiscards(current, cadProject)).toThrow();
+};
+
+describe('PERF-188.2 certified no-op equivalence proof', () => {
+  it('ordinary controlled commit: re-running the skipped persistence clone is a discarded no-op', async () => {
+    const project = buildProjectWithEntities(6);
+    const harness = await createControlledHarness(buildDrawing(project));
+    await harness.settle();
+    await act(async () => {
+      expect(renameLayer(harness.api(), project.layers[0]!.id, 'noop-commit')).toBe(true);
+    });
+    await harness.settle();
+
+    // Mutation covered: if the certified publish were not canonical (e.g. the
+    // wrapper stopped cloning/normalizing), the second clone would change the
+    // signature and `discarded` would be false here.
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+  });
+
+  it('undo: re-running the skipped persistence clone is a discarded no-op', async () => {
+    const project = buildProjectWithEntities(6);
+    const harness = await createControlledHarness(buildDrawing(project));
+    await act(async () => {
+      renameLayer(harness.api(), project.layers[0]!.id, 'noop-undo');
+    });
+    await act(async () => {
+      harness.api().undo();
+    });
+    await harness.settle();
+
+    // Mutation covered: undo publishes a fresh baseline clone; if that clone or
+    // the history baseline diverged from canonical, the discard flips false.
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+  });
+
+  it('redo: re-running the skipped persistence clone is a discarded no-op', async () => {
+    const project = buildProjectWithEntities(6);
+    const harness = await createControlledHarness(buildDrawing(project));
+    await act(async () => {
+      renameLayer(harness.api(), project.layers[0]!.id, 'noop-redo');
+    });
+    await act(async () => {
+      harness.api().undo();
+    });
+    await act(async () => {
+      harness.api().redo();
+    });
+    await harness.settle();
+
+    // Mutation covered: redo republishes a history snapshot clone; a
+    // normalization gap in that republish would make the discard false.
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+  });
+
+  it('LandXML imported-TIN commit: re-running the skipped persistence clone is a discarded no-op', async () => {
+    const initial = createBlankCadDrawingDocument({ units: 'm' });
+    const harness = await createControlledHarness(initial, { withSurfaceCache: true });
+    await harness.settle();
+    await act(async () => {
+      const payload = commitPayload();
+      harness.api().runLandXmlImport(payload.preview, payload.fileName, payload.commitSelection);
+    });
+    await harness.settle();
+    expect(harness.drawing().project.surfaces).toHaveLength(1);
+
+    // Mutation covered: imported TIN surfaces carry nested provenance/faces;
+    // if the publish skipped surface normalization the second clone would
+    // reorder/sanitize and the discard would be false.
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+  });
+
+  it('draft plotFrame:false commit: re-running the skipped persistence clone is a discarded no-op', async () => {
+    const project = buildProjectWithEntities(3);
+    const draft = buildDraftWithPlotFrame(project, false);
+    const harness = await createControlledHarness(buildDrawing(project, { draft }));
+    await harness.settle();
+    await act(async () => {
+      expect(renameLayer(harness.api(), project.layers[0]!.id, 'noop-draft')).toBe(true);
+    });
+    await harness.settle();
+    expect(harness.drawing().draft?.sheets[0]?.viewports[0]?.plotFrame).toBe(false);
+
+    // Mutation covered: the explicit plotFrame:false is restored by the drawing
+    // clone; if it were dropped, the re-clone would not reproduce the published
+    // layout payload. The discard guard still runs on project/layout/labels.
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+  });
+
+  it('legacy pointGroupId input: normalized publish re-clones to a discarded no-op; raw input diverges', async () => {
+    const rawProject = legacyPointGroupSurfaceProject();
+    const harness = await createControlledHarness(buildDrawing(rawProject));
+    await harness.settle();
+
+    // Mount normalization published the canonical surface; the certified doc
+    // re-clones to a no-op against the normalized history project.
+    const source = harness.drawing().project.surfaces![0]!.definition.pointSource;
+    expect(source).toEqual({ kind: 'point-group', pointGroupIds: ['g1'] });
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+
+    // Control: the PRE-normalization legacy document must not be treated as a
+    // no-op. `cloneCadProject` migrates `pointGroupId` -> `pointGroupIds`, so
+    // the same assertion fails here — the proof is not tautological.
+    const rawDrawing = buildDrawing(legacyPointGroupSurfaceProject());
+    expectNonCanonicalRerunDiverges(rawDrawing, rawDrawing.project);
+  });
+
+  it('key-reordered imported-TIN input: normalized publish re-clones to a discarded no-op; raw input diverges', async () => {
+    const rawProject = nonCanonicalImportedTinSurfaceProject();
+    const harness = await createControlledHarness(buildDrawing(rawProject));
+    await harness.settle();
+
+    const published = harness.drawing().project.surfaces![0]!;
+    expect(Object.keys(published.definition)).toEqual(['importedTin', 'pointSource']);
+    expect(published.purpose).not.toBe('not-a-real-purpose');
+    expectCertifiedRerunDiscards(harness.drawing(), harness.api().cadProject);
+
+    // Control: the raw key order + unknown purpose are both normalized by the
+    // clone, so the pre-normalization document fails the same discard assertion.
+    const rawDrawing = buildDrawing(nonCanonicalImportedTinSurfaceProject());
+    expectNonCanonicalRerunDiverges(rawDrawing, rawDrawing.project);
   });
 });

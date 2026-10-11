@@ -33,7 +33,7 @@ provenance-certified commits/undo/redo; every non-certified path is byte-for-byt
 the pre-change clone-first behavior. Mount normalization and the legacy residual
 are unchanged.
 
-## Behaviour coverage (`tests/cad_transaction_certified_sync_perf1882.test.tsx`, 26 tests)
+## Behaviour coverage (`tests/cad_transaction_certified_sync_perf1882.test.tsx`, 33 tests)
 
 - **A** canonical commit/undo/redo clone once; the published project is a
   distinct reference from the history project yet value-equal; pre-commit
@@ -68,6 +68,15 @@ are unchanged.
 - **G** negative controls: the ownership-boundary clone is never omitted
   (published project is an independent ref); a source-project mismatch always
   normalizes; a raw-signature bypass cannot leak a legacy shape.
+- **H** certified no-op equivalence proof (7 tests): re-running the exact
+  would-be persistence clone-then-compare (`cloneCadDrawingDocument` +
+  `buildCadProjectSignature` + layout/labels) against each certified publish
+  (ordinary commit, undo, redo, LandXML imported-TIN, draft `plotFrame:false`)
+  discards the clone (signatures/layout/labels equal, deep project equality
+  with the published doc). Legacy `pointGroupId` and key-reordered-TIN
+  controls prove falsifiability: the same assertion FAILS pre-normalization
+  (`sigSame === false`, `discarded === false`) and the certified assertion
+  helper throws on those inputs.
 
 `tests/cad_transaction_clone_perf188.test.tsx` was updated narrowly for the
 2 -> 1 counts (titles/comments/assertions); its 19 tests stay green and keep
@@ -75,25 +84,99 @@ covering mount, no-op, external adopt, drawing switch, legacy residual,
 draft/layout/labels, non-canonical mounts, snapshot isolation, and budget
 liveness. No graph goldens changed.
 
-## Benchmark (logged only, no CI thresholds)
+## Benchmark (paired BEFORE vs AFTER, logged only, no CI thresholds)
 
-1k/10k entities of a real `CadProject` + drawing; fixtures built outside every
-timed window; 2 warmup rounds; 10 measured rounds; medians reported.
+Method: one identical harness (the suite's `buildProjectWithEntities` +
+`createControlledHarness` + `renameLayer` pattern) was run against two source
+trees on the same machine, Node v26.10.0, and toolchain — BEFORE = pinned
+`92ba37e1` (clone-twice persistence normalization), AFTER = HEAD `dc5a1d2a`
+(certified skip). Fixtures are built outside every timed window; 2 warmup
+rounds are excluded; each run performs 15 measured CAD commit/undo/redo rounds;
+5 BEFORE/AFTER runs were interleaved (75 timed rounds per side per entity
+count). The timed loop (acts, order, rounds, warmup) is byte-identical on both
+sides; only the source tree under test changes. Clone counts are real
+production `cloneCadDrawingDocument` calls intercepted at the hooks' import
+boundary; times are logged only and never asserted.
 
-| Entities | Path | Clones / 10 rounds | Median ms | Skipped clone ms | BEFORE estimate ms |
+### Observed medians (pooled: 5 runs x 15 rounds = 75 samples)
+
+| Entities | Path | BEFORE median ms | AFTER median ms | Delta ms | Delta % |
 |---|---|---|---|---|---|
-| 1,000 | commit | 10 | 1.93 | 0.10 | ~2.03 |
-| 1,000 | undo | 10 | 1.78 | — | ~1.88 |
-| 1,000 | redo | 10 | 1.72 | — | ~1.82 |
-| 1,000 | no-op | 0 | — | — | — |
-| 10,000 | commit | 10 | 15.86 | 0.48 | ~16.34 |
-| 10,000 | undo | 10 | 13.87 | — | ~14.35 |
-| 10,000 | redo | 10 | 14.49 | — | ~14.97 |
-| 10,000 | no-op | 0 | — | — | — |
+| 1,000 | commit | 3.49 | 2.23 | -1.26 | -36.2% |
+| 1,000 | undo | 2.79 | 2.07 | -0.72 | -25.7% |
+| 1,000 | redo | 2.68 | 2.00 | -0.69 | -25.6% |
+| 10,000 | commit | 29.71 | 15.98 | -13.72 | -46.2% |
+| 10,000 | undo | 20.79 | 13.38 | -7.40 | -35.6% |
+| 10,000 | redo | 20.57 | 13.53 | -7.03 | -34.2% |
 
-BEFORE is `AFTER + skipped-clone` (the exact normalization clone the
-certificate removes). Counts are deterministic; times are machine/JIT-noise
-dominated and are never asserted.
+### Variance (pooled per-round p25 / median / p75; observed min–max)
+
+| Entities | Path | BEFORE p25/med/p75 (min–max) | AFTER p25/med/p75 (min–max) |
+|---|---|---|---|
+| 1,000 | commit | 2.78 / 3.49 / 3.86 (2.56–7.58) | 2.03 / 2.23 / 2.41 (1.83–6.22) |
+| 1,000 | undo | 2.58 / 2.79 / 3.51 (2.44–9.27) | 1.88 / 2.07 / 3.11 (1.74–6.76) |
+| 1,000 | redo | 2.58 / 2.68 / 3.10 (2.45–4.47) | 1.86 / 2.00 / 2.17 (1.76–4.22) |
+| 10,000 | commit | 28.41 / 29.71 / 30.45 (20.26–62.22) | 14.39 / 15.98 / 16.77 (12.88–39.65) |
+| 10,000 | undo | 19.69 / 20.79 / 21.47 (18.57–22.81) | 12.92 / 13.38 / 14.78 (10.49–15.64) |
+| 10,000 | redo | 19.46 / 20.57 / 20.98 (18.47–31.66) | 12.81 / 13.53 / 14.61 (11.33–34.89) |
+
+Per-run medians were stable: the spread of the 5 run medians is <=0.22 ms at
+1,000 entities and <=1.09 ms at 10,000 (e.g. 10k BEFORE commit 29.01–30.10 ms,
+AFTER commit 15.87–16.46 ms). The wide per-round maxima are JIT/GC/descheduling
+outliers in the tail and are not used for the deltas. These times are machine
+and JIT-noise sensitive; only the clone counts are deterministic.
+
+### Clone counts (deterministic)
+
+| Entities | Path | BEFORE clones / 15-round run | AFTER clones / 15-round run |
+|---|---|---|---|
+| 1,000 | commit | 30 (2/round) | 15 (1/round) |
+| 1,000 | undo | 30 (2/round) | 15 (1/round) |
+| 1,000 | redo | 30 (2/round) | 15 (1/round) |
+| 1,000 | no-op | 0 | 0 |
+| 10,000 | commit | 30 (2/round) | 15 (1/round) |
+| 10,000 | undo | 30 (2/round) | 15 (1/round) |
+| 10,000 | redo | 30 (2/round) | 15 (1/round) |
+| 10,000 | no-op | 0 | 0 |
+
+Counts are conditional on the test layering. The AFTER counts are pinned by the
+committed suite (`expect(commitClones).toBe(ROUNDS)` and the undo/redo/no-op
+equivalents in `tests/cad_transaction_certified_sync_perf1882.test.tsx`); the
+BEFORE 2/round counts are observed on the pinned source and match the
+pre-change clone-first path (wrapper ownership clone + persistence
+normalization clone). The clone removed by the certificate is the persistence
+normalization clone it proves redundant.
+
+### Skipped-clone cost vs measured net operation savings
+
+The exact clone the certificate skips was timed warm in the same loop:
+**0.09 ms (1,000)** and **0.33 ms (10,000)** median (0.07–0.31 / 0.31–1.95 ms
+observed min–max). A separate micro-benchmark on the same fixtures gives
+`buildCadProjectSignature` **0.51 ms (1,000)** / **2.47 ms (10,000)** and a
+warm `cloneCadDrawingDocument` **0.12 ms (1,000)** / **0.31 ms (10,000)**.
+
+The measured net operation savings (e.g. -1.26 ms / -13.72 ms commit at
+1k/10k) are larger than the standalone skipped-clone cost because the certified
+skip also bypasses the surrounding persistence work — two entry
+`buildCadProjectSignature` calls, the clone, a third signature on the cloned
+result, and the layout/labels comparison — and because the discarded clone's
+allocation/GC pressure is not captured by a warm single-clone timing. Report
+both: the clone alone is sub-millisecond; the certificate removes the whole
+redundant normalization step.
+
+The old estimate rows below assumed `BEFORE = AFTER + skipped-clone`; the
+paired run shows that estimate understated the real BEFORE cost (1k commit
+estimated ~2.03 ms vs observed 3.49 ms), so those rows are **superseded and not
+used**.
+
+| Entities | Path | Superseded BEFORE estimate ms | Observed BEFORE median ms |
+|---|---|---|---|
+| 1,000 | commit | ~2.03 | 3.49 |
+| 1,000 | undo | ~1.88 | 2.79 |
+| 1,000 | redo | ~1.82 | 2.68 |
+| 10,000 | commit | ~16.34 | 29.71 |
+| 10,000 | undo | ~14.35 | 20.79 |
+| 10,000 | redo | ~14.97 | 20.57 |
 
 Supplemental path counts on the same 1k fixture (logged): the legacy
 `onPersistedStateChange` fallback pays 3 clones on the first commit and 2
@@ -104,7 +187,8 @@ normalization clones; a certified commit pays 1; a no-op pays 0.
 ## Commands run
 
 - New suite `tests/cad_transaction_certified_sync_perf1882.test.tsx`:
-  **26/26 pass** (P2-1/P2-2 pins each fail against the pre-fix code).
+  **33/33 pass** (P2-1/P2-2 pins each fail against the pre-fix code; §H
+  equivalence proofs fail on any normalization divergence).
 - Updated suite `tests/cad_transaction_clone_perf188.test.tsx`:
   **19/19 pass**.
 - Focused regression batch (11 files): both perf suites +
@@ -118,9 +202,9 @@ normalization clones; a certified commit pays 1; a no-op pays 0.
   **76/76 pass**.
 - `npx tsc --noEmit`: exit 0.
 - `npx eslint` on both changed source files and both test files: 0 errors.
-- `npm run check:portable-paths`: 6439 tracked paths, 0 violations.
-- `npm run build`: clean (built in 11.80s).
-- `npm run test:agent`: **1063 files passed / 11411 passed / 1 skipped** with
+- `npm run check:portable-paths`: 6442 tracked paths, 0 violations.
+- `npm run build`: clean (built in 14.41s).
+- `npm run test:agent`: **1063 files passed / 11423 passed / 1 skipped** with
   only the 3 known pre-existing, ignored/private Study Desktop real-data
   failures (`study_ai_unit_calibration_v5`, `study_ai_unit_preflight`, and the
   third frozen-corpus suite). These are unrelated to this change and were not
