@@ -188,7 +188,10 @@ normalization clones; a certified commit pays 1; a no-op pays 0.
 
 - New suite `tests/cad_transaction_certified_sync_perf1882.test.tsx`:
   **33/33 pass** (P2-1/P2-2 pins each fail against the pre-fix code; §H
-  equivalence proofs fail on any normalization divergence).
+  equivalence proofs fail when project-signature/layout/labels normalization
+  diverges — the rerun's discard decision compares exactly those fields, and
+  the deep-equality assertions cover project/layout/labels, not draft or
+  other drawing fields).
 - Updated suite `tests/cad_transaction_clone_perf188.test.tsx`:
   **19/19 pass**.
 - Focused regression batch (11 files): both perf suites +
