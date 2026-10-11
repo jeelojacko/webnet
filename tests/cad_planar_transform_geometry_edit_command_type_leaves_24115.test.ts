@@ -1381,6 +1381,12 @@ describe('STRUCT-241.15 full-src graph pins', () => {
 });
 
 describe('STRUCT-241.15 negative controls (in-memory mutations only)', () => {
+  // Pristine disk contents captured at collection time (describe bodies run
+  // before any `it`), so the worktree-clean guard compares against the
+  // pre-control state instead of reading the files twice at the end.
+  const pristinePt = fs.readFileSync(PT_LEAF, 'utf8');
+  const pristineGe = fs.readFileSync(GE_LEAF, 'utf8');
+  const pristineHub = fs.readFileSync(HUB, 'utf8');
   const ptSource = (): string => fs.readFileSync(PT_LEAF, 'utf8');
   const geSource = (): string => fs.readFileSync(GE_LEAF, 'utf8');
   const hubSource = (): string => fs.readFileSync(HUB, 'utf8');
@@ -1750,9 +1756,12 @@ describe('STRUCT-241.15 negative controls (in-memory mutations only)', () => {
   });
 
   it('leaves the worktree clean (mutations never touch disk)', () => {
-    expect(fs.readFileSync(PT_LEAF, 'utf8')).toBe(ptSource());
-    expect(fs.readFileSync(GE_LEAF, 'utf8')).toBe(geSource());
-    expect(fs.readFileSync(HUB, 'utf8')).toBe(hubSource());
+    expect(fs.readFileSync(PT_LEAF, 'utf8')).toBe(pristinePt);
+    expect(fs.readFileSync(GE_LEAF, 'utf8')).toBe(pristineGe);
+    expect(fs.readFileSync(HUB, 'utf8')).toBe(pristineHub);
+    expect(ptSource()).toBe(pristinePt);
+    expect(geSource()).toBe(pristineGe);
+    expect(hubSource()).toBe(pristineHub);
     // Static proof: every mutation above goes through in-memory parseText;
     // this file performs no filesystem writes (patterns split so this
     // assertion cannot match its own source text).
