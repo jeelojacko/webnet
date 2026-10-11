@@ -90,6 +90,12 @@ checked, 14 stashes in order, no ribbon/config/fixture/permission
 changes; reviewer ran no tests itself — all validation parent-run, see
 above).
 
+## Controller acceptance correction
+
+- Restored the exact historical Phase 18F section JSDoc immediately above `CadSurfacePointSource` in the definition leaf (the type body and all other eleven-contract parity remained unchanged).
+- Added an explicit regression pin for the original comment plus a negative in-memory mutation that removes the comment and must fail the positive pin.
+- This documentation/test-only correction does not change the hub or either leaf's emitted runtime JavaScript, dependency graphs, persisted schema or CAD behavior. The previous 5/5 CI success applied to the pre-correction head; a new exact-head CI run is required before merge.
+
 ## Risks / non-goals
 
 - Cohesion-only extraction; zero runtime behavior delta (emit + digests

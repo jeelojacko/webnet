@@ -534,7 +534,16 @@ describe('STRUCT-241.10 baseline union shapes pinned verbatim', () => {
   });
 });
 
+const ORIGINAL_PHASE18F_HEADER = '/** Phase 18F: TIN surface model (engine only; never triangle entities). */\n\nexport type CadSurfacePointSource =';
+const assertOriginalPhase18FHeader = (source: string): void => {
+  expect(source).toContain(ORIGINAL_PHASE18F_HEADER);
+};
+
 describe('STRUCT-241.10 JSDoc parity (comments travel with the declarations)', () => {
+  it('preserves the original Phase 18F section JSDoc directly above CadSurfacePointSource', () => {
+    assertOriginalPhase18FHeader(defSource());
+  });
+
   it.each(DEFINITION_JSDOC_MARKERS)('definition leaf keeps marker %s', (marker) => {
     expect(defSource()).toContain(marker);
   });
@@ -946,6 +955,13 @@ describe('STRUCT-241.10 full-src graph pins', () => {
 // ---------------------------------------------------------------------------
 
 describe('STRUCT-241.10 negative controls (in-memory mutations only)', () => {
+  it('fails the original Phase 18F section JSDoc pin if the header disappears', () => {
+    const original = defSource();
+    const mutated = original.replace(ORIGINAL_PHASE18F_HEADER, 'export type CadSurfacePointSource =');
+    expect(mutated).not.toBe(original);
+    expect(() => assertOriginalPhase18FHeader(mutated)).toThrow();
+  });
+
   it('fails the shape pin when the legacy pointGroupId member is dropped', () => {
     const mutated = defSource().replace('pointGroupIds?: string[]; pointGroupId?: string', 'pointGroupIds?: string[]');
     expect(mutated).not.toBe(defSource());
