@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createCadHistoryState, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import { buildStableCadProjectSignature } from '../../engine/cad/cadProjectState';
+import { areCadProjectsCanonicallyEqual } from '../../engine/cad/cadProjectState';
 import type { CadProject } from '../../engine/cad/cadTypes';
 
 export const useSurveyCadWorkspaceHistory = (
@@ -53,9 +53,19 @@ export const useSurveyCadWorkspaceHistory = (
   // the just-committed transaction and disable undo/redo.
   // Signature-guarded: the workspace's own persistence writes compare
   // equal, so no update loop is possible.
+  // PERF-187: the previous double `buildStableCadProjectSignature` call paid
+  // two complete canonical traversals + allocations + JSON.stringify per
+  // effect run. `areCadProjectsCanonicallyEqual` preserves the exact same
+  // key-order-insensitive equivalence (clone-normalized TIN surfaces stay
+  // equal; genuine external edits still adopt) with a same-reference fast
+  // path plus, per distinct-reference comparison, one cheap domain walk per
+  // side and one allocation-light early-exit comparison walk with zero
+  // serialization, falling back to the original canonical serializer on
+  // exotic values rather than risking undo loss.
   useEffect(() => {
     if (resetKeyRef.current !== resetKey) return;
-    if (buildStableCadProjectSignature(history.present.project) === buildStableCadProjectSignature(baseProject)) return;
+    if (history.present.project === baseProject) return;
+    if (areCadProjectsCanonicallyEqual(history.present.project, baseProject)) return;
     replaceHistory(
       createCadHistoryState(
         baseProject,
