@@ -74,6 +74,11 @@ const PT_LEAF24115 = path.join(CAD_DIR, 'cadTransactionsPlanarTransformCommandTy
 const GE_LEAF24115 = path.join(CAD_DIR, 'cadTransactionsGeometryEditCommandTypes.ts');
 const PT_ALIAS24115 = 'CadPlanarTransformCommandPayload';
 const GE_ALIAS24115 = 'CadGeometryEditCommandPayload';
+// STRUCT-241.16 roll-forward: the two new leaf paths/aliases.
+const SV_LEAF24116 = path.join(CAD_DIR, 'cadTransactionsSheetViewportCommandTypes.ts');
+const PL_LEAF24116 = path.join(CAD_DIR, 'cadTransactionsPolylineTopologyCommandTypes.ts');
+const SV_ALIAS24116 = 'CadSheetViewportCommandPayload';
+const PL_ALIAS24116 = 'CadPolylineTopologyCommandPayload';
 
 const abs = (relative: string): string => path.join(REPO_ROOT, relative);
 const relPosix = (absolute: string): string => path.relative(REPO_ROOT, absolute).split(path.sep).join('/');
@@ -353,6 +358,10 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   // geometry-edit (7) aliases per-member (all single-keyed, no widening).
   const planar = leafMemberDescriptors(PT_LEAF24115, 'planar', PT_ALIAS24115);
   const geometryedit = leafMemberDescriptors(GE_LEAF24115, 'geometryedit', GE_ALIAS24115);
+  // STRUCT-241.16 roll-forward: expand the sheet/viewport (6) +
+  // polyline-topology (2) aliases per-member (all single-keyed, no widening).
+  const sheetviewport = leafMemberDescriptors(SV_LEAF24116, 'sheet', SV_ALIAS24116);
+  const polytopology = leafMemberDescriptors(PL_LEAF24116, 'polytopo', PL_ALIAS24116);
   const alignment = leafMemberDescriptors(
     abs('src/engine/cad/cadTransactionsAlignmentCommandTypes.ts'), 'alignment', 'CadAlignmentCommandPayload');
   const parcelConstruction = leafMemberDescriptors(
@@ -379,6 +388,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (name === BC_ALIAS) members.push(...basiccurve);
       else if (name === PT_ALIAS24115) members.push(...planar);
       else if (name === GE_ALIAS24115) members.push(...geometryedit);
+      else if (name === SV_ALIAS24116) members.push(...sheetviewport);
+      else if (name === PL_ALIAS24116) members.push(...polytopology);
       else if (name === 'CadAlignmentCommandPayload') members.push(...alignment);
       else if (name === 'CadParcelConstructionCommandPayload') members.push(...parcelConstruction);
       else members.push(name);
@@ -1063,22 +1074,31 @@ describe('STRUCT-241.14 baseline shapes: Extract<CadCommand> vs leaf vs Base*', 
 });
 
 describe('STRUCT-241.14 hub union splice order and member counts', () => {
-  it('measures 61 top-level members and documents the 72 -> 61 extraction', () => {
+  it('measures 55 top-level members and documents the 61 -> 55 extraction', () => {
     const counts = hubTopLevelCounts();
     // STRUCT-241.15 roll-forward: 13 planar-transform + geometry-edit inline
     // members replaced by 2 alias references (19 inline, 35 refs, 7 intersections).
-    expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 });
-    // Re-inlining the two 241.15 leaves restores the 241.14 shape
+    // STRUCT-241.16 roll-forward: 8 sheet/viewport + polyline-topology inline
+    // members replaced by 2 alias references (11 inline, 37 refs, 7 intersections).
+    expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 });
+    // Re-inlining the two 241.16 leaves restores the 241.15 shape
+    // 61 = 55 + 6 + 2 - 2 (11 inline + 37 refs + 7 intersections at the
+    // 241.16 pin; the 61 shape held 19 inline + 35 refs + 7).
+    expect(leafMemberDescriptors(SV_LEAF24116, 'sheet', SV_ALIAS24116).length).toBe(6);
+    expect(leafMemberDescriptors(PL_LEAF24116, 'polytopo', PL_ALIAS24116).length).toBe(2);
+    expect(counts.total + 6 + 2 - 2).toBe(61);
+    // Re-inlining the two 241.15 leaves on top restores the 241.14 shape
     // 72 = 61 + 6 + 7 - 2 (19 inline + 35 refs + 7 intersections at the
-    // 241.15 pin; the 72 shape held 32 inline + 33 refs + 7).
+    // 241.15 pin; the 72 shape held 32 inline + 33 refs + 7) — from the
+    // 241.16 pin: 72 = 55 + 6 + 2 + 6 + 7 - 4.
     expect(leafMemberDescriptors(PT_LEAF24115, 'planar', PT_ALIAS24115).length).toBe(6);
     expect(leafMemberDescriptors(GE_LEAF24115, 'geometryedit', GE_ALIAS24115).length).toBe(7);
-    expect(counts.total + 6 + 7 - 2).toBe(72);
+    expect(counts.total + 6 + 2 + 6 + 7 - 4).toBe(72);
     // Re-inlining the two 241.14 leaves on top restores the 241.13 shape
     // 89 = 72 + 13 + 6 - 2.
     expect(leafMemberDescriptors(PR_LEAF, 'primitive', PR_ALIAS).length).toBe(13);
     expect(leafMemberDescriptors(BC_LEAF, 'basiccurve', BC_ALIAS).length).toBe(6);
-    expect(counts.total + 6 + 7 + 13 + 6 - 4).toBe(89);
+    expect(counts.total + 6 + 7 + 6 + 2 + 13 + 6 - 6).toBe(89);
   });
 
   it('splices the primitive group between ERASE and TRAVERSE', () => {
@@ -1122,7 +1142,7 @@ describe('STRUCT-241.14 hub union splice order and member counts', () => {
 
   it('leaves no inline primitive/basic-curve key behind in the hub union', () => {
     const inlineSets = hubInlineKeySets();
-    expect(inlineSets.length).toBe(19);
+    expect(inlineSets.length).toBe(11);
     const moved: Set<string> = new Set([...EXPECTED_MOVED_LITERALS]);
     for (const set of inlineSets) {
       for (const key of set) {
@@ -1316,10 +1336,10 @@ describe('STRUCT-241.14 CAD+F2F graph pins', () => {
     // Post-241.13 baseline 507 / 2475; the two type-only leaves add +2 nodes
     // and +3 type edges (2 hub imports + 2 primitive-draw out-edges + 0
     // basic-curve out-edges - 1 retired hub tangent-solver edge).
-    // STRUCT-241.15 roll-forward: 511 / 2483 (+2 nodes, +5 type edges:
-    // 2 hub imports + 3 geometry-edit out-edges + 0 planar out-edges).
-    expect(graph.nodes.length).toBe(511);
-    expect(graph.edges.length).toBe(2483);
+    // STRUCT-241.16 roll-forward: 513 / 2486 (+2 nodes, +3 type edges:
+    // 2 hub imports + 1 polyline out-edge + 0 sheet out-edges).
+    expect(graph.nodes.length).toBe(513);
+    expect(graph.edges.length).toBe(2486);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1403,9 +1423,9 @@ describe('STRUCT-241.14 full-src graph pins', () => {
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // Post-241.13 baseline 1679 / 7586; the two leaves add the same +2 / +3
     // (every 241.14 edge resolves inside `src`).
-    // STRUCT-241.15 roll-forward: 1683 / 7594 (same +2 / +5).
-    expect(graph.nodes.length).toBe(1683);
-    expect(graph.edges.length).toBe(7594);
+    // STRUCT-241.16 roll-forward: 1685 / 7597 (same +2 / +3).
+    expect(graph.nodes.length).toBe(1685);
+    expect(graph.edges.length).toBe(7597);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
@@ -1628,7 +1648,7 @@ describe('STRUCT-241.14 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });
@@ -1640,7 +1660,7 @@ describe('STRUCT-241.14 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });

@@ -65,6 +65,11 @@ const GE_LEAF = path.join(CAD_DIR, 'cadTransactionsGeometryEditCommandTypes.ts')
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 const PT_ALIAS = 'CadPlanarTransformCommandPayload';
 const GE_ALIAS = 'CadGeometryEditCommandPayload';
+// STRUCT-241.16 roll-forward: the two new leaf paths/aliases.
+const SV_LEAF24116 = path.join(CAD_DIR, 'cadTransactionsSheetViewportCommandTypes.ts');
+const PL_LEAF24116 = path.join(CAD_DIR, 'cadTransactionsPolylineTopologyCommandTypes.ts');
+const SV_ALIAS24116 = 'CadSheetViewportCommandPayload';
+const PL_ALIAS24116 = 'CadPolylineTopologyCommandPayload';
 
 const abs = (relative: string): string => path.join(REPO_ROOT, relative);
 const relPosix = (absolute: string): string => path.relative(REPO_ROOT, absolute).split(path.sep).join('/');
@@ -383,6 +388,10 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
   // 6 + 7, no widening).
   const planar = leafMemberDescriptors(PT_LEAF, 'planar', PT_ALIAS);
   const geometryedit = leafMemberDescriptors(GE_LEAF, 'geometryedit', GE_ALIAS);
+  // STRUCT-241.16 roll-forward: expand the sheet/viewport (6) +
+  // polyline-topology (2) aliases per-member (all single-keyed, no widening).
+  const sheetviewport = leafMemberDescriptors(SV_LEAF24116, 'sheet', SV_ALIAS24116);
+  const polytopology = leafMemberDescriptors(PL_LEAF24116, 'polytopo', PL_ALIAS24116);
   const alias = findAlias(hub, 'hub', 'CadCommand');
   const members: string[] = [];
   const visit = (node: ts.TypeNode): void => {
@@ -407,6 +416,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (name === 'CadParcelConstructionCommandPayload') members.push(...parcelConstruction);
       else if (name === PT_ALIAS) members.push(...planar);
       else if (name === GE_ALIAS) members.push(...geometryedit);
+      else if (name === SV_ALIAS24116) members.push(...sheetviewport);
+      else if (name === PL_ALIAS24116) members.push(...polytopology);
       else members.push(name);
       return;
     }
@@ -801,10 +812,13 @@ describe('STRUCT-241.15 leaf presence and key order', () => {
       expect(fs.readFileSync(leaf, 'utf8')).not.toContain('// Phase');
     }
     // The hub splice regions (SURVEYTABLE_EDIT through HELMERT2D, and
-    // PROJECTTRANSFORM through SHEET_ADD) carry no line or block comments.
+    // PROJECTTRANSFORM through the sheet/viewport alias) carry no line or
+    // block comments.
     const hubText = fs.readFileSync(HUB, 'utf8');
     const surveyIdx = hubText.indexOf("key: 'SURVEYTABLE_EDIT'");
-    const sheetIdx = hubText.indexOf("key: 'SHEET_ADD'");
+    // STRUCT-241.16 roll-forward: SHEET_ADD is no longer inline, so the
+    // region now ends at the sheet/viewport alias splice.
+    const sheetIdx = hubText.indexOf(`| ${SV_ALIAS24116}`);
     expect(surveyIdx).toBeGreaterThanOrEqual(0);
     expect(sheetIdx).toBeGreaterThan(surveyIdx);
     const region = hubText.slice(surveyIdx, sheetIdx);
@@ -1018,14 +1032,22 @@ describe('STRUCT-241.15 baseline shapes: Extract<CadCommand> vs leaf vs Base*', 
 });
 
 describe('STRUCT-241.15 hub union splice order and member counts', () => {
-  it('measures 61 top-level members and documents the 72 -> 61 extraction', () => {
+  it('measures 55 top-level members and documents the 61 -> 55 extraction', () => {
     const counts = hubTopLevelCounts();
-    expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 });
-    // Re-inlining the two leaves restores the 241.14 shape 72 = 61 + 6 + 7
-    // bodies − 2 alias references... precisely: 72 = 61 + 6 + 7 − 2.
+    // STRUCT-241.16 roll-forward: 8 sheet/viewport + polyline-topology inline
+    // members replaced by 2 alias references (11 inline, 37 refs, 7 intersections).
+    expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 });
+    // Re-inlining the two 241.16 leaves restores the 241.15 shape
+    // 61 = 55 + 6 + 2 - 2 (11 inline + 37 refs + 7 intersections at the
+    // 241.16 pin; the 61 shape held 19 inline + 35 refs + 7).
+    expect(leafMemberDescriptors(SV_LEAF24116, 'sheet', SV_ALIAS24116).length).toBe(6);
+    expect(leafMemberDescriptors(PL_LEAF24116, 'polytopo', PL_ALIAS24116).length).toBe(2);
+    expect(counts.total + 6 + 2 - 2).toBe(61);
+    // Re-inlining the two 241.15 leaves on top restores the 241.14 shape
+    // 72 = 61 + 6 + 7 - 2 (from the 241.16 pin: 72 = 55 + 6 + 2 + 6 + 7 - 4).
     expect(leafMemberDescriptors(PT_LEAF, 'planar', PT_ALIAS).length).toBe(6);
     expect(leafMemberDescriptors(GE_LEAF, 'geometryedit', GE_ALIAS).length).toBe(7);
-    expect(counts.total + 6 + 7 - 2).toBe(72);
+    expect(counts.total + 6 + 2 + 6 + 7 - 4).toBe(72);
   });
 
   it('splices the planar group between SURVEYTABLE_EDIT and HELMERT2D', () => {
@@ -1036,12 +1058,14 @@ describe('STRUCT-241.15 hub union splice order and member counts', () => {
     expect(seq[survey + 2]).toEqual({ kind: 'inline', label: 'HELMERT2D' });
   });
 
-  it('splices the geometry-edit group between PROJECTTRANSFORM and SHEET_ADD', () => {
+  it('splices the geometry-edit group between PROJECTTRANSFORM and the sheet/viewport alias', () => {
     const seq = hubMemberSequence();
     const project = seq.findIndex((m) => m.kind === 'inline' && m.label === 'PROJECTTRANSFORM');
     expect(seq[project]).toEqual({ kind: 'inline', label: 'PROJECTTRANSFORM' });
     expect(seq[project + 1]).toEqual({ kind: 'ref', label: GE_ALIAS });
-    expect(seq[project + 2]).toEqual({ kind: 'inline', label: 'SHEET_ADD' });
+    // STRUCT-241.16 roll-forward: SHEET_ADD now arrives via the
+    // sheet/viewport alias reference.
+    expect(seq[project + 2]).toEqual({ kind: 'ref', label: SV_ALIAS24116 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1062,7 +1086,7 @@ describe('STRUCT-241.15 hub union splice order and member counts', () => {
 
   it('leaves no inline planar/geometry-edit key behind in the hub union', () => {
     const inlineSets = hubInlineKeySets();
-    expect(inlineSets.length).toBe(19);
+    expect(inlineSets.length).toBe(11);
     const moved: Set<string> = new Set([...EXPECTED_MOVED_LITERALS]);
     for (const set of inlineSets) {
       for (const key of set) {
@@ -1091,11 +1115,13 @@ describe('STRUCT-241.15 hub union splice order and member counts', () => {
     expect(shapes[2]!.props).toEqual(EXPECTED_PROJECTTRANSFORM_SHAPE.map(pinShape));
     const hubText = fs.readFileSync(HUB, 'utf8');
     expect(hubText).toContain("export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';");
-    // TRAVERSE/BATCH_COGO and the sheet/viewport run stay inline too.
+    // TRAVERSE/BATCH_COGO stay inline too; the sheet/viewport run now
+    // arrives via its alias (STRUCT-241.16 roll-forward).
     const seq = hubMemberSequence(hub);
-    for (const label of ['TRAVERSE', 'BATCH_COGO', 'SHEET_ADD', 'SHEET_DELETE', 'SURVEYTABLE_EDIT']) {
+    for (const label of ['TRAVERSE', 'BATCH_COGO', 'SURVEYTABLE_EDIT']) {
       expect(seq.some((m) => m.kind === 'inline' && m.label === label), `${label} inline`).toBe(true);
     }
+    expect(seq.some((m) => m.kind === 'ref' && m.label === SV_ALIAS24116), 'sheet alias').toBe(true);
   });
 
   it('retires only the proven-unused cadTypes specifiers from the hub', () => {
@@ -1277,11 +1303,11 @@ describe('STRUCT-241.15 CAD+F2F graph pins', () => {
     const typeCycles = findCycles(graph.nodes, graph.type);
     expect([valueCycles.cyclic.length, valueCycles.cyclicNodes.size]).toEqual([0, 0]);
     expect([typeCycles.cyclic.length, typeCycles.cyclicNodes.size]).toEqual([0, 0]);
-    // Post-241.14 baseline 509 / 2478; the two type-only leaves add +2 nodes
-    // and +5 type edges (2 hub imports + 3 geometry-edit out-edges + 0
-    // planar out-edges − 0 retired edges).
-    expect(graph.nodes.length).toBe(511);
-    expect(graph.edges.length).toBe(2483);
+    // STRUCT-241.16 roll-forward: +2 nodes / +3 type edges (2 hub imports +
+    // 1 polyline out-edge + 0 sheet out-edges − 0 retired edges; the hub
+    // keeps its ./cadTypes barrel edge).
+    expect(graph.nodes.length).toBe(513);
+    expect(graph.edges.length).toBe(2486);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 1585,
       uniqPairs: 1567,
@@ -1370,8 +1396,10 @@ describe('STRUCT-241.15 full-src graph pins', () => {
     expect(typeCycles.cyclic.reduce((sum, component) => sum + component.length, 0)).toBe(38);
     // Post-241.14 baseline 1681 / 7589; the two leaves add the same +2 / +5
     // (every 241.15 edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1683);
-    expect(graph.edges.length).toBe(7594);
+    // STRUCT-241.16 roll-forward: 1685 / 7597 (same +2 / +3; every 241.16
+    // edge resolves inside `src`).
+    expect(graph.nodes.length).toBe(1685);
+    expect(graph.edges.length).toBe(7597);
     expect(pairDigest(graph)).toEqual({
       valueEdges: 4444,
       uniqPairs: 4385,
@@ -1685,7 +1713,7 @@ describe('STRUCT-241.15 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });
@@ -1697,7 +1725,7 @@ describe('STRUCT-241.15 negative controls (in-memory mutations only)', () => {
     const mutated = source.replace(refLine, '');
     expect(mutated).not.toBe(source);
     const counts = hubTopLevelCounts(parseText('mutated-hub.ts', mutated));
-    expect(() => expect(counts).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 })).toThrow();
+    expect(() => expect(counts).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 })).toThrow();
     const flat = hubFlattenedKeys(parseText('mutated-hub.ts', mutated));
     expect(() => expect(flat.length).toBe(168)).toThrow();
   });

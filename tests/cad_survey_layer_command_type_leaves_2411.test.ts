@@ -101,6 +101,11 @@ const BC_LEAF = path.join(CAD_DIR, 'cadTransactionsBasicCurveCommandTypes.ts');
 // are expanded by the flattened view so the 168 effective members stay pinned.
 const PT_LEAF24115 = path.join(CAD_DIR, 'cadTransactionsPlanarTransformCommandTypes.ts');
 const GE_LEAF24115 = path.join(CAD_DIR, 'cadTransactionsGeometryEditCommandTypes.ts');
+// STRUCT-241.16 roll-forward: sheet/viewport (6) + polyline-topology (2)
+// leaves are expanded by the flattened view so the 168 effective members
+// stay pinned.
+const SV_LEAF24116 = path.join(CAD_DIR, 'cadTransactionsSheetViewportCommandTypes.ts');
+const PL_LEAF24116 = path.join(CAD_DIR, 'cadTransactionsPolylineTopologyCommandTypes.ts');
 const HUB = path.join(CAD_DIR, 'cadTransactions.types.ts');
 
 const LAYER_ALIAS = 'CadLayerCommandPayload';
@@ -346,6 +351,12 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
     PT_LEAF24115, 'planar leaf', 'CadPlanarTransformCommandPayload');
   const geometryeditKeys = unionMemberDescriptors(
     GE_LEAF24115, 'geometryedit leaf', 'CadGeometryEditCommandPayload');
+  // STRUCT-241.16 roll-forward: expand the sheet/viewport (6) +
+  // polyline-topology (2) leaves (all single-keyed, no widening).
+  const sheetViewportKeys = unionMemberDescriptors(
+    SV_LEAF24116, 'sheet leaf', 'CadSheetViewportCommandPayload');
+  const polylineTopologyKeys = unionMemberDescriptors(
+    PL_LEAF24116, 'polyline leaf', 'CadPolylineTopologyCommandPayload');
   const keyDescriptor = (member: ts.TypeLiteralNode): string | null => {
     const keyProp = member.members.find(
       (m): m is ts.PropertySignature =>
@@ -378,6 +389,8 @@ const hubFlattenedKeys = (source?: ts.SourceFile): string[] => {
       else if (flat.typeName.text === 'CadBasicCurveCommandPayload') members.push(...basiccurveKeys);
       else if (flat.typeName.text === 'CadPlanarTransformCommandPayload') members.push(...planarKeys);
       else if (flat.typeName.text === 'CadGeometryEditCommandPayload') members.push(...geometryeditKeys);
+      else if (flat.typeName.text === 'CadSheetViewportCommandPayload') members.push(...sheetViewportKeys);
+      else if (flat.typeName.text === 'CadPolylineTopologyCommandPayload') members.push(...polylineTopologyKeys);
       else members.push(flat.typeName.text);
       return;
     }
@@ -1442,10 +1455,10 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // STRUCT-241.14 roll-forward: 89 -> 72 top-level (32 inline, 33 refs,
     // 7 intersections); flattened effective members stay 168 via the
     // primitive-draw + basic-curve leaves.
-    // STRUCT-241.15 roll-forward: 72 -> 61 top-level (19 inline, 35 refs,
+    // STRUCT-241.16 roll-forward: 61 -> 55 top-level (11 inline, 37 refs,
     // 7 intersections); flattened effective members stay 168 via the
-    // planar-transform + geometry-edit leaves.
-    expect(hubTopLevelCounts()).toEqual({ total: 61, inline: 19, refs: 35, intersections: 7 });
+    // sheet/viewport + polyline-topology leaves.
+    expect(hubTopLevelCounts()).toEqual({ total: 55, inline: 11, refs: 37, intersections: 7 });
   });
 
   it('flattens to the exact 168 effective members in the original sequence', () => {
@@ -1484,7 +1497,11 @@ describe('STRUCT-241.1 hub union splice order and member counts', () => {
     // parcel-construction members moved to leaves).
     // STRUCT-241.14 roll-forward: 51 -> 32 inline (19 primitive-draw +
     // basic-curve members moved to leaves).
-    expect(inlineSets.length).toBe(19);
+    // STRUCT-241.15 roll-forward: 32 -> 19 inline (13 planar-transform +
+    // geometry-edit members moved to leaves).
+    // STRUCT-241.16 roll-forward: 19 -> 11 inline (6 sheet/viewport +
+    // 2 polyline-topology members moved to leaves).
+    expect(inlineSets.length).toBe(11);
     for (const set of inlineSets) {
       for (const key of set) {
         expect(key.startsWith('LAYER_'), `inline ${key} still in hub`).toBe(false);
