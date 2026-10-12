@@ -4,7 +4,8 @@ import {
   cadPointFromAzimuthDistance,
   type CadNamedPoint,
 } from './cadGeometry';
-import { cadPointFromBearingDistance, formatCadBearing } from './cadCogo';
+import { cadPointFromBearingDistance } from './cadCogo';
+import { formatCadBearing } from './cadBearingFormat';
 import type { CadBatchParsedCurve, CadBatchParsedLine } from './cadBatchCogoTypes';
 
 const isNumeric = (value: string): boolean => {
