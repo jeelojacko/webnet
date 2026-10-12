@@ -54,10 +54,20 @@ export interface CadProjectLookup {
   readonly blockDefinitionById: ReadonlyMap<string, CadBlockDefinition>;
 }
 
-/** Last-wins on duplicate ids, matching the renderer's existing Map behavior. */
+/**
+ * Last-wins on duplicate ids, matching the renderer's existing Map behavior.
+ * PERF-CAD-RENDER.1: one-pass for-loop + `Map.set` (no intermediate tuple
+ * array). `Map.set` keeps the FIRST insertion position while a later
+ * duplicate overwrites the value, so duplicate-id last-wins and
+ * first-insertion order are both preserved.
+ */
 const byId = <T extends { id: string }>(
   entries: readonly T[] | undefined,
-): ReadonlyMap<string, T> => new Map((entries ?? []).map((entry) => [entry.id, entry]));
+): ReadonlyMap<string, T> => {
+  const map = new Map<string, T>();
+  for (const entry of entries ?? []) map.set(entry.id, entry);
+  return map;
+};
 
 export const buildCadProjectLookup = (project: CadProject): CadProjectLookup => ({
   entityById: byId(project.entities),
