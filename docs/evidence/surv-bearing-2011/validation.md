@@ -180,3 +180,15 @@ change sets. Value SCC 0/0 and TYPE SCC 7/38 are unchanged.
 - `importReviewFormatters.parseDirectionAngleTokenDeg` still maps malformed
   tokens to `0` (calls `dmsToRad` directly).
 - #200 owns the broader quadrant/DMS dedup.
+
+## SURV-DMS-200.2 correction (post-hoc, append-only)
+
+The compact-token dialect pin `45.3000 -> 45.511…` recorded above was itself a
+float-carry observation (45°30'40"), not the true `DDD.MMSS` reading. After the
+SURV-DMS-200.2 textual extraction the importer value is `45.5` (45°30'00"), so
+the CAD `45.3` vs importer `45.5` split is preserved but at the corrected
+importer value. `45.1234` shifts only in its last bits to
+`45.20944444444445`. Re-validated focused suites: `angles.spec`,
+`surv_bearing_2011_format_dialect`, `surv_dir_2001_face2_invalid_angle_gate`,
+new `dms_compact_carry_2002`, plus RW5/JobXML/parse/direction/import-review
+neighbours (all green); `tsc`/`eslint` clean; portable-paths 6453/0.
