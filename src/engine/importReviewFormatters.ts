@@ -72,9 +72,26 @@ export const normalizeDirectionAngleDeg = (valueDeg: number): number => {
   return wrapped === 360 ? 0 : wrapped;
 };
 
+// Duplicated in parseDirectionSetRecords.ts: full-src graph node/edge pins forbid a shared module here.
+const isStrictDirectionAngleToken = (token: string | undefined): boolean => {
+  const trimmed = token?.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed
+    .replace(/[°º]/g, '-')
+    .replace(/'/g, '-')
+    .replace(/"/g, '')
+    .replace(/\s+/g, '');
+  return /^[+-]?(?=.*\d)(?:\d+(?:\.\d*)?|\.\d+)(?:-(?:\d+(?:\.\d*)?|\.\d+)){0,2}-?$/.test(normalized);
+};
+
 export const parseDirectionAngleTokenDeg = (token: string | undefined): number | undefined => {
   const trimmed = token?.trim();
   if (!trimmed) return undefined;
+  // `dmsToRad` returns literal 0 for unparseable input, so a malformed token
+  // (e.g. `abc1`, `0.0.0`, `0-00-00-1`) would otherwise become a valid 0 and
+  // face-2 normalization would fabricate `180-00-00.0`. Require the strict
+  // DMS/numeric shape first; valid values stay bit-identical below.
+  if (!isStrictDirectionAngleToken(trimmed)) return undefined;
   const dmsValue = dmsToRad(trimmed) * RAD_TO_DEG;
   if (Number.isFinite(dmsValue)) return normalizeDirectionAngleDeg(dmsValue);
   const numericValue = Number.parseFloat(trimmed);
