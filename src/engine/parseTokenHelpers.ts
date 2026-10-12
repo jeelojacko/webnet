@@ -325,10 +325,19 @@ export const extractHiHt = (tokens: string[]): { hi?: number; ht?: number; rest:
 
 export const toDegrees = (token: string): number => {
   if (!token) return Number.NaN;
-  const quadrant = parseQuadrantBearingTokenToRad(token);
+  const trimmed = token.trim();
+  if (!trimmed) return Number.NaN;
+  const quadrant = parseQuadrantBearingTokenToRad(trimmed);
   if (quadrant != null) return quadrant * RAD_TO_DEG;
-  if (token.includes('-')) return dmsToRad(token) * RAD_TO_DEG;
-  return parseFloat(token);
+  // Decimal-degree context (P/PH control records): strip exactly one leading
+  // sign before the hyphen decision so a signed decimal such as
+  // '-63.582441392' is read via parseFloat instead of the compact-DMS
+  // hyphen path in dmsToRad. Genuine hyphenated bodies ('-45-30-00') keep
+  // the bit-identical dmsToRad route with the sign included.
+  let probe = trimmed;
+  if (probe.startsWith('-') || probe.startsWith('+')) probe = probe.substring(1);
+  if (probe.includes('-')) return dmsToRad(trimmed) * RAD_TO_DEG;
+  return parseFloat(trimmed);
 };
 
 export const parseAngleTokenRad = (
@@ -341,7 +350,15 @@ export const parseAngleTokenRad = (
   if (!trimmed) return Number.NaN;
   const quadrant = parseQuadrantBearingTokenToRad(trimmed);
   if (quadrant != null) return quadrant;
-  if (trimmed.includes('-')) return dmsToRad(trimmed);
+  // Same sign-aware probe as `toDegrees`: strip exactly one leading sign
+  // before the hyphen decision so a single-part signed body (`-45.3000`) is
+  // not misrouted into the compact-DMS hyphen path. Genuine hyphenated bodies
+  // (`-45-30-00`) keep the bit-identical `dmsToRad` route with the sign
+  // included; single-part signed bodies fall through to the dd/dms mode logic
+  // below.
+  let probe = trimmed;
+  if (probe.startsWith('-') || probe.startsWith('+')) probe = probe.substring(1);
+  if (probe.includes('-')) return dmsToRad(trimmed);
   const val = parseFloat(trimmed);
   if (Number.isNaN(val)) return Number.NaN;
   const mode = state.angleUnits ?? fallbackMode;

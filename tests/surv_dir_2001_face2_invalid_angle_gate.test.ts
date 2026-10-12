@@ -152,13 +152,18 @@ describe('SURV-DIR-200.1 strict direction-angle shape gate (unit)', () => {
       ['90', 90],
       ['270', 270],
       // Compact DDD.MMSS; the review formatter normalizes after converting.
-      ['45.3000', 45.51111111111112],
+      // SURV-DMS-200.2 correction: prior 45.51111111111112 was a binary-carry
+      // observation (45°30'40"); compact `45.3000` is 45°30'00" = 45.5.
+      ['45.3000', 45.5],
       ['045-30-00', 45.5],
       ['45-', 45], // literal trailing-hyphen abbreviation (documented)
       ['45°', 45], // degree-symbol abbreviation
       ["45°30'", 45], // baseline reads the compact body as 45
       ['45-30-00.5', 45.5001388888889],
-      ['-45.5', 314.5],
+      // SURV-DMS-200.2 correction: prior 314.5 relied on the hyphen-branch
+      // accident for `-45.5`; stripping one leading sign first reads compact
+      // 45°50' = -45.8333…, normalized to 314.1666….
+      ['-45.5', 314.1666666666667],
       ['0-00-00', 0],
       ['0.0000', 0],
       ['.5', 0.8333333333333144],
@@ -190,8 +195,10 @@ describe('SURV-DIR-200.1 face-2 normalization no longer fabricates 180', () => {
     expect(normalizeDirectionLineFace2ToFace1('DN 2 000-00-00.0')).toBe('DN 2 180-00-00.0');
     expect(normalizeDirectionLineFace2ToFace1('DN 2 180-00-00.0')).toBe('DN 2 000-00-00.0');
     expect(normalizeDirectionLineFace2ToFace1('DN 2 90-00-00.0')).toBe('DN 2 270-00-00.0');
+    // SURV-DMS-200.2 correction: prior `225-30-40.0` came from the compact
+    // binary carry (45°30'40"); `45.3000` is 45°30'00", so face-2 is 225-30-00.0.
     expect(normalizeDirectionLineFace2ToFace1('DM 5 45.3000 10.0000')).toBe(
-      'DM 5 225-30-40.0 10.0000',
+      'DM 5 225-30-00.0 10.0000',
     );
   });
 });

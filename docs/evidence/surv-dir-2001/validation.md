@@ -178,3 +178,20 @@ Symbol handling in the quadrant parser belongs to a separate explicit phase.
 Slot-2 worker model went unavailable mid-phase (3× upstream 400); the
 test+docs-only P2c was applied as parent emergency fallback per routing
 rules and needs no re-review of src/ (unchanged since r4).
+
+## SURV-DMS-200.2 correction (post-hoc, append-only)
+
+`dmsToRad`'s compact `DDD.MMSS` branch carried 4-digit minutes into seconds and
+routed single-part negatives (`-45.5`) through the hyphenated branch. The fix
+strips one leading sign before the branch decision and extracts the compact
+body textually. Corrections to values pinned earlier:
+
+| token / path | prior (carry / accident) | corrected |
+| --- | --- | --- |
+| `parseDirectionAngleTokenDeg('45.3000')` | `45.51111111111112` (45°30'40") | `45.5` (45°30'00") |
+| `parseDirectionAngleTokenDeg('-45.5')` | `314.5` (hyphen-branch accident) | `314.1666666666667` (compact 45°50') |
+| `normalizeDirectionLineFace2ToFace1('DM 5 45.3000 10.0000')` | `DM 5 225-30-40.0 10.0000` | `DM 5 225-30-00.0 10.0000` |
+
+`parseDirectionAngleTokenDeg('-45.3000')` now reads compact 45°30' = 314.5
+(previously the misroute read it as -45.3° and normalized to 314.7). The strict
+shape gate is unchanged; malformed tokens remain undefined.
