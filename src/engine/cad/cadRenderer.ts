@@ -1703,11 +1703,20 @@ export const buildCadDisplayScene = (
   options?: BuildCadDisplaySceneOptions,
 ): CadDisplayScene => {
   const ctx = sceneRenderContext(project, options);
+  // PERF-CAD-RENDER.1: single strict-order pass. Local output array is
+  // created per call and never retained; entity order × per-entity
+  // primitive order is preserved exactly by appending each visible
+  // entity's primitives in sequence. `if (!entity.visible) continue`
+  // keeps the legacy truthy visibility check.
+  const primitives: CadDisplayPrimitive[] = [];
+  for (const entity of project.entities) {
+    if (!entity.visible) continue;
+    const entityPrimitives = toPrimitives(project, ctx, entity);
+    for (const primitive of entityPrimitives) primitives.push(primitive);
+  }
   return {
     bounds: project.bounds,
-    primitives: project.entities
-      .filter((entity) => entity.visible)
-      .flatMap((entity) => toPrimitives(project, ctx, entity)),
+    primitives,
     // Phase 18F — derived TIN layers alongside entity primitives. Empty
     // (not absent) when no surface is built so consumers skip uniformly.
     // Null cache (export scene, sheet viewports) = definition-only.
