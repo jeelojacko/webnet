@@ -171,6 +171,11 @@ const STRUCT_24115_ADDED_EDGES = 5;
 // no VALUE/MIXED change).
 const STRUCT_24116_ADDED_NODES = 2;
 const STRUCT_24116_ADDED_EDGES = 3;
+// SURV-BEARING-201.1 measured delta (one CAD value leaf: cadBearingFormat.ts,
+// with three value edges from cadCogoSummaries + cadCogoCurveMath +
+// cadBatchCogoParsing; no VALUE/MIXED change; outside the transform slice).
+const SURV_2011_ADDED_NODES = 1;
+const SURV_2011_ADDED_EDGES = 3;
 
 // STRUCT-195.12 cumulative scope: the parcel-diagnostics cycle break adds one
 // node (cadCogoParcelLineworkTopology) and repoints value edges among the 5
@@ -277,6 +282,31 @@ const GEO_19514_REMOVED = [
 const GEO_19514_ADDED = [
   ...GEO_LEAVES.map((leaf) => `mixed|${leaf}|${GEO_PRIMITIVES}`),
   `value|${GEO_FACADE}|${GEO_PRIMITIVES}`,
+].sort();
+
+// SURV-BEARING-201.1 cumulative scope: one new zero-import value leaf
+// (src/engine/cad/cadBearingFormat.ts) owns formatCadBearing, with three
+// added VALUE edges (cadCogoSummaries + cadCogoCurveMath +
+// cadBatchCogoParsing -> cadBearingFormat) and no removals. This is an
+// INDEPENDENT authorization proved in
+// tests/surv_bearing_2011_format_dialect.test.ts so the bearing-format
+// change cannot hide behind the trio, parcel, arc, or geometry change sets.
+const BEARING_FORMAT = 'src/engine/cad/cadBearingFormat.ts';
+const BEARING_COGO_SUMMARIES = 'src/engine/cad/cadCogoSummaries.ts';
+const BEARING_COGO_CURVE_MATH = 'src/engine/cad/cadCogoCurveMath.ts';
+const BEARING_BATCH_PARSING = 'src/engine/cad/cadBatchCogoParsing.ts';
+// Scoped to the new zero-import leaf only: cadCogoSummaries is also incident
+// to the authorized 195.13 arc edge, so matching the source modules would
+// double-count that change.
+const bearTouches = (key: string): boolean => {
+  const [, from, to] = key.split('|');
+  return from === BEARING_FORMAT || to === BEARING_FORMAT;
+};
+/** Independently verified SURV-BEARING-201.1 addition allowlist (3 value edges). */
+const BEARING_2011_ADDED = [
+  `value|${BEARING_COGO_SUMMARIES}|${BEARING_FORMAT}`,
+  `value|${BEARING_COGO_CURVE_MATH}|${BEARING_FORMAT}`,
+  `value|${BEARING_BATCH_PARSING}|${BEARING_FORMAT}`,
 ].sort();
 
 /** 12 kernel dependency modules whose imports moved facade → core. */
@@ -635,14 +665,14 @@ describe('STRUCT-195.11 module boundary (static parse)', () => {
 // 5. Graph delta allowlist vs frozen fixture.
 // ===========================================================================
 describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 parcel, STRUCT-195.13 arc-cogo, and STRUCT-195.14 geometry deltas)', () => {
-  it('touches only the relocated trio or the authorized 195.12/195.13/195.14 sets on every removed/added VALUE edge', () => {
+  it('touches only the relocated trio or the authorized 195.12/195.13/195.14/201.1 sets on every removed/added VALUE edge', () => {
     const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
     const movedValue = [...removed, ...added].filter(isValueEdgeKey);
     expect(movedValue.length).toBeGreaterThan(0);
     for (const key of movedValue) {
       const [, from, to] = key.split('|');
       const trio = RELOCATED_TRIO.has(from!) || RELOCATED_TRIO.has(to!);
-      expect(trio || parcelTouches(key) || arcTouches(key) || geoTouches(key), `${key} escapes the trio, parcel, arc, and geometry authorizations`).toBe(true);
+      expect(trio || parcelTouches(key) || arcTouches(key) || geoTouches(key) || bearTouches(key), `${key} escapes the trio, parcel, arc, geometry, and bearing authorizations`).toBe(true);
     }
   });
 
@@ -654,8 +684,15 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
 
   it('carries exactly the authorized STRUCT-195.13 arc-cogo delta (all kinds)', () => {
     const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
-    expect(removed.filter(arcTouches).sort()).toEqual(ARC_19513_REMOVED);
-    expect(added.filter(arcTouches).sort()).toEqual(ARC_19513_ADDED);
+    const isArc = (key: string): boolean => arcTouches(key) && !bearTouches(key);
+    expect(removed.filter(isArc).sort()).toEqual(ARC_19513_REMOVED);
+    expect(added.filter(isArc).sort()).toEqual(ARC_19513_ADDED);
+  });
+
+  it('carries exactly the authorized SURV-BEARING-201.1 cadBearingFormat delta (all kinds)', () => {
+    const { removed, added } = multisetDelta(BASELINE_DECODED.edges, currentRelEdges());
+    expect(removed.filter(bearTouches).sort()).toEqual([]);
+    expect(added.filter(bearTouches).sort()).toEqual(BEARING_2011_ADDED);
   });
 
   it('carries exactly the authorized STRUCT-195.14 geometry delta (all kinds)', () => {
@@ -666,7 +703,7 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
 
   it('removes exactly the facade kernel imports and the request->facade edge (non-parcel, non-arc, non-geometry remainder)', () => {
     const removedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).removed
-      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key) && !geoTouches(key)).sort();
+      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key) && !geoTouches(key) && !bearTouches(key)).sort();
     const expected = [
       ...KERNEL_DEPS.map((name) => `value|${FACADE}|${depPath(name)}`),
       `mixed|${FACADE}|${depPath('cadTransform2D')}`,
@@ -677,7 +714,7 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
 
   it('adds exactly the core kernel imports, facade->core, and request->core edges (non-parcel, non-arc, non-geometry remainder)', () => {
     const addedValue = multisetDelta(BASELINE_DECODED.edges, currentRelEdges()).added
-      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key) && !geoTouches(key)).sort();
+      .filter(isValueEdgeKey).filter((key) => !parcelTouches(key) && !arcTouches(key) && !geoTouches(key) && !bearTouches(key)).sort();
     const expected = [
       `value|${FACADE}|${KERNEL}`,
       ...KERNEL_DEPS.map((name) => `value|${KERNEL}|${depPath(name)}`),
@@ -699,7 +736,7 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     }
   });
 
-  it('adds exactly three nodes and eight edges cumulatively (195.13 and 195.14 are total-net-zero) and forms no new/expanded VALUE SCC', () => {
+  it('adds exactly the cumulative 195.11/195.12/195.13/195.14/201.1 node and edge deltas and forms no new/expanded VALUE SCC', () => {
     const graph = currentGraph();
     // STRUCT-241.1 adds exactly two type-only leaf nodes
     // (cadTransactionsLayerCommandTypes.ts +
@@ -714,13 +751,11 @@ describe('STRUCT-195.11 graph delta allowlist (cumulative with STRUCT-195.12 par
     // STRUCT-241.16 adds two type-only leaves with three type edges, also
     // outside the slice; VALUE SCC
     // expectations below are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES + STRUCT_24113_ADDED_NODES + STRUCT_24114_ADDED_NODES + STRUCT_24115_ADDED_NODES + STRUCT_24116_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES + STRUCT_24113_ADDED_EDGES + STRUCT_24114_ADDED_EDGES + STRUCT_24115_ADDED_EDGES + STRUCT_24116_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 3 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES + STRUCT_24113_ADDED_NODES + STRUCT_24114_ADDED_NODES + STRUCT_24115_ADDED_NODES + STRUCT_24116_ADDED_NODES + SURV_2011_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 8 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES + STRUCT_24113_ADDED_EDGES + STRUCT_24114_ADDED_EDGES + STRUCT_24115_ADDED_EDGES + STRUCT_24116_ADDED_EDGES + SURV_2011_ADDED_EDGES);
     // STRUCT-195.13 is a net-zero value-edge repoint and STRUCT-195.14 is a
-    // net-zero total-edge relocation (-6/+6), so the cumulative edge count
-    // is unchanged from the 195.12 measurement; nodes gain exactly the
-    // 195.14 primitives module. The SCC shape moves 1/7 -> 0/0 as the last
-    // geometry cycle dissolves.
+    // net-zero total-edge relocation (-6/+6); SURV-BEARING-201.1 adds exactly
+    // one node and three value edges. The SCC shape stays 0/0.
     const valueCycles = findCycles(graph.nodes, graph.value);
     expect(valueCycles.cyclic.length).toBe(0);
     expect(valueCycles.cyclicNodes.size).toBe(0);

@@ -191,6 +191,11 @@ const STRUCT_24115_ADDED_EDGES = 5;
 // no VALUE/MIXED change).
 const STRUCT_24116_ADDED_NODES = 2;
 const STRUCT_24116_ADDED_EDGES = 3;
+// SURV-BEARING-201.1 measured delta (one CAD value leaf: cadBearingFormat.ts,
+// with three value edges from cadCogoSummaries + cadCogoCurveMath +
+// cadBatchCogoParsing; no VALUE/MIXED change; outside the parcel slice).
+const SURV_2011_ADDED_NODES = 1;
+const SURV_2011_ADDED_EDGES = 3;
 
 /** Every baseline edge incident to one of the 5 parcel modules (41 edges). */
 const BASELINE_PARCEL_EDGES: readonly BaselineEdge[] = [
@@ -531,7 +536,7 @@ describe('STRUCT-195.12 parcel graph guard', () => {
     }
   });
 
-  it('adds exactly two nodes (topology + primitives modules) and seven edges overall', () => {
+  it('adds exactly the cumulative node/edge deltas (topology + primitives + bearing leaf) overall', () => {
     const graph = currentGraph();
     // STRUCT-195.14 adds exactly one node (cadGeometryPrimitives.ts) with a
     // net-zero total edge delta; 195.13 was already net-zero. STRUCT-241.1
@@ -548,10 +553,11 @@ describe('STRUCT-195.12 parcel graph guard', () => {
     // outside the parcel slice. STRUCT-241.15 adds two type-only leaves
     // with five type edges, also outside the parcel slice. STRUCT-241.16
     // adds two type-only leaves with three type edges, also outside the
-    // parcel slice. The frozen 41-edge
+    // parcel slice. SURV-BEARING-201.1 adds one value leaf with three value
+    // edges, also outside the parcel slice. The frozen 41-edge
     // parcel slice and its allowlists above are untouched.
-    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES + STRUCT_24113_ADDED_NODES + STRUCT_24114_ADDED_NODES + STRUCT_24115_ADDED_NODES + STRUCT_24116_ADDED_NODES);
-    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES + STRUCT_24113_ADDED_EDGES + STRUCT_24114_ADDED_EDGES + STRUCT_24115_ADDED_EDGES + STRUCT_24116_ADDED_EDGES);
+    expect(graph.nodes.length).toBe(BASELINE_NODE_COUNT + 2 + STRUCT_2411_ADDED_NODES + STRUCT_2412_ADDED_NODES + STRUCT_2413_ADDED_NODES + STRUCT_2414_ADDED_NODES + STRUCT_2415_ADDED_NODES + STRUCT_2416_ADDED_NODES + STRUCT_2417_ADDED_NODES + STRUCT_2418_ADDED_NODES + STRUCT_2419_ADDED_NODES + STRUCT_24110_ADDED_NODES + STRUCT_24111_ADDED_NODES + STRUCT_24112_ADDED_NODES + STRUCT_24113_ADDED_NODES + STRUCT_24114_ADDED_NODES + STRUCT_24115_ADDED_NODES + STRUCT_24116_ADDED_NODES + SURV_2011_ADDED_NODES);
+    expect(graph.edges.length).toBe(BASELINE_EDGE_COUNT + 7 + STRUCT_2411_ADDED_EDGES + STRUCT_2412_ADDED_EDGES + STRUCT_2413_ADDED_EDGES + STRUCT_2414_ADDED_EDGES + STRUCT_2415_ADDED_EDGES + STRUCT_2416_ADDED_EDGES + STRUCT_2417_ADDED_EDGES + STRUCT_2418_ADDED_EDGES + STRUCT_2419_ADDED_EDGES + STRUCT_24110_ADDED_EDGES + STRUCT_24111_ADDED_EDGES + STRUCT_24112_ADDED_EDGES + STRUCT_24113_ADDED_EDGES + STRUCT_24114_ADDED_EDGES + STRUCT_24115_ADDED_EDGES + STRUCT_24116_ADDED_EDGES + SURV_2011_ADDED_EDGES);
     expect(graph.nodes).toContain(abs(TOPOLOGY));
   });
 });

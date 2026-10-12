@@ -149,6 +149,23 @@ export const parseDmsAngleDegrees = (value: string): number | undefined => {
     .replace(/'/g, '-')
     .replace(/"/g, '')
     .replace(/\s+/g, '');
+  // dmsToRad returns 0 for unparseable input; require a strict numeric DMS
+  // shape here so a malformed token (including digit-bearing garbage like
+  // `abc1` or extra/multi-dot numerics like `0.0.0`) cannot become a real
+  // 0-degree observation at the importer boundary (dmsToRad itself is
+  // intentionally left untouched). Normalization above has already rewritten
+  // degree symbols to hyphens and stripped whitespace/quotes. Three rules:
+  //   1. every hyphen-separated segment is a single-dot decimal (`\d+.\d*`
+  //      or `.\d+`), so `0.0.0` is rejected;
+  //   2. at most three hyphen parts (degree/minute/seconds), so a 4th
+  //      segment like `0-00-00-1` is rejected instead of being a silent 0;
+  //   3. one optional trailing hyphen is allowed because degree-symbol
+  //      normalization turns `45°` into `45-` (abbreviated DMS), which
+  //      dmsToRad reads as 45 exactly as before. A literal `45-` therefore
+  //      remains valid and is not "fixed".
+  if (!/^[+-]?(?=.*\d)(?:\d+(?:\.\d*)?|\.\d+)(?:-(?:\d+(?:\.\d*)?|\.\d+)){0,2}-?$/.test(normalized)) {
+    return undefined;
+  }
   const parsed = dmsToRad(normalized) * RAD_TO_DEG;
   return Number.isFinite(parsed) ? parsed : undefined;
 };

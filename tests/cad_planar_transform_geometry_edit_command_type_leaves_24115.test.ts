@@ -1306,12 +1306,12 @@ describe('STRUCT-241.15 CAD+F2F graph pins', () => {
     // STRUCT-241.16 roll-forward: +2 nodes / +3 type edges (2 hub imports +
     // 1 polyline out-edge + 0 sheet out-edges − 0 retired edges; the hub
     // keeps its ./cadTypes barrel edge).
-    expect(graph.nodes.length).toBe(513);
-    expect(graph.edges.length).toBe(2486);
+    expect(graph.nodes.length).toBe(514);
+    expect(graph.edges.length).toBe(2489);
     expect(pairDigest(graph)).toEqual({
-      valueEdges: 1585,
-      uniqPairs: 1567,
-      sha: '0bc9bae1f87e81161f250fd5852730e56b9bdd1311b02257cdecf39dd4d2fcb7',
+      valueEdges: 1588,
+      uniqPairs: 1570,
+      sha: 'f1ef85bbd9e6cc3f0a7d9d82407a133dc92cf8f041640626036c34a7c90552d1',
     });
   }, 30_000);
 
@@ -1398,12 +1398,12 @@ describe('STRUCT-241.15 full-src graph pins', () => {
     // (every 241.15 edge resolves inside `src`).
     // STRUCT-241.16 roll-forward: 1685 / 7597 (same +2 / +3; every 241.16
     // edge resolves inside `src`).
-    expect(graph.nodes.length).toBe(1685);
-    expect(graph.edges.length).toBe(7597);
+    expect(graph.nodes.length).toBe(1686);
+    expect(graph.edges.length).toBe(7600);
     expect(pairDigest(graph)).toEqual({
-      valueEdges: 4444,
-      uniqPairs: 4385,
-      sha: '415f97f0a1a662ca6523144106bec331fef305476eb34cd316df7c70f8972448',
+      valueEdges: 4447,
+      uniqPairs: 4388,
+      sha: 'e1bad92e1864e6093b9399f95e08464d1fa3e1bbb94f3767bbaa6017205bc410',
     });
   }, 120_000);
 });

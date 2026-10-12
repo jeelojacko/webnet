@@ -145,10 +145,10 @@ import type {
  * keeps all 195.9 payload/type/purity/singleton assertions intact and only
  * rolls the global golden forward; any further pair/edge/SHA change fails.
  */
-const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1567;
-const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1585;
+const EXPECTED_BASELINE_VALUE_PAIR_COUNT = 1570;
+const EXPECTED_BASELINE_VALUE_EDGE_COUNT = 1588;
 const EXPECTED_BASELINE_VALUE_PAIRS_SHA256 =
-  '0bc9bae1f87e81161f250fd5852730e56b9bdd1311b02257cdecf39dd4d2fcb7';
+  'f1ef85bbd9e6cc3f0a7d9d82407a133dc92cf8f041640626036c34a7c90552d1';
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const abs = (relative: string): string => path.resolve(REPO_ROOT, relative);
 const rel = (absolute: string): string => path.relative(REPO_ROOT, absolute);
