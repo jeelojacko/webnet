@@ -12,6 +12,29 @@ import type {
 
 type DirectionFace = 'face1' | 'face2';
 
+// Duplicated in importReviewFormatters.ts: full-src graph node/edge pins forbid a shared module here.
+const isStrictDirectionAngleToken = (token: string | undefined): boolean => {
+  const trimmed = token?.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed
+    .replace(/[°º]/g, '-')
+    .replace(/'/g, '-')
+    .replace(/"/g, '')
+    .replace(/\s+/g, '');
+  return /^[+-]?(?=.*\d)(?:\d+(?:\.\d*)?|\.\d+)(?:-(?:\d+(?:\.\d*)?|\.\d+)){0,2}-?$/.test(normalized);
+};
+
+// Local-only (the review formatter has no quadrant dialect): full-src graph node/edge pins forbid a shared module here.
+// Allows one optional trailing hyphen before E/W (mirrors the strict numeric predicate's trailing `-?`), so abbreviated DMS quadrant bodies such as `N45-E` stay admitted.
+const isStrictQuadrantBearingToken = (token: string | undefined): boolean => {
+  const trimmed = token?.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.replace(/\s+/g, '').toUpperCase();
+  return /^[NS](?:\d+(?:\.\d*)?|\.\d+)(?:-(?:\d+(?:\.\d*)?|\.\d+)){0,2}-?[EW]$/.test(
+    normalized,
+  );
+};
+
 type RawDirectionShotLike = {
   to: string;
   obs: number;
@@ -184,6 +207,21 @@ export const handleDirectionSetRecord = ({
 
     const to = parts[1];
     const ang = parts[2];
+    // Fail-closed shape gate for the direction angle. Raw fallback lines (e.g.
+    // a face-2 normalization miss) can reach this route without passing the
+    // import-review formatter, and `parseAngleTokenRad`/`dmsToRad` would accept
+    // malformed shapes such as `45abc` (as 45) or `0.0.0`/`0-00-00-1` (as 0).
+    // Valid quadrant bearings (`N45E`, `N45-30-00E`, ...) are accepted here as
+    // `parseAngleTokenRad` handles them before `dmsToRad`; the strict quadrant
+    // shape keeps lenient bodies (`N45abcE`) out. Planned preanalysis tokens
+    // (`?`/empty) stay valid and are handled below.
+    const plannedAngleToken =
+      state.preanalysisMode === true && (ang == null || ang.trim() === '' || ang.trim() === '?');
+    const validQuadrantBearing = isStrictQuadrantBearingToken(ang);
+    if (!plannedAngleToken && !validQuadrantBearing && !isStrictDirectionAngleToken(ang)) {
+      logs.push(`Invalid direction angle at line ${lineNum}, skipping ${code}.`);
+      return true;
+    }
     const angParsed = parseObservedAngleToken(ang, 'dms');
     if (!angParsed.valid) {
       logs.push(`Invalid direction angle at line ${lineNum}, skipping ${code}.`);
