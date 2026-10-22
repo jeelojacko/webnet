@@ -1,0 +1,41 @@
+name: Petunia WebNet CI
+
+on:
+  push:
+    branches:
+      - ci/petunia-webnet-pilot
+
+jobs:
+  static:
+    name: WebNet Static Checks
+    runs-on: petunia-linux
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout WebNet
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verify environment
+        run: |
+          node --version
+          npm --version
+          git rev-parse --short HEAD
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix study-desktop
+
+      - name: Check portable paths
+        run: npm run check:portable-paths
+
+      - name: TypeScript validation
+        run: npm run typecheck
+
+      - name: ESLint validation
+        run: npm run lint
+
+      - name: Success
+        run: echo "PETUNIA-WEBNET-STATIC-OK"
