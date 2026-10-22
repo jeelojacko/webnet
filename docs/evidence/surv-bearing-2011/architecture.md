@@ -157,3 +157,23 @@ Tests:
 directly, so a malformed token there still becomes `0`; it was intentionally
 out of this scoped change. The broader cross-module quadrant/DMS dedup remains
 #200.
+
+## SURV-DMS-200.2 correction (post-hoc, append-only)
+
+`dmsToRad`'s compact `DDD.MMSS` branch read the fractional body through
+floating-point subtraction, so 4-digit minutes could carry into seconds. The
+SURV-DMS-200.2 fix strips one leading sign before the hyphen/compact decision
+and extracts `MM`/`SS`/fractional tail textually; the hyphenated branch math is
+unchanged (and the historical lenient `parseFloat` body is preserved for
+non-numeric shapes such as `45abc`). Float-carry values recorded above are
+corrected as follows:
+
+| token | prior (carry) | corrected (oracle) |
+| --- | --- | --- |
+| `45.3000` | `45.511111111111106` (45°30'40") | `45.5` (45°30'00") |
+| `N45.3000E` | `45.511111111111106` | `45.5` |
+| `45.1234` | `45.209444444444436` (last-bit) | `45.20944444444445` (`45 + 12/60 + 34/3600`) |
+
+Files: `src/engine/angles.ts` (compact branch only) and
+`tests/surv_bearing_2011_format_dialect.test.ts` (goldens corrected with
+truth-in-history comments); new `tests/dms_compact_carry_2002.test.ts`.

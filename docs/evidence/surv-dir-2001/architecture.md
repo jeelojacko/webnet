@@ -150,3 +150,14 @@ trailing hyphen before the suffix. This mirrors the numeric predicate's `-?$`
 allowance. Still rejected: `N45--E` (two hyphens), `N45Eextra`, `N45abcE`,
 `N0.0.0E`, `N0-00-00-1E`, empty body. No new files, imports, or graph edges;
 the STRUCT pins (full-`src` nodes 1686 / edges 7600) are unchanged.
+
+## SURV-DMS-200.2 correction (post-hoc, append-only)
+
+The strict predicates above are unchanged. What changed is `dmsToRad`'s compact
+`DDD.MMSS` branch, which previously read the fractional body through
+floating-point subtraction (binary carry) and misrouted single-part negatives
+(`-45.5`) into the hyphenated branch. SURV-DMS-200.2 strips one leading sign
+before the hyphen/compact decision and extracts `MM`/`SS`/fractional tail
+textually; hyphenated multi-part math stays bit-identical. Downstream review
+values corrected: `45.3000` now reads 45°30'00" (was 45°30'40"), and the face-2
+row `DM 5 45.3000 10.0000` normalizes to `225-30-00.0` (was `225-30-40.0`).

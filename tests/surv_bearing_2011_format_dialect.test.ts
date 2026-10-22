@@ -177,8 +177,11 @@ describe('SURV-BEARING-201.1 parser dialect parity', () => {
     expect(cadParseDmsDegrees('45.3000')).toBe(45.3);
     expect(cadParseBearingDegrees('45.3000')).toBe(45.30000000000001);
     // Importer: no-separator token is compact DDD.MMSS (`dmsToRad`).
-    expect(parseDmsAngleDegrees('45.3000')).toBe(45.511111111111106);
-    expect(parseQuadrantBearingDegrees('N45.3000E')).toBe(45.511111111111106);
+    // SURV-DMS-200.2 correction: the historical value 45.511111111111106 was a
+    // binary-carry observation (45°30'40"); textual compact extraction reads
+    // `45.3000` as the oracle 45°30'00" = 45.5.
+    expect(parseDmsAngleDegrees('45.3000')).toBe(45.5);
+    expect(parseQuadrantBearingDegrees('N45.3000E')).toBe(45.5);
     // Hyphenated DMS agrees in both dialects.
     expect(cadParseDmsDegrees('45-30-00')).toBe(45.5);
     expect(parseDmsAngleDegrees('45-30-00')).toBe(45.5);
@@ -187,7 +190,10 @@ describe('SURV-BEARING-201.1 parser dialect parity', () => {
   });
 
   it('keeps the RW5 fixture dialect for AR45.1234 (DDD.MMSS)', () => {
-    expect(parseDmsAngleDegrees('45.1234')).toBe(45.209444444444436);
+    // SURV-DMS-200.2 correction: the historical value 45.209444444444436
+    // differed only in the last bits from the oracle `45 + 12/60 + 34/3600`;
+    // the textual compact extraction returns the oracle-rounded double.
+    expect(parseDmsAngleDegrees('45.1234')).toBe(45.20944444444445);
     expect(parseDmsAngleDegrees('45.1234')).toBeCloseTo(45 + 12 / 60 + 34 / 3600, 12);
   });
 
@@ -230,8 +236,14 @@ describe('SURV-BEARING-201.1 parser dialect parity', () => {
 
   it('preserves the full valid DMS shape matrix after the tightened gate', () => {
     // Compact DDD.MMSS forms (importer dialect).
-    expect(parseDmsAngleDegrees('45.3000')).toBe(45.511111111111106);
-    expect(parseDmsAngleDegrees('-45.5')).toBe(-45.5);
+    // SURV-DMS-200.2 correction: prior `45.511111111111106` was a binary-carry
+    // observation (45°30'40"); compact `45.3000` is 45°30'00" = 45.5.
+    expect(parseDmsAngleDegrees('45.3000')).toBe(45.5);
+    // SURV-DMS-200.2 correction: prior `-45.5` -> -45.5 was a hyphen-branch
+    // accident (the leading '-' misrouted the body). Stripping one leading sign
+    // before the branch decision reads compact 45°50' = -45.8333…, consistent
+    // with the positive `45.5` -> 45°50' compact reading.
+    expect(parseDmsAngleDegrees('-45.5')).toBe(-45.833333333333336);
     expect(parseDmsAngleDegrees('.5')).toBeCloseTo(50 / 60, 12);
     // Hyphenated DMS forms.
     expect(parseDmsAngleDegrees('045-30-00')).toBe(45.5);
