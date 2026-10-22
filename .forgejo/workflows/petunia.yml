@@ -3,7 +3,10 @@ name: Petunia WebNet CI
 on:
   push:
     branches:
-      - ci/petunia-webnet-pilot
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   static:
