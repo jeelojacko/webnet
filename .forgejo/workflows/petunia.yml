@@ -1,0 +1,53 @@
+name: Petunia WebNet CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  static:
+    name: WebNet Static Checks
+    runs-on: petunia-linux
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout WebNet
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verify environment
+        run: |
+          node --version
+          npm --version
+          git rev-parse --short HEAD
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix study-desktop
+
+      - name: Check portable paths
+        run: npm run check:portable-paths
+
+      - name: TypeScript validation
+        env:
+          NODE_OPTIONS: "--max-old-space-size=5120"
+        run: |
+          echo "=== Container memory limit ==="
+          cat /sys/fs/cgroup/memory.max 2>/dev/null || true
+
+          echo "=== Node heap limit ==="
+          node -e "console.log('V8 heap limit MiB:', Math.round(require('node:v8').getHeapStatistics().heap_size_limit / 1024 / 1024))"
+
+          npm run typecheck
+
+      - name: ESLint validation
+        run: npm run lint
+
+      - name: Success
+        run: echo "PETUNIA-WEBNET-STATIC-OK"
