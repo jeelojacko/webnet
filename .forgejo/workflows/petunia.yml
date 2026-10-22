@@ -32,7 +32,16 @@ jobs:
         run: npm run check:portable-paths
 
       - name: TypeScript validation
-        run: npm run typecheck
+        env:
+          NODE_OPTIONS: "--max-old-space-size=5120"
+        run: |
+          echo "=== Container memory limit ==="
+          cat /sys/fs/cgroup/memory.max 2>/dev/null || true
+
+          echo "=== Node heap limit ==="
+          node -e "console.log('V8 heap limit MiB:', Math.round(require('node:v8').getHeapStatistics().heap_size_limit / 1024 / 1024))"
+
+          npm run typecheck
 
       - name: ESLint validation
         run: npm run lint
